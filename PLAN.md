@@ -2,6 +2,13 @@
 
 > **Stato:** ✅ **PIANO COMPLETATO AL 100% (92/92, 2026-08-13)**. Percorso della giornata: la verifica statica (build+grep) di DS-01/UX-NEW aveva dato esito positivo, ma il rendering in browser era rotto (vedi [DS-03](#-debito-tecnico-aperto)); corretto, poi notifiche/filtri/layout/accessibilità verificati manualmente uno per uno (vedi [QA](#-task-testing-priorità-alta--riaperti-dopo-laudit-chiusi-il-2026-08-13)), infine chiuso tutto il debito tecnico (DEBT-01..06), la struttura (STR-01..04), SEO (meta tag + JSON-LD) e PWA-03 (banner "Installa App")
 > **Ultimo aggiornamento:** 2026-08-13
+>
+> 🔭 **Il progetto non è considerato definitivamente chiuso**: è pianificata una fase futura per
+> integrare un'**AI che aiuti a compilare i task** (es. creazione da linguaggio naturale — l'utente
+> scrive/detta una frase e l'AI pre-compila titolo/data/ora/importanza nel form). Nessun task formale
+> ancora aperto per questo: provider AI, architettura (serve un backend/proxy per non esporre la
+> chiave API lato client, dato che oggi l'app è puramente client-side) e scope preciso sono ancora
+> da decidere. Vedi conversazione del 2026-08-13 per il contesto.
 > **Notifiche:** ✅ Ripianificazione, permessi, Service Worker in build e recupero all'apertura — **RIPARATI** | ✅ Notifica in-app e toast di fallback **verificati a mano in browser (QA-04, QA-11)** | ✅ Service Worker attivo confermato sia in dev sia in build di produzione (**DEBT-05 chiuso**)
 > **Filtri:** ✅ Criteri spostati nello store Zustand — **RIPARATI e verificati a mano in browser (QA-07)**
 > **Accessibilità:** ✅ QA-09 verificato (2026-08-13) — trovato e risolto un **bug critico** in `ConfirmDialog` (A11Y-06): il dialog di conferma non si chiudeva mai davvero (Annulla/Escape/Conferma), lasciando un overlay invisibile che bloccava tutti i click sull'intera app finché non si ricaricava la pagina. Risolti anche dropdown non chiudibili da tastiera (A11Y-07) e un `aria-hidden` errato che nascondeva il dialog stesso agli screen reader (A11Y-08)

@@ -1,12 +1,17 @@
 # Agenda Intelligente con Notifiche Persistenti
 
-> **Stato:** 🔧 **FUNZIONALITÀ CORE RIPRISTINATE (2026-08-12)** — verifica manuale in browser ancora da fare
-> **Tema Tailwind:** ✅ **Attivo (DS-01 risolto il 2026-08-12)** — vedi [sotto](#tema-tailwind-ora-attivo)
+> **Stato:** ✅ **Piano completo al 100% (2026-08-13)** — tutte le funzionalità core, i task QA e il debito tecnico chiusi e verificati manualmente in browser. Dettaglio completo in [`PLAN.md`](PLAN.md).
 >
 > Progetto **React 18 + JavaScript + JSDoc + Tailwind CSS v4 + PWA** per la gestione di scadenze con sistema di promemoria persistenti.
 >
 > **Design Reference:** Google Stitch Cognitive Protocol
 > **Piano di lavoro e stato dei task:** [`PLAN.md`](PLAN.md)
+>
+> 🔭 **Non è considerato un progetto definitivamente chiuso**: è pianificata una fase futura per
+> integrare un'**AI che aiuti a compilare i task** (es. creazione da linguaggio naturale — l'utente
+> scrive/detta una frase e l'AI pre-compila titolo/data/ora/importanza nel form). Provider AI,
+> architettura (serve un backend/proxy per non esporre la chiave API lato client, dato che oggi
+> l'app è puramente client-side) e scope preciso sono ancora da decidere.
 
 ---
 
@@ -27,24 +32,25 @@ Il valore principale dell'app è:
 | **Scadenze** | Data + ora configurabili separatamente | ✅ Funzionante |
 | **Persistenza** | Salvataggio su localStorage, date serializzate ISO | ✅ Funzionante |
 | **Importanza** | 3 livelli (Bassa/Media/Alta) per priorità e visualizzazione | ✅ Funzionante |
-| **Agenda** | Vista giornaliera/settimanale + elenco prossime scadenze | ✅ Funzionante |
-| **Dashboard** | Panoramica immediata: imminenti, scaduti, alta priorità, compleanni | ✅ Funzionante |
-| **Filtri** | Per tipo, stato, importanza, data | 🔧 Riparati il 2026-08-12 — da verificare in browser |
-| **Notifiche (app aperta)** | Promemoria ripetuti e configurabili | 🔧 Riparate il 2026-08-12 — da verificare in browser |
-| **Notifiche (app chiusa)** | Service Worker + IndexedDB | ⚠️ Parziale — vedi [Limitazioni note](#️-limitazioni-note) |
-| **PWA installabile** | Manifest + icone | ✅ Requisiti soddisfatti (icone create il 2026-08-12) |
+| **Agenda** | Vista giornaliera/settimanale/prossime + filtri, con scorciatoie rapide in Filtri | ✅ Funzionante |
+| **Dashboard** | Panoramica immediata: imminenti, scaduti, alta priorità, compleanni, calendario | ✅ Funzionante |
+| **Filtri** | Per tipo, stato, importanza, data + 7 scorciatoie rapide (pagina Filtri) | ✅ Funzionante |
+| **Notifiche (app aperta)** | Promemoria ripetuti e configurabili, con cronologia (pagina Alerts) | ✅ Funzionante |
+| **Notifiche (app chiusa)** | Service Worker + IndexedDB | ⚠️ Parziale per limiti della piattaforma — vedi [Limitazioni note](#️-limitazioni-note) |
+| **PWA installabile** | Manifest + icone + banner "Installa App" su mobile | ✅ Funzionante |
 | **Tailwind CSS** | Stili utility-first per UI responsive | ✅ Tema custom attivo (vedi sotto) |
 | **Design System** | Tema personalizzato da Google Stitch | ✅ `@theme` in `global.css` — unica sorgente di verità |
-| **Test automatici** | — | ❌ Assenti |
+| **SEO** | Meta tag Open Graph + structured data JSON-LD | ✅ Funzionante |
+| **Test automatici** | Vitest, layer logic | ✅ 49/49 (`npm test`) |
 
 ---
 
 ## ⚠️ Limitazioni note
 
-Un punto da conoscere prima di lavorare sul progetto. Tracciato in [`PLAN.md`](PLAN.md) come QA-12.
+Punti da conoscere prima di lavorare sul progetto. Storico completo in [`PLAN.md`](PLAN.md).
 
 <a id="tema-tailwind-ora-attivo"></a>
-### Il tema Tailwind — ora attivo (DS-01/DS-02 risolti il 2026-08-12)
+### Il tema Tailwind (nota storica — DS-01/DS-02 risolti il 2026-08-12)
 
 `src/styles/global.css` conteneva solo `@import "tailwindcss"`. In **Tailwind v4** un `tailwind.config.js` viene letto soltanto se dichiarato con `@config` (o se i token sono definiti in un blocco `@theme`) — non accadeva nessuno dei due, quindi tutto `tailwind.config.js` era codice morto e classi come `font-headline-md`, `p-lg`, `gap-md`, `px-margin-mobile` non producevano CSS pur essendo usate in tutta la UI.
 
@@ -113,8 +119,6 @@ src/
 │
 ├── logic/                          # Logica applicativa (NO React)
 │   ├── hooks.js                    # useAgenda — hook principale (dati, filtri, CRUD)
-│   ├── hooks/
-│   │   └── useResponsive.js        # ⚠️ convive con hooks.js: risoluzione ambigua (DEBT-02)
 │   ├── store/
 │   │   ├── index.js                # useAgendaStore + subscribeWithSelector; items, filterCriteria, sortCriteria
 │   │   └── persistence.js          # saveToStorage, loadFromStorage, setupStorePersistence (sottoscritta ai soli items)
@@ -142,13 +146,13 @@ src/
 │   │   ├── AgendaPage.jsx
 │   │   ├── CreatePage.jsx
 │   │   ├── TasksPage.jsx
-│   │   ├── AlertsPage.jsx
-│   │   ├── FiltersPage.jsx
+│   │   ├── AlertsPage.jsx          # Cronologia notifiche mostrate (IndexedDB)
+│   │   ├── FiltersPage.jsx         # 7 scorciatoie di filtro rapide
 │   │   └── SettingsPage.jsx        # Include l'attivazione del permesso notifiche
 │   └── components/
 │       ├── Layout/                 # MainLayout, TopAppBar, DesktopTopAppBar, SideNavBar, MobileSideNav, BottomNav
 │       ├── Navigation/             # FAB
-│       ├── Responsive/             # MobileNav, DesktopNav
+│       ├── InstallBanner/          # Banner "Installa App" (beforeinstallprompt), mobile only
 │       ├── AgendaItem/             # AgendaItem, AgendaItemCard, AgendaItemActions, AgendaItemCompact
 │       ├── AgendaView/             # AgendaView, AgendaHeader, DailyView, WeeklyView, UpcomingList, ViewToggle
 │       ├── Dashboard/              # Dashboard, QuickStats, CalendarWidget, UpcomingCards, PriorityList,
@@ -169,9 +173,6 @@ src/
 ├── sw.js                           # Service Worker (sorgente per injectManifest) — NON metterlo in public/
 └── main.jsx                        # Entry point: registra il SW, avvia persistenza e notifiche
 ```
-
-> **Nota su `Layout/` e `Responsive/`:** i componenti di navigazione sono 8 e si sovrappongono — sono strati
-> di redesign successivi mai rimossi. Consolidamento tracciato come DEBT-01 in `PLAN.md`.
 
 ---
 
@@ -277,7 +278,7 @@ Utile da leggere prima di modificare `src/logic/notifications/`.
 ### Cognitive Protocol (da Google Stitch)
 **"Effortless Precision"** — interfaccia noise-free che permette di gestire schedule complessi con calma e controllo: whitespace generoso, allineamento sistematico, palette restrittiva, motion sottile.
 
-> ⚠️ I token qui sotto sono **dichiarati** in `tailwind.config.js` e in `:root` di `global.css`, ma il file di config non viene letto (vedi [Limitazioni](#️-limitazioni-note)). Valgono oggi solo le CSS vars e le utility scritte a mano in `global.css`.
+> I token qui sotto sono definiti nel blocco `@theme` di `src/styles/global.css`, l'unica sorgente di verità per colori, spaziature e tipografia (vedi [nota storica](#tema-tailwind-ora-attivo)).
 
 ### Color Palette
 | Ruolo | Hex | Uso |
