@@ -1,0 +1,405 @@
+/* Tailwind CSS v4 - Uses @tailwindcss/postcss plugin */
+@import "tailwindcss";
+@plugin "@tailwindcss/forms";
+@plugin "@tailwindcss/container-queries";
+
+/* File scansionati per le classi utility usate (v4 non legge più tailwind.config.js) */
+@source "../../index.html";
+@source "../**/*.{js,jsx}";
+
+/* darkMode: 'class' — equivalente v4 del vecchio tailwind.config.js */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/*
+ * Unica sorgente di verità per il design system (Stitch Cognitive Protocol / Material Design 3).
+ * Sostituisce tailwind.config.js (rinominato in tailwind.config.js.deprecated — v4 non lo leggeva
+ * senza @config/@theme, quindi era codice morto: vedi DS-01/DS-02 in PLAN.md).
+ */
+@theme {
+  /* Primary palette */
+  --color-primary: #002045;
+  --color-primary-container: #1a365d;
+  --color-primary-fixed: #d6e3ff;
+  --color-primary-fixed-dim: #adc7f7;
+  --color-on-primary: #ffffff;
+  --color-on-primary-container: #86a0cd;
+  --color-on-primary-fixed: #001b3c;
+  --color-on-primary-fixed-variant: #2d476f;
+
+  /* Secondary palette */
+  --color-secondary: #b51822;
+  --color-secondary-container: #d93537;
+  --color-secondary-fixed: #ffdad7;
+  --color-secondary-fixed-dim: #ffb3ad;
+  --color-on-secondary: #ffffff;
+  --color-on-secondary-container: #fffbff;
+  --color-on-secondary-fixed: #410004;
+  --color-on-secondary-fixed-variant: #930013;
+
+  /* Tertiary palette */
+  --color-tertiary: #002713;
+  --color-tertiary-container: #003f23;
+  --color-tertiary-fixed: #91f8b8;
+  --color-tertiary-fixed-dim: #74db9d;
+  --color-on-tertiary: #ffffff;
+  --color-on-tertiary-container: #4bb278;
+  --color-on-tertiary-fixed: #002110;
+  --color-on-tertiary-fixed-variant: #00522f;
+
+  /* Error palette */
+  --color-error: #ba1a1a;
+  --color-error-container: #ffdad6;
+  --color-on-error: #ffffff;
+  --color-on-error-container: #93000a;
+
+  /* Surface colors */
+  --color-surface: #f7fafc;
+  --color-surface-container-lowest: #ffffff;
+  --color-surface-container-low: #f1f4f6;
+  --color-surface-container: #ebeef0;
+  --color-surface-container-high: #e5e9eb;
+  --color-surface-container-highest: #e0e3e5;
+  --color-surface-dim: #d7dadc;
+  --color-surface-variant: #e0e3e5;
+  --color-surface-tint: #455f88;
+  --color-surface-bright: #f7fafc;
+
+  /* On colors */
+  --color-on-surface: #181c1e;
+  --color-on-surface-variant: #43474e;
+
+  /* Background */
+  --color-background: #f7fafc;
+  --color-on-background: #181c1e;
+
+  /* Inverse colors */
+  --color-inverse-surface: #2d3133;
+  --color-inverse-on-surface: #eef1f3;
+  --color-inverse-primary: #adc7f7;
+
+  /* Outline colors */
+  --color-outline: #74777f;
+  --color-outline-variant: #c4c6cf;
+
+  /* Status colors - WCAG AA compliant */
+  --color-success: #2d7d4b; /* 4.6:1 su #ffffff */
+  --color-warning: #b45f06; /* 5.1:1 su #ffffff */
+  --color-info: #00522f;
+  --color-danger: #ba1a1a;
+
+  /* Border radius */
+  --radius: 0.25rem;
+  --radius-sm: 0.25rem;
+  --radius-md: 0.375rem;
+  --radius-lg: 0.5rem;
+  --radius-xl: 0.75rem;
+  --radius-2xl: 1rem;
+  --radius-3xl: 1.5rem;
+  --radius-full: 9999px;
+
+  /* Spacing (griglia base 4px) */
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 16px;
+  --spacing-lg: 24px;
+  --spacing-xl: 32px;
+  --spacing-2xl: 48px;
+  --spacing-3xl: 64px;
+  --spacing-margin-mobile: 20px;
+  --spacing-gutter: 16px;
+  --spacing-base: 4px;
+
+  /* Font family */
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-body: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-headline-lg: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-headline-md: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-display-date: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-label-caps: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-label-sm: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-body-md: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-body-lg: 'Inter', system-ui, -apple-system, sans-serif;
+
+  /* Font size - token tipografici Stitch */
+  --text-display-date: 2.125rem;
+  --text-display-date--line-height: 2.5rem;
+  --text-display-date--letter-spacing: -0.02em;
+  --text-display-date--font-weight: 700;
+
+  --text-headline-lg: 1.5rem;
+  --text-headline-lg--line-height: 2rem;
+  --text-headline-lg--font-weight: 600;
+
+  --text-headline-md: 1.25rem;
+  --text-headline-md--line-height: 1.75rem;
+  --text-headline-md--font-weight: 600;
+
+  --text-body-lg: 1rem;
+  --text-body-lg--line-height: 1.5rem;
+  --text-body-lg--font-weight: 400;
+
+  --text-body-md: 0.875rem;
+  --text-body-md--line-height: 1.25rem;
+  --text-body-md--font-weight: 400;
+
+  --text-label-caps: 0.75rem;
+  --text-label-caps--line-height: 1rem;
+  --text-label-caps--letter-spacing: 0.05em;
+  --text-label-caps--font-weight: 700;
+
+  --text-label-sm: 0.6875rem;
+  --text-label-sm--line-height: 0.875rem;
+  --text-label-sm--font-weight: 500;
+
+  /* Shadows */
+  --shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  --shadow-fab: 0 4px 12px rgba(0, 0, 0, 0.15);
+  --shadow-glass-sm: 0 2px 8px rgba(0, 0, 0, 0.08);
+
+  /* Transizioni */
+  --default-transition-duration: 200ms;
+  --default-transition-timing-function: cubic-bezier(0.2, 0.8, 0.2, 1);
+
+}
+
+/*
+ * Tailwind v4 non ha un namespace @theme per z-index/width con chiavi nominate
+ * (solo --color-*, --font-*, --text-*, --radius-*, --shadow-*, --spacing-*, ecc.
+ * sono supportati: vedi node_modules/tailwindcss/theme.css). z-fab/w-nav-desktop
+ * restano quindi classi scritte a mano, non duplicate altrove.
+ */
+.z-fab { z-index: 1000; }
+.z-navbar { z-index: 50; }
+.w-nav-desktop { width: 16rem; }
+.w-sidebar { width: 64px; }
+
+/* Custom scrollbar for desktop */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background-color: #cbd5e1;
+  border-radius: 4px;
+}
+
+/* Tailwind Preflight (@layer base) già applica box-sizing/margin/padding reset su *.
+   Non ripeterlo qui fuori da un @layer: nelle cascade layer le regole non-layered
+   vincono sempre su @layer utilities, quindi un reset margin/padding qui fuori
+   azzererebbe silenziosamente pt-16, p-lg, mb-1, ecc. in tutta l'app (bug reale
+   riscontrato in verifica manuale 2026-08-13: header che copre i contenuti, card
+   senza padding, liste senza spaziatura). */
+
+/*
+ * @layer base: le regole qui dentro hanno priorità PIÙ BASSA di @layer utilities
+ * nel sistema di cascade layer di Tailwind v4, quindi ogni classe Tailwind (colori,
+ * text-decoration, ecc.) applicata a un elemento può correttamente sovrascriverle.
+ * Fuori da un layer, queste stesse regole batterebbero SEMPRE le utility (bug reale:
+ * `a { color }` unlayered rendeva invisibile "+ Nuovo Task" e l'icona "+" del FAB,
+ * perché sovrascriveva `text-on-primary` indipendentemente dall'ordine nel file).
+ */
+@layer base {
+  html {
+    font-size: 16px;
+    text-size-adjust: none;
+    scroll-behavior: smooth;
+  }
+
+  html, body {
+    height: 100%;
+    min-height: 100vh;
+  }
+
+  body {
+    overflow-x: hidden;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    background-color: var(--color-surface);
+    color: var(--color-on-surface);
+    line-height: 1.5;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    font-weight: 600;
+    line-height: 1.25;
+    color: var(--color-on-surface);
+  }
+
+  /* Font sizes match Stitch typography tokens */
+  h1 { font-size: 2.125rem; } /* display-date: 34px */
+  h2 { font-size: 1.5rem; } /* headline-lg: 24px */
+  h3 { font-size: 1.25rem; } /* headline-md: 20px */
+  h4 { font-size: 1rem; } /* body-lg: 16px */
+  h5 { font-size: 0.875rem; } /* body-md: 14px */
+  h6 { font-size: 0.75rem; } /* label-caps: 12px */
+
+  a {
+    color: var(--color-primary);
+    text-decoration: underline;
+    text-decoration-color: var(--color-primary);
+    text-underline-offset: 2px;
+  }
+
+  a:hover {
+    color: var(--color-primary-container);
+  }
+
+  button {
+    cursor: pointer;
+    font-family: inherit;
+    font-size: inherit;
+    line-height: inherit;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+  }
+
+  img, picture, video, canvas, svg {
+    display: block;
+    max-width: 100%;
+  }
+
+  input, button, textarea, select {
+    font: inherit;
+    color: inherit;
+  }
+}
+
+/* Accessibility - Skip link */
+.skip-link {
+  position: absolute;
+  top: -40px;
+  left: 0;
+  background: #111827;
+  color: white;
+  padding: 8px 16px;
+  z-index: 100;
+  transition: top 0.3s;
+}
+
+.skip-link:focus {
+  top: 0;
+}
+
+/* Utility class per accessibilita */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Touch target minimum size */
+.touch-target {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ===== UX-03: Animazioni Sottili ===== */
+
+/* Fade-in base */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.3s ease-out forwards;
+}
+
+/* Fade-in con delay progressivo */
+.animate-fade-in-delay-1 {
+  animation: fadeIn 0.3s ease-out 0.1s forwards;
+}
+
+.animate-fade-in-delay-2 {
+  animation: fadeIn 0.3s ease-out 0.2s forwards;
+}
+
+.animate-fade-in-delay-3 {
+  animation: fadeIn 0.3s ease-out 0.3s forwards;
+}
+
+.animate-fade-in-delay-4 {
+  animation: fadeIn 0.3s ease-out 0.4s forwards;
+}
+
+/* Slide up */
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-slide-up {
+  animation: slideUp 0.3s ease-out forwards;
+}
+
+/* Scale subtle */
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-scale-in {
+  animation: scaleIn 0.2s ease-out forwards;
+}
+
+/* Hover effects */
+.hover-lift {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.hover-lift:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.hover-scale {
+  transition: transform 0.2s ease;
+}
+
+.hover-scale:hover {
+  transform: scale(1.02);
+}

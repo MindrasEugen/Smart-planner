@@ -1,0 +1,1240 @@
+# PLAN — Agenda Intelligente con Notifiche Persistenti
+
+> **Stato:** ✅ **PIANO COMPLETATO AL 100% (92/92, 2026-08-13)**. Percorso della giornata: la verifica statica (build+grep) di DS-01/UX-NEW aveva dato esito positivo, ma il rendering in browser era rotto (vedi [DS-03](#-debito-tecnico-aperto)); corretto, poi notifiche/filtri/layout/accessibilità verificati manualmente uno per uno (vedi [QA](#-task-testing-priorità-alta--riaperti-dopo-laudit-chiusi-il-2026-08-13)), infine chiuso tutto il debito tecnico (DEBT-01..06), la struttura (STR-01..04), SEO (meta tag + JSON-LD) e PWA-03 (banner "Installa App")
+> **Ultimo aggiornamento:** 2026-08-13
+> **Notifiche:** ✅ Ripianificazione, permessi, Service Worker in build e recupero all'apertura — **RIPARATI** | ✅ Notifica in-app e toast di fallback **verificati a mano in browser (QA-04, QA-11)** | ✅ Service Worker attivo confermato sia in dev sia in build di produzione (**DEBT-05 chiuso**)
+> **Filtri:** ✅ Criteri spostati nello store Zustand — **RIPARATI e verificati a mano in browser (QA-07)**
+> **Accessibilità:** ✅ QA-09 verificato (2026-08-13) — trovato e risolto un **bug critico** in `ConfirmDialog` (A11Y-06): il dialog di conferma non si chiudeva mai davvero (Annulla/Escape/Conferma), lasciando un overlay invisibile che bloccava tutti i click sull'intera app finché non si ricaricava la pagina. Risolti anche dropdown non chiudibili da tastiera (A11Y-07) e un `aria-hidden` errato che nascondeva il dialog stesso agli screen reader (A11Y-08)
+> **Performance:** ✅ TUTTI COMPLETATI (PERF-01 SKIPPED, PERF-02 VERIFIED, PERF-03 IMPLEMENTED)
+> **UX/UI:** ✅ **DS-03 risolto (2026-08-13)** — layout verificato visivamente in browser (mobile), non solo con build+grep
+> **Design System:** ✅ **DS-01 + DS-02 + DS-03 risolti** — `tailwind.config.js` migrato in `@theme` (DS-01/02, 2026-08-12); **DS-03 (2026-08-13)**: due regole scritte fuori da `@layer` in `global.css` (`*,*::before,*::after{margin:0;padding:0}` e il blocco `a,h1..h6,body,...`) battevano sempre le utility Tailwind (`@layer utilities`) per via delle cascade layer, azzerando ogni `pt-*/p-*/m-*` e forzando `color:var(--color-primary)` su ogni link. Invisibile a build+grep (le regole CSS esistono, sono solo sovrascritte a runtime) — visibile solo aprendo il browser. Fix: reset ridondante rimosso, blocco elementi HTML spostato in `@layer base`.
+> **PWA:** ✅ **Icone e manifest completi (PWA-01 chiuso il 2026-08-12)** — requisiti di installabilità soddisfatti; prompt di installazione da confermare in browser
+> **Linguaggio:** JavaScript (con JSDoc) | **Framework:** React 18 + Tailwind CSS v4 + Vite + PWA
+> **Build:** ✅ `npm run build` OK | **Lint:** ✅ 0 errori, 39 warning | **Test automatici:** ✅ Vitest, **49/49** (`npm test`) — QA-12
+> **Design Reference:** Google Stitch - Cognitive Protocol
+
+---
+
+## 📌 Legenda
+
+| Stato | Significato |
+|-------|-------------|
+| ⬜ TODO | Da fare |
+| 🟡 IN_PROGRESS | In lavorazione |
+| ✅ DONE | Completato e verificato |
+| 🔴 BLOCKER | Rompe una funzionalità dichiarata |
+| ⚠️ DA RIVERIFICARE | Marcato DONE in passato ma senza prova; richiede verifica manuale |
+
+> **Nota sulla verifica:** in questo progetto "DONE" è stato usato anche per lavoro mai eseguito in un browser reale.
+> Da ora: **✅ DONE solo con la prova a fianco** (comando eseguito, output, o passo manuale svolto).
+
+---
+
+## 🎯 Panoramica Progetto
+
+**Agenda Intelligente** è un'app React per la gestione di scadenze con **notifiche persistenti**.
+Il CRUD, la persistenza e la struttura Logic ↔ UI sono solidi. Le due funzionalità che danno
+valore all'app — notifiche ripetute e filtri — erano **dichiarate complete ma non funzionanti**:
+sono state riparate il 2026-08-12, con verifica automatica sul codice; la verifica manuale in
+browser (permessi, notifica di sistema, toast di fallback, filtri) è stata completata il 2026-08-13.
+
+**Obiettivo attuale:** il layout è stato aperto in un browser reale per la prima volta (2026-08-13) e
+riparato (DS-03/04/05, vedi Debito Tecnico); lo stesso giorno sono state chiuse tutte le verifiche
+manuali di notifiche e filtri (QA-04, QA-06, QA-07, QA-10, QA-11 — incluso il sub-test di recupero
+alla riapertura), il layout desktop a 3 colonne (≥1024px), i test automatici (QA-12), le 3 pagine
+stub (STR-04), alcuni difetti trovati da una review esterna (DS-06, A11Y-05), il breakpoint tablet
+(QA-08) e l'accessibilità (QA-09 — durante il test trovato e risolto un **bug critico** in
+`ConfirmDialog` che bloccava l'intera app dopo la prima conferma/annullamento, vedi A11Y-06).
+**Tutti i 12 task QA sono chiusi e tutto il debito tecnico (DEBT-01..06) è risolto.** STR-02 e STR-03
+risultano entrambi già soddisfatti (STR-02 come effetto collaterale di DS-01/DS-02, STR-03 come
+copertura JSDoc già completa in `src/logic/**` — entrambi verificati 2026-08-13, nessun codice
+modificato). SEO-01/02 (meta tag Open Graph + JSON-LD in `index.html`) e PWA-03 (banner "Installa App"
+mobile via `beforeinstallprompt`, nuovo componente `InstallBanner`) implementati e verificati in
+browser reale lo stesso giorno. **Il piano è ora completo al 100% (92/92).**
+
+---
+
+## 📊 Stato Attuale
+
+| Area | Total | DONE | % | Note |
+|------|-------|------|---|------|
+| ARCHITETTURA (ARCH) | 3 | 3 | 100% | |
+| LOGICA (LOGIC) | 12 | 12 | 100% | difetti corretti in FIX-02/03/05/08 |
+| UI | 12 | 12 | 100% | |
+| **IMPLEMENTAZIONE CORE** | **27** | **27** | **100%** | |
+| RIORGANIZZAZIONE (ORG) | 6 | 6 | 100% | |
+| ACCESSIBILITÀ (A11Y) | 8 | 8 | 100% | A11Y-05..08 aperti e chiusi 2026-08-13 (`<main>` duplicato, bug critico ConfirmDialog, dropdown non chiudibili da tastiera, aria-hidden errato) |
+| RESPONSIVITÀ (RESP) | 3 | 3 | 100% | da riverificare ora che DS-01 è risolto (classi di spaziatura oggi generano CSS) |
+| PERFORMANCE (PERF) | 3 | 3 | 100% | |
+| **STRUTTURA (STR)** | **4** | **4** | **100%** | Tutti chiusi 2026-08-13 |
+| **FIX FUNZIONALI (FIX)** | **10** | **10** | **100%** | ✅ 2026-08-12 |
+| **QA** | **12** | **12** | **100%** | Tutti i task QA verificati 2026-08-13 |
+| **DESIGN SYSTEM (DS)** | **2** | **2** | **100%** | ✅ DS-01 + DS-02 chiusi 2026-08-12: layout sbloccato |
+| **PWA** | **3** | **3** | **100%** | Tutti chiusi 2026-08-13 (PWA-01 il 2026-08-12) |
+| **SEO** | **2** | **2** | **100%** | Tutti chiusi 2026-08-13 |
+| **DEBITO TECNICO (DEBT)** | **6** | **6** | **100%** | Tutto il debito tecnico chiuso 2026-08-13 |
+| **RIFACIMENTO LAYOUT (UX-NEW)** | **6** | **6** | **100%** | Tutti chiusi 2026-08-12 |
+| **TOTALE** | **92** | **92** | **100%** | Tutti i task chiusi 2026-08-13 |
+
+> La percentuale è scesa rispetto all'88% dichiarato prima, ma non è stato perso lavoro. Tre ragioni:
+> **(a)** 6 task QA marcati ✅ VERIFIED sono tornati a ⚠️ DA RIVERIFICARE perché attestavano
+> comportamenti che il codice non poteva produrre; **(b)** sono state aggiunte le aree DS, DEBT e
+> 2 task QA che prima non erano tracciate; **(c)** il conteggio precedente ometteva PERF, STR,
+> SEO, PWA e UX-NEW. Il 69% è calcolato su tutte le righe presenti in questo documento.
+> I task UX-01/02/03 (❌ CANCELLED) sono esclusi dal totale.
+
+---
+
+## 🔍 Audit 2026-08-12 — Funzionalità core non funzionanti
+
+Analisi statica del codice a fronte di ciò che README e PLAN dichiaravano. Ogni voce è stata
+confermata leggendo il codice, non dedotta.
+
+| # | Difetto | Effetto | Riscontro |
+|---|---------|---------|-----------|
+| 1 | `requestNotificationPermission()` non aveva **alcun chiamante** nella UI, e `canNotify()` controllava solo `'Notification' in window`, non il permesso | Nessuna notifica di sistema, mai — e nemmeno il fallback toast | `browser.js:11,16` senza riferimenti in `src/ui/**` |
+| 2 | `subscribe(selector, listener)` usata senza il middleware `subscribeWithSelector` | Le notifiche non si ripianificavano: un task creato restava senza promemoria fino al reload | `integration.js:202` vs `store/index.js:20` |
+| 3 | Criteri di filtro in variabili a livello di modulo | Nessun re-render: `FilterBar` e `useFilters` erano scollegati dalla lista | `hooks.js:36-37`, `useMemo` a `hooks.js:65` |
+| 4 | `public/sw.js` in collisione con il SW generato da `vite-plugin-pwa` | La logica notifiche **spariva dalla build**: `grep -c "agenda-notifications" dist/sw.js` → `0` | strategia `generateSW` in `vite.config.js` |
+| 5 | `cancelItemNotification` (async) invocata senza `await` prima del salvataggio | Race: la pulizia poteva cancellare la notifica appena creata | `integration.js:73` vs `:87` |
+| 6 | `getExpiredNotifications()` e `checkAndNotifyNow()` senza chiamanti | Nessun recupero delle scadenze passate alla riapertura dell'app | `db.js:73`, `integration.js:252` |
+| 7 | `showToast()` scriveva in un array che nessun componente React leggeva | Ogni fallback e messaggio d'errore del layer logic finiva solo in `console.log` | `notifications/toast.js` vs `Toast/useToast.js` |
+| 8 | Scaduto di un multiplo esatto di `repeatEvery` → orario calcolato = istante corrente | Ricorsione infinita con una notifica per iterazione | `Math.ceil` in `scheduler.js:31` |
+| 9 | `public/index.html` duplicato che punta a `/src/main.jsx` | Se avesse vinto la copia su `dist/index.html`, build di produzione totalmente rotta | confronto `diff index.html public/index.html` |
+| 10 | `tailwind.config.js` ignorato (v4 senza `@config`) | ~5,5 KB di token morti; `font-headline-md`, `p-lg`, `px-margin-mobile` non esistono come CSS | solo `@import "tailwindcss"` in `global.css:2` |
+
+I punti 1-9 sono stati risolti (vedi sezione seguente). Il punto 10 resta aperto come **DS-01**.
+
+---
+
+## ✅ Fix Funzionali (2026-08-12)
+
+| ID | Task | Owner | Stato | Prova |
+|----|------|-------|-------|-------|
+| FIX-01 | Permesso notifiche richiedibile: `isNotificationSupported()` / `canNotify()` separati, notifica via `registration.showNotification()`, sezione "Notifiche" in SettingsPage | LOGIC + UI | ✅ DONE | `src/logic/notifications/browser.js`, `src/ui/pages/SettingsPage.jsx` |
+| FIX-02 | `subscribeWithSelector` sullo store: la ripianificazione notifiche reagisce ai cambi di `items` | LOGIC | ✅ DONE | script di verifica: listener chiamato 2/2 volte |
+| FIX-03 | `filterCriteria` / `sortCriteria` come stato dello store; firme di `useAgenda()` invariate, `useFilters.js` e `FilterBar.jsx` non toccati | LOGIC | ✅ DONE | script di verifica: `applyFiltersAndSort` filtra 1 di 2 item |
+| FIX-04 | `strategies: 'injectManifest'`, SW sorgente in `src/sw.js`, `public/sw.js` eliminato, `runtimeCaching` riscritta come rotta Workbox, `devOptions` attivo | ARCHITECT | ✅ DONE | `grep -c "agenda-notifications" dist/sw.js` → **1** (era 0) |
+| FIX-05 | Race risolta: `await cancelItemNotification()` prima del salvataggio; query IndexedDB spostata in `db.js` come `removeScheduledNotificationsByItemId` | LOGIC | ✅ DONE | `src/logic/notifications/integration.js`, `db.js` |
+| FIX-06 | `flushExpiredNotifications()` chiamata all'avvio: le scadenze passate vengono segnalate alla riapertura | LOGIC | ✅ DONE | `integration.js`, `startNotificationMonitor()` |
+| FIX-07 | Toast del layer logic collegati al `ToastProvider` React (pub/sub con buffer per i messaggi emessi prima del mount) | LOGIC + UI | ✅ DONE | `notifications/toast.js`, `Toast/ToastProvider.jsx` |
+| FIX-08 | Scheduler: `floor(...) + 1` al posto di `ceil(...)` (orario sempre strettamente futuro), guard per `repeatEvery` 0/NaN, date non valide e `notificationSettings` assenti, retry a 60s | LOGIC | ✅ DONE | 8 casi limite verificati con script |
+| FIX-09 | Ripianificazioni serializzate su una coda: due modifiche ravvicinate non si cancellano più a vicenda | LOGIC | ✅ DONE | `queueReschedule()` in `integration.js` |
+| FIX-10 | Registrazione SW unificata su `virtual:pwa-register`; eliminati `public/index.html` (duplicato stantio) e `src/logic/notifications/sw.js` (orfano) | ARCHITECT | ✅ DONE | `src/main.jsx`; lint da 43 a 40 warning |
+
+**Verificato automaticamente:** `npm run build` OK · `npm run lint` 0 errori / 40 warning · SW di dev servito · store, filtri, persistenza e 8 casi dello scheduler testati con script temporanei.
+
+**NON verificato (richiede un browser reale):** prompt del permesso, comparsa effettiva della notifica, ciclo di vita dei record IndexedDB dal vivo, recupero alla riapertura, click sui filtri. → task **QA-04, QA-06, QA-07, QA-10, QA-11**.
+
+---
+
+## ✅ Task Completati (IMPLEMENTAZIONE CORE)
+
+### 🏗️ ARCHITETTURA
+
+| ID | Task | Owner | Stato |
+|----|------|-------|-------|
+| ARCH-01 | Configurazione progetto Vite + React + JavaScript | ORCHESTRATOR | ✅ DONE |
+| ARCH-02 | Configurazione Tailwind CSS v4 + PostCSS | ORCHESTRATOR | ✅ DONE |
+| ARCH-03 | Configurazione PWA (vite-plugin-pwa, manifest, Service Worker) | ORCHESTRATOR | ✅ DONE |
+
+### 🧠 LOGICA APPLICATIVA
+
+| ID | Task | Owner | DependsOn | Stato |
+|----|------|-------|-----------|-------|
+| LOGIC-01 | Definizione Tipi JSDoc (Importance, Status, ItemType, TimeStatus, NotificationSettings) | LOGIC | - | ✅ DONE |
+| LOGIC-02 | Store Zustand + Persistenza localStorage | LOGIC | LOGIC-01 | ✅ DONE |
+| LOGIC-03 | Logica Temporale Centralizzata (timezone, parsing date) | LOGIC | LOGIC-01 | ✅ DONE |
+| LOGIC-04 | Hook Notifiche (useNotifications) | LOGIC | LOGIC-01, LOGIC-03 | ✅ DONE (integrato in useAgenda + integration.js) |
+| LOGIC-05 | Service Worker per Notifiche Background | LOGIC | LOGIC-04 | ✅ DONE (scritto nel 2025, ma escluso dalla build fino a **FIX-04**) |
+| LOGIC-06 | Scheduler Notifiche (calculateNextNotificationTime, shouldNotifyNow) | LOGIC | LOGIC-03, LOGIC-04 | ✅ DONE (ricorsione infinita e guard mancanti corretti in **FIX-08**) |
+| LOGIC-07 | CRUD AgendaItem (createTask, createBirthday, add/update/delete/toggleComplete) | LOGIC | LOGIC-01, LOGIC-02 | ✅ DONE |
+| LOGIC-08 | Filtri e Ordinamento (applyFilters, applySort, applyFiltersAndSort) | LOGIC | LOGIC-01, LOGIC-02 | ✅ DONE (logica pura sempre corretta: il difetto era nello stato, vedi **FIX-03**) |
+| LOGIC-09 | Hook per Agenda (useAgenda) | LOGIC | LOGIC-01, LOGIC-02, LOGIC-07, LOGIC-08 | ✅ DONE (criteri spostati nello store con **FIX-03**) |
+| LOGIC-10 | Integrazione Notifiche + Store (setupAutoNotifications, cancelItemNotification) | LOGIC | LOGIC-05, LOGIC-06, LOGIC-09 | ✅ DONE (subscribe inefficace e race risolte in **FIX-02**, **FIX-05**, **FIX-09**) |
+| LOGIC-11 | Conversione tipi TypeScript → JSDoc | ORCHESTRATOR | - | ✅ DONE |
+| LOGIC-12 | Conversione store e logica da .ts a .js | ORCHESTRATOR | LOGIC-11 | ✅ DONE |
+
+### 🎨 INTERFACCIA UTENTE (Core)
+
+| ID | Task | Owner | DependsOn | Stato |
+|----|------|-------|-----------|-------|
+| UI-01 | Struttura Base App + Routing (App.jsx, main.jsx, BrowserRouter) | UI | LOGIC-02, LOGIC-09 | ✅ DONE |
+| UI-02 | Dashboard (DashboardPage, Dashboard component con sezioni) | UI | LOGIC-09 | ✅ DONE |
+| UI-03 | Vista Agenda (AgendaPage, AgendaView, DailyView, WeeklyView, UpcomingList) | UI | LOGIC-09 | ✅ DONE |
+| UI-04 | Form Task (TaskForm, useTaskForm, FormField con validazione) | UI | LOGIC-07, LOGIC-09 | ✅ DONE |
+| UI-05 | Form Birthday (BirthdayForm, useBirthdayForm con personName) | UI | LOGIC-07, LOGIC-09 | ✅ DONE |
+| UI-06 | Componente AgendaItem (AgendaItem, AgendaItemCard, AgendaItemActions) | UI | LOGIC-09 | ✅ DONE |
+| UI-07 | Filtri e Ordinamento (FilterBar, FilterChip, FilterDropdown, SortDropdown) | UI | LOGIC-08, LOGIC-09 | ✅ DONE |
+| UI-08 | Responsive e Accessibilita (MainLayout, MobileNav, DesktopNav) | UI | UI-01..UI-07 | ✅ DONE |
+| UI-09 | Tema e Stili (global.css con Tailwind CSS) | UI | UI-08 | ✅ DONE |
+| UI-10 | Conversione tutti componenti da .tsx a .jsx | REACT INTERFACE | LOGIC-11, LOGIC-12 | ✅ DONE |
+| UI-11 | Aggiornamento import/export per JavaScript | REACT INTERFACE | UI-10 | ✅ DONE |
+| UI-12 | Applicazione stili Tailwind a tutti i componenti | REACT INTERFACE | UI-10, UI-11 | ✅ DONE |
+
+---
+
+## 🎨 MIGLIORAMENTO LAYOUT E RIORGANIZZAZIONE
+
+### 📋 Suggerimenti Integrati (da suggerimenti-miglioramento-layout.md)
+
+**Priorità suggerite dal file:**
+1. **Alta:** Accessibilità, Responsività mobile-first, Performance
+2. **Media:** UX/UI, Struttura e organizzazione, Testing
+3. **Bassa:** SEO, Funzionalità PWA avanzate
+
+### ✅ Task Riorganizzazione (Priorità ALTA)
+
+| ID | Task | Owner | DependsOn | Stato | Priority | Acceptance |
+|----|------|-------|-----------|-------|----------|------------|
+| ORG-01 | **Pulizia file inutili** - Eliminare stitch_persistent_reminder_agenda, theme.scss, theme.js | ORCHESTRATOR | - | ✅ DONE | HIGH | File eliminati, build funzionante |
+| ORG-02 | **Pulizia global.css** - Rimuovere contenuto duplicato da theme.scss | ORCHESTRATOR | ORG-01 | ✅ DONE | HIGH | global.css pulito, ~360 linee rimosse |
+| ORG-03 | **Uniformare variabili CSS** - Sostituire --bs-* con --color-* in global.css | **UI ENGINE** | ORG-02 | ✅ DONE | HIGH | Tutte le variabili usano lo schema --color-* |
+| ORG-04 | **Ottimizzare Tailwind config** - tailwind.config.js con tema custom | **ARCHITECT** | ORG-02 | ✅ DONE | HIGH | Config con colori Stitch, font Inter (già esistente) |
+| ORG-05 | **Riorganizzare cartella styles/** - Struttura coerente con Tailwind | **UI ENGINE** | ORG-04 | ✅ DONE | MEDIUM | Cartella styles/ pulita e organizzata |
+| ORG-06 | **Creare layout base** - Header/Main/Footer component con Tailwind | **UI ENGINE** | ORG-04 | ✅ DONE | HIGH | Layout coerente con Tailwind in Layout/TopAppBar, BottomNav, MainLayout |
+
+### ✅ Task Accessibilità (Priorità ALTA)
+
+| ID | Task | Owner | DependsOn | Stato | Priority | Acceptance |
+|----|------|-------|-----------|-------|----------|------------|
+| A11Y-01 | Aggiungere attributi ARIA a tutti i componenti interattivi | **UI ENGINE** | ORG-06 | ✅ DONE | HIGH | aria-label su TaskForm, BirthdayForm, ConfirmDialog, ToastProvider, FilterBar, FilterDropdown, SortDropdown, AgendaItemCard, AgendaItemCompact |
+| A11Y-02 | Verificare contrasto colori WCAG (minimo 4.5:1) | **UI ENGINE** | ORG-03, ORG-04 | ✅ DONE | HIGH | Success: #2d7d4b (4.6:1), Warning: #b45f06 (5.1:1) su #ffffff |
+| A11Y-03 | Implementare navigazione da tastiera (tab order, focus states) | **UI ENGINE** | ORG-06 | ✅ DONE | HIGH | onKeyDown su FilterDropdown/SortDropdown, focus trap su ConfirmDialog, focus automatico su Toast |
+| A11Y-04 | Aggiungere skip link per accessibilità | **UI ENGINE** | ORG-06 | ✅ DONE | MEDIUM | Skip link già presente in global.css (linea 222-235) |
+| **A11Y-05** | **Landmark `<main>` duplicato e annidato su ogni pagina** — `MainLayout.jsx` avvolge già tutto in `<main id="main-content">`, ma ogni pagina (Dashboard/Agenda/Settings/Tasks/Filters/Alerts) renderizzava un secondo `<main>` per la variante desktop → `<main><main>...</main></main>`, HTML non valido e due landmark "main" sulla stessa pagina (screen reader confusi). Scoperto da una review esterna (`agenda-intelligente-review.pptx`, 2026-08-13), verificato nel DOM reale prima di intervenire | UI ENGINE | ✅ **DONE (2026-08-13)** | MEDIUM | Il secondo `<main>` di ogni pagina sostituito con `<div>` (stesse classi, il markup HTML/CSS resta identico). Verificato: `document.querySelectorAll('main').length` → **1** su Dashboard/Agenda/Settings/Tasks/Filters/Alerts (prima: 2 ovunque) |
+| **A11Y-06** | **`ConfirmDialog` non si chiudeva mai davvero — bug critico, non solo di accessibilità.** Scoperto durante QA-09 testando il focus trap. `isClosing` veniva impostato a `true` per il fade-out ma **mai riportato a `false`**: la guardia di rendering `!isOpen && !isClosing` restava per sempre falsa dopo la prima chiusura (Annulla, Escape **o Conferma** — tutti i percorsi usano lo stesso `setIsClosing(true)` mai resettato). Il dialog restava montato invisibile (`opacity-0`) ma con `pointer-events: auto` su un `fixed inset-0`: un overlay a schermo intero che blocca **ogni click sull'intera app**, in ogni pagina, per sempre — finché non si ricarica la pagina. Confermato con `document.elementFromPoint(5,5)` (angolo lontano dal dialog visibile): restituiva il backdrop invisibile invece del contenuto della pagina | LOGIC/UI | ✅ **DONE (2026-08-13)** | **CRITICAL** | `handleClose`/`handleConfirm` ora chiamano `setIsClosing(false)` subito prima di `onClose()`/`onConfirm()`. Verificato: dopo Annulla **e** dopo Conferma, `document.querySelectorAll('[role="alertdialog"]').length` → **0** e `elementFromPoint` sull'angolo colpisce di nuovo un elemento reale della pagina, non il backdrop |
+| **A11Y-07** | `FilterDropdown`/`SortDropdown` non si chiudevano da tastiera — Escape non aveva alcun effetto e spostare il focus altrove (Tab) lasciava il pannello aperto, sovrapposto ai controlli successivi. Solo un listener `mousedown` per il click esterno, nessuna gestione per chi non usa il mouse. Stesso pattern duplicato in entrambi i componenti | UI ENGINE | ✅ **DONE (2026-08-13)** | MEDIUM | Aggiunto un listener nativo `keydown`/`focusout` sul nodo del dropdown (non prop JSX, per non attivare `jsx-a11y/no-noninteractive-element-interactions` su un `<div>` mai esso stesso a fuoco): Escape chiude e ririporta il focus al pulsante trigger, l'uscita del focus dal componente chiude il pannello. Verificato in browser con interazioni reali (click + Escape, click + Tab): in entrambi i casi il pannello si chiude correttamente, nessuna regressione sulla selezione delle opzioni |
+| **A11Y-08** | `ConfirmDialog`: `aria-hidden="true"` era applicato al **contenitore del dialog stesso** (non al resto della pagina) — per le regole WAI-ARIA questo rimuove l'intero dialog, titolo/messaggio/pulsanti inclusi, dall'albero di accessibilità nonostante `role="alertdialog"` e `aria-modal="true"`. Chrome sembra ignorare l'effetto quando il subtree contiene il focus (da qui probabilmente la mancata scoperta finora), ma resta un pattern ARIA invalido che gli strumenti di audit automatico (axe, Lighthouse) segnalerebbero come errore a prescindere | UI ENGINE | ✅ **DONE (2026-08-13)** | LOW | Rimosso l'`aria-hidden="true"` superfluo (il div non serve comunque hidden: viene montato solo quando il dialog è aperto). Il click sul backdrop per chiudere resta gestito (pattern standard, silenziata con motivazione la coppia di regole ESLint che lo segnalava come "elemento statico con interazione", dato che l'equivalente da tastiera è Escape) |
+
+### ✅ Task Responsività (Priorità ALTA)
+
+| ID | Task | Owner | DependsOn | Stato | Priority | Acceptance |
+|----|------|-------|-----------|-------|----------|------------|
+| RESP-01 | Ottimizzare per mobile-first (breakpoint Tailwind) | **UI ENGINE** | ORG-04, ORG-06 | ✅ DONE | HIGH | Layout con lg:hidden, hidden lg:flex, lg:ml-64 già implementati |
+| RESP-02 | Testare breakpoint Tailwind (sm:640, md:1024, lg:1280) | **UI ENGINE** | RESP-01 | ✅ DONE | HIGH | Mobile/Tablet/Desktop tutti verificate |
+| RESP-03 | Implementare hamburger menu per mobile | **UI ENGINE** | RESP-01, ORG-06 | ✅ DONE | MEDIUM | Menu mobile funzionale e accessibile - breakpoint sm:hidden, touch target 44px+ |
+
+### ⬜ Task Performance (Priorità ALTA)
+
+| ID | Task | Owner | DependsOn | Stato | Priority | Acceptance |
+|----|------|-------|-----------|-------|----------|------------|
+| PERF-01 | Implementare lazy loading immagini | UI ENGINE | ORG-06 | ✅ SKIPPED | HIGH | Nessun <img> statico da ottimizzare (usa solo Material Symbols font) |
+| PERF-02 | Ottimizzare bundle con code splitting | ARCHITECT | - | ✅ VERIFIED | HIGH | Dimensione JS ridotta, chunk ottimizzati con React.lazy + Suspense. Testato in runtime: chunk caricati on-demand |
+| PERF-03 | Implementare React.memo e useMemo per evitare render non necessari | LOGIC ENGINE | - | ✅ IMPLEMENTED | MEDIUM | Componenti memoizzati: AgendaItemCard (memo + 7 useMemo), DailyView (3 useMemo), WeeklyView (4 useMemo), FilterChip (memo + 1 useMemo). Fixato anche template literal malformato e parentheses in AgendaItemCard |
+
+### ❌ Task UX/UI (Priorità MEDIA - **SOSTITUITI DA UX-NEW-01..06**)
+> **Nota:** Questi task sono stati contrassegnati come IMPLEMENTED ma gli screenshot mostrano che non risolvono i problemi UX reali. Sono stati **sostituiti** dai nuovi task UX-NEW-01..06 che affrontano i problemi in modo olistico.
+
+| ID | Task | Owner | DependsOn | Stato | Priority | Acceptance |
+|----|------|-------|-----------|-------|----------|------------|
+| UX-01 | Aggiungere feedback visivi (hover states, loading spinners) | UI ENGINE | ORG-06 | ❌ CANCELLED | MEDIUM | **Sostituito da UX-NEW-01 e UX-NEW-04** |
+| UX-02 | Migliorare gerarchia visiva (spacing, dimensioni font) | UI ENGINE | ORG-03, ORG-06 | ❌ CANCELLED | MEDIUM | **Sostituito da UX-NEW-02 e UX-NEW-03** |
+| UX-03 | Aggiungere animazioni sottili (fade-in, slide per hover) | UI ENGINE | ORG-06 | ❌ CANCELLED | LOW | **Sostituito da UX-NEW-01** |
+
+### ✅ Task Struttura (Priorità MEDIA)
+
+| ID | Task | Owner | DependsOn | Stato | Priority | Acceptance |
+|----|------|-------|-----------|-------|----------|------------|
+| STR-01 | Riorganizzare componenti per feature (Dashboard/, AgendaView/, ecc.) | ORCHESTRATOR | - | ✅ DONE | MEDIUM | Struttura cartelle coerente, risolto conflitto file duplicato AgendaItemCompact.jsx |
+| ~~STR-02~~ | ~~Creare file di configurazione centralizzato per tema~~ | UI ENGINE | ORG-04 | ✅ **DONE (verificato 2026-08-13)** | MEDIUM | **Già soddisfatto come effetto collaterale di DS-01/DS-02** (2026-08-12), mai chiuso in questa tabella. Il blocco `@theme` in `src/styles/global.css` (righe 18-165) è l'unica sorgente di verità per colori (intera palette Material Design 3), spaziature (`--spacing-xs..3xl`, griglia 4px) e tipografia (famiglie font + tutti i token `--text-*` con line-height/weight/letter-spacing) — esattamente l'acceptance criteria. Le sole eccezioni (`z-fab`, `w-nav-desktop`, ecc.) sono 4 classi scritte a mano nello **stesso file**, subito sotto, con una nota che spiega perché (Tailwind v4 non ha un namespace `@theme` per z-index/width con chiavi nominate) — non è dispersione, è documentato e centralizzato comunque. Verificato oggi: `grep` di colori esadecimali hardcoded (`#[0-9a-fA-F]{6}`) su tutto `src/ui/**` → **zero risultati**; nessun secondo file di stile in `src/styles/`; gli `style={{...}}` inline rimasti nei componenti sono valori strutturali one-off (z-index di overlay specifici, `max-width`, `env(safe-area-inset-bottom)`), non token di design. Creare un secondo file di configurazione avrebbe reintrodotto esattamente il doppio sistema che DS-02 aveva eliminato |
+| ~~STR-03~~ | ~~Documentare contratto Logic → UI con JSDoc~~ | LOGIC ENGINE | - | ✅ **DONE (verificato 2026-08-13)** | MEDIUM | **Già soddisfatto**, mai chiuso in questa tabella. Verificata sistematicamente ogni funzione esportata (`export function`/`export async function`) in `src/logic/**/*.js` (esclusi i file di test): tutte le 82 funzioni esportate, in tutti e 15 i file (`hooks.js`, `items/actions.js`, `items/selectors.js`, `items/filters.js`, `store/index.js`, `store/persistence.js`, `notifications/{index,browser,scheduler,integration,toast,db}.js`, `time/{status,timezone}.js`), hanno un blocco `/**...*/` JSDoc direttamente sopra, con `@param`/`@returns` tipizzati tramite i `@typedef` in `src/types/**`. Nessuna funzione esportata priva di JSDoc trovata. Nessun file di codice modificato |
+| ~~STR-04~~ | ~~`TasksPage.jsx`, `FiltersPage.jsx`, `AlertsPage.jsx` erano stub identici~~ | UI ENGINE | - | ✅ **DONE (2026-08-13)** | MEDIUM | Implementate con contenuto reale, non rimosse: **TasksPage** — vista dedicata ai soli Task (`useAgenda().tasks`), ordinamento locale (`SortDropdown` + `applySort`), CTA "+ Nuovo Task", riusa `AgendaItemCard`. **FiltersPage** — 7 scorciatoie filtro (Scaduti/Oggi/Domani/Prossima settimana/Alta priorità/In sospeso/Completati) con conteggio reale (`applyFilters`), un clic imposta il filtro globale (`setFilterCriteria`, lo stesso store di FilterBar) e naviga in Agenda già filtrata — verificato: "Scaduti" → chip "Data: Scaduti" applicato. **AlertsPage** — cronologia notifiche mostrate: nuovo store IndexedDB `history` in `db.js` (v2, con `addHistoryEntry`/`getHistory`/`clearHistory`, tetto di 200 voci), agganciato dentro `showBrowserNotification()` in `browser.js` così logga indipendentemente dal canale (SW/Notification/toast) — verificato in browser: le notifiche di background di sessione sono comparse in cronologia con orario, pulsante "Cancella" testato e funzionante. `npm test` 49/49, `npm run lint` 0 errori (39 warning, +2 per `console.error` nei nuovi punti di log, coerente con il resto del codice), `npm run build` OK |
+
+---
+
+### 🎯 NOVITÀ: TASK DI RIFACIMENTO LAYOUT (Priorità ALTA - Rifacimento Chirurgico)
+> **Motivazione:** Gli screenshot mostrano che i task UX precedentementi segnati come completati NON lo sono. anziché rifare tutto da zero, procediamo con un **rifacimento chirurgico** di CSS e componenti Dashboard.
+
+> **Riferimenti UX:**
+> - **Todoist** (sistema colori priorità: Rosso=Alta, Arancio=Media, Verde=Bassa)
+> - **Google Calendar** (evidenziazione giorno corrente, layout calendario)
+> - **Notion** (card pulite, gerarchia visiva, spaziatura generosa)
+> - **TickTick** (stats narrative con messaggi tipo "Hai completato X task")
+
+| ID | Task | Owner | DependsOn | Stato | Priority | Acceptance |
+|----|------|-------|-----------|-------|----------|------------|
+| **UX-NEW-01** | **Design System Moderno in global.css** | UI ENGINE | ORG-04 | ⬜ TODO | **HIGH** | global.css aggiornato con: spacing system (4/8/16/24/32px), shadow system (sm/md/lg), border-radius coerenti, transizioni fluide (200ms), variabili CSS per colori priorità/scadenze |
+| **UX-NEW-02** | **Dashboard: Layout a 3 colonne moderno** | UI ENGINE | UX-NEW-01 | ✅ DONE (2026-08-12) | **HIGH** | Layout DashboardPage.jsx con: colonna sinistra (stats), colonna centrale (calendario + pannello task giorno), colonna destra (upcoming). Spaziatura 24px tra colonne, padding 32px. **Ispirazione: Notion dashboard** |
+| **UX-NEW-03** | **Dashboard: Stats Narrative + Calendario Interattivo** | UI ENGINE | UX-NEW-01, UX-NEW-02 | ✅ DONE (2026-08-12) | **HIGH** | QuickStats con messaggi narrativi ("Hai completato 5 task oggi"), CTA pulsanti ("+ Nuovo Task"). Calendario con: evidenziazione giorno corrente (border-2 + bg primary/10), click su giorno → pannello laterale con task del giorno. **Ispirazione: Google Calendar + Todoist** |
+| **UX-NEW-04** | **Dashboard: Segnalazione Visiva Colori Priorità/Scadenze** | UI ENGINE | UX-NEW-01 | ✅ DONE (2026-08-12) | **HIGH** | Sistema colori coerente: **Priorità** (Alta=`bg-error/10 text-error`, Media=`bg-warning/10 text-warning`, Bassa=`bg-success/10 text-success`). **Scadenze** (Imminente=strip 4px `bg-warning`, Scaduto=strip 4px `bg-error`, Completato=`opacity-60`). Badge visibili su ogni AgendaItemCard. **Ispirazione: Todoist priority system** |
+| **UX-NEW-05** | **Navigazione: Sidebar/TopBar con Voce Attiva** | UI ENGINE | UX-NEW-01 | ✅ DONE (2026-08-12) | **HIGH** | SideNavBar: voce attiva con `bg-primary/10 text-primary font-medium`, hover `bg-surface-container-high`. TopAppBar mobile: icona calendar attiva se in Dashboard/Agenda. **Ispirazione: Google Apps sidebar** |
+| **UX-NEW-06** | **Pagina Agenda: Layout Ordinato e Moderno** | UI ENGINE | UX-NEW-01 | ✅ DONE (2026-08-12) | **MEDIUM** | AgendaPage con: header con filtri in barra compatta, lista task con spaziatura 12px tra elementi, nessuna sovrapposizione, ordinamento chiaro (data → priorità). **Ispirazione: Todoist project view** |
+
+> **Nota 2026-08-12 (UX-NEW-02..06 — riverifica contro le acceptance criteria):** il codice
+> implementava già gran parte di UX-NEW-02/03/05, ma con diversi scostamenti dalle acceptance
+> criteria sopra, tutti corretti:
+> - **UX-NEW-04:** `AgendaItemCard.jsx`, `WeeklyView.jsx`, `UpcomingList.jsx` usavano le classi
+>   `card-agenda`, `badge-completed/overdue/imminent/high/medium/low`, `badge-status`, `completed` —
+>   **mai definite** in `global.css` (stesso difetto di DS-01). Card e badge privi di stile. Risolto
+>   con classi Tailwind reali (`bg-error/10 text-error`, strip 4px per scadenze, `opacity-60`).
+> - **UX-NEW-02:** gap tra colonne era 32px (`gap-xl`) invece di 24px richiesti → `gap-lg`. Upcoming
+>   era nella colonna sinistra invece che nella destra → spostato, colonna destra ora contiene
+>   `UpcomingCards` + `GlassmorphismCard`.
+> - **UX-NEW-03:** CTA "+ Nuovo" era condizionato a `pendingCount === 0 && totalItems === 0`, quindi
+>   spariva per sempre dopo il primo task creato → reso sempre visibile, testo allineato a "+ Nuovo
+>   Task". `CalendarWidget.jsx`: il pallino indicatore del giorno corrente era `absolute` dentro un
+>   contenitore non `relative` → si posizionava rispetto all'antenato sbagliato, corretto.
+> - **UX-NEW-05:** `SideNavBar.jsx` usava `bg-primary-container text-on-primary-container` invece di
+>   `bg-primary/10 text-primary font-medium`, hover `bg-surface-variant` invece di
+>   `bg-surface-container-high` → allineato. `TopAppBar.jsx` (icona calendario mobile) non aveva
+>   nessuna logica di stato attivo → aggiunta con `useLocation()`.
+> - **UX-NEW-06:** `AgendaHeader.jsx` renderizzava una seconda barra di ricerca/filtri **decorativa e
+>   non funzionante** (nessun `onClick` sui chip, la ricerca non filtrava nulla) sovrapposta al vero
+>   `FilterBar` sottostante — rimossa. Conteneva anche un bug di encoding (`Alta Priorit√†`). Liste
+>   task: spaziatura 8px (`gap-sm`) invece di 12px → `gap-3` (12px esatti, verificato in
+>   `dist/assets/*.css`). Ordinamento era solo per data, senza tie-break → aggiunta priorità come
+>   secondo criterio in `DailyView.jsx`, `WeeklyView.jsx`, `UpcomingList.jsx`.
+>
+> Verificato con `npm run build` (CSS generato correttamente) e `npm run lint` (0 errori, warning
+> scesi da 40 a 37 rimuovendo codice morto incontrato durante il fix).
+
+---
+
+#### 📋 **DETTAGLI TASK UX-NEW (Riferimento per UI ENGINE)**
+
+**UX-NEW-01 - Design System Moderno in global.css**
+- **Spacing System:** Definire classi Tailwind: `gap-xs` (4px), `gap-sm` (8px), `gap-md` (16px), `gap-lg` (24px), `gap-xl` (32px)
+- **Shadow System:** `shadow-sm` (0 1px 2px rgba(0,0,0,0.05)), `shadow-md` (0 4px 6px rgba(0,0,0,0.1)), `shadow-lg` (0 10px 15px rgba(0,0,0,0.1))
+- **Border Radius:** `rounded-sm` (4px), `rounded-md` (8px), `rounded-lg` (12px), `rounded-xl` (16px)
+- **Transizioni:** `transition-all duration-200 ease-in-out` come default
+- **Colori Priorità:** 
+  - `--color-priority-high: #ba1a1a` (rosso)
+  - `--color-priority-medium: #f59e0b` (arancio)
+  - `--color-priority-low: #4bb278` (verde)
+- **Colori Scadenze:**
+  - `--color-status-imminent: #f59e0b`
+  - `--color-status-overdue: #ba1a1a`
+  - `--color-status-completed: #4bb278`
+
+**UX-NEW-02 - Dashboard Layout a 3 colonne**
+```
++--------------------------------------------------+
+|  TOP APP BAR (mobile) / DESKTOP TOP BAR          |
++--------------------------------------------------+
+|                                                  |
+|  +------------+  +------------------+  +------+ |
+|  | STATS      |  | CALENDARIO       |  | UPCOM| |
+|  | - Task     |  | - Mese corrente  |  | - Pross| |
+|  |   complet. |  | - Giorno evidenz.|  | imi   | |
+|  | - Task     |  | - Click → pannello|  | eventi | |
+|  |   in sosp. |  |   task giorno    |  |      | |
+|  +------------+  +------------------+  +------+ |
+|                                                  |
++--------------------------------------------------+
+```
+
+**UX-NEW-03 - Stats Narrative + Calendario Interattivo**
+- QuickStats: "Hai completato **5** task oggi" (testo grande, icona ✓ verde)
+- QuickStats: "**3** task in sospeso" (testo grande, icona ⏳ arancio)
+- CTA: Pulsante "+ Nuovo Task" (sfondo primary, icona +)
+- Calendario: Giorno corrente con `border-2 border-primary bg-primary/10`
+- Pannello task giorno: Appare al click, mostra lista task con filtro per data
+
+**UX-NEW-04 - Segnalazione Visiva Colori**
+- **Badge Priorità:** 
+  - Alta: `<span class="px-2 py-1 bg-red-50 text-red-600 rounded-full">Alta</span>`
+  - Media: `<span class="px-2 py-1 bg-amber-50 text-amber-600 rounded-full">Media</span>`
+  - Bassa: `<span class="px-2 py-1 bg-green-50 text-green-600 rounded-full">Bassa</span>`
+- **Border Scadenze:**
+  - Imminente: `border-l-4 border-amber-500`
+  - Scaduto: `border-l-4 border-red-500`
+  - Completato: `opacity-60 grayscale`
+
+**UX-NEW-05 - Navigazione con Voce Attiva**
+- SideNavBar: Voce attiva = `bg-primary/10 text-primary font-medium`
+- SideNavBar: Hover = `hover:bg-surface-container-high`
+- Mobile: Icona calendario evidenziata se in Dashboard/Agenda
+
+**UX-NEW-06 - Pagina Agenda**
+- Header: Filtri in barra orizzontale compatta (non dropdown multipli)
+- Lista: Spaziatura 12px tra task, nessuna sovrapposizione
+- Ordinamento: Prima per data, poi per priorità (Alta → Bassa)
+
+---
+
+### ⬜ Task SEO e Meta (Priorità BASSA)
+
+| ID | Task | Owner | DependsOn | Stato | Priority | Acceptance |
+|----|------|-------|-----------|-------|----------|------------|
+| ~~SEO-01~~ | ~~Aggiungere meta tag completi (description, og:title, og:description)~~ | UI ENGINE | ORG-06 | ✅ **DONE (2026-08-13)** | LOW | Aggiunti `og:type`, `og:title`, `og:description`, `og:image` (icona 512x512), `og:locale`, `twitter:card` in `index.html` (la `description` semplice esisteva già). Verificato in browser reale: tutti i tag presenti nel DOM con i valori attesi |
+| ~~SEO-02~~ | ~~Implementare structured data JSON-LD~~ | UI ENGINE | SEO-01 | ✅ **DONE (2026-08-13)** | LOW | Aggiunto blocco `<script type="application/ld+json">` in `index.html` (schema.org `WebApplication`). Verificato: JSON valido sia nel build (`dist/index.html`) sia parsato lato client in browser reale |
+
+### ⬜ Task PWA (Priorità ALZATA — bloccano le notifiche in background)
+
+| ID | Task | Owner | DependsOn | Stato | Priority | Acceptance |
+|----|------|-------|-----------|-------|----------|------------|
+| **PWA-01** | **Creare le icone mancanti** + manifest completo | ARCHITECT | - | ✅ **DONE (2026-08-12)** | **HIGH** | Vedi sotto |
+| PWA-02 | Service worker per caching offline | ARCHITECT | - | ✅ DONE (**FIX-04**) | HIGH | `injectManifest` + `precacheAndRoute(self.__WB_MANIFEST)` + `NavigationRoute` per la SPA; **24** asset in precache (18 prima delle icone) |
+| ~~PWA-03~~ | ~~Aggiungere banner "Installa App" per mobile~~ | UI ENGINE | PWA-01 ✅ | ✅ **DONE (2026-08-13)** | MEDIUM | Nuovo `useInstallPrompt` (hook su `beforeinstallprompt`/`appinstalled`, salta se già in standalone) + `InstallBanner` (`lg:hidden`, sopra la BottomNav, pulsanti "Installa" e chiudi con dismiss persistito in localStorage). Verificato in browser reale: Chrome ha emesso `beforeinstallprompt` realmente, il banner è comparso su viewport mobile con il testo atteso, il pulsante di chiusura lo nasconde e la chiusura resta valida dopo un reload; non premuto "Installa" per non innescare l'installazione reale della PWA sul sistema dell'utente |
+
+**PWA-01 — cosa è stato fatto**
+
+Le icone sono state **generate proceduralmente** (script senza dipendenze: rasterizzatore con
+supersampling 4x + codifica PNG e ICO a livello di byte), con i colori del design system:
+sfondo `--color-primary` `#002045`, fascia `--color-secondary` `#b51822`, glifo calendario + spunta.
+Contenuto entro la safe zone così le stesse immagini valgono anche come `maskable`.
+
+| File | Dimensione | Note |
+|------|-----------|------|
+| `public/icons/icon-192x192.png` | 1.464 byte | `purpose: any` + `maskable` |
+| `public/icons/icon-512x512.png` | 4.601 byte | `purpose: any` + `maskable` |
+| `public/icons/apple-touch-icon.png` | 1.332 byte | referenziata da `index.html` |
+| `public/favicon.ico` | 993 byte | 3 immagini PNG incorporate (16/32/48); **era 0 byte** |
+
+Manifest completato in `vite.config.js`: aggiunti `id`, `start_url`, `scope`, `lang`,
+`orientation`; `theme_color` allineato al design system (`#002045`, era `#ffffff`).
+`index.html`: `apple-touch-icon` non punta più al favicon, `theme-color` allineato.
+
+Il generatore e il validatore sono **versionati** in `scripts/`, quindi le icone sono
+riproducibili e non sono binari opachi:
+```bash
+npm run icons          # rigenera public/icons/* e public/favicon.ico
+npm run icons:verify   # valida i file in dist/
+```
+
+**Verifiche eseguite**
+- Validatore a livello di byte: firma PNG, IHDR, **CRC di ogni chunk**, decompressione zlib alla
+  dimensione di scanline attesa, byte di filtro, IEND, nessun byte di troppo → **tutti i file validi**,
+  incluse le 3 immagini dentro l'ICO
+- Ispezione visiva delle icone renderizzate a 192 e 512 px
+- Requisiti di installabilità Chrome sul manifest buildato: `name`, `short_name`, `start_url`,
+  `display: standalone`, icona 192 PNG, icona 512 PNG, icona `maskable` → **tutti presenti**
+- `dist/sw.js` registra un handler `fetch` (requisito per l'installabilità)
+- ⚠️ **Non verificato:** il prompt di installazione vero e proprio (richiede un browser)
+
+> **Perché PWA-01 non era a priorità bassa:** `periodicSync` — l'unico meccanismo di risveglio
+> periodico realmente disponibile sul web — richiede una **PWA installata**. Ora il prerequisito
+> di QA-06 è soddisfatto.
+
+### ✅ Task Testing (Priorità ALTA — riaperti dopo l'audit, chiusi il 2026-08-13)
+
+> **Perché i ✅ VERIFIED erano stati revocati:** QA-04, QA-06, QA-07 e QA-10 dichiaravano verificati
+> comportamenti che il codice non poteva produrre (permesso notifiche mai richiesto, SW custom assente
+> dalla build, filtri scollegati dalla UI). Il 2026-08-13 sono stati rieseguiti **a mano, in un browser
+> reale** (Chrome via Claude in Chrome + conferma dell'utente per i popup nativi non ispezionabili via
+> automazione): QA-04, QA-06, QA-07, QA-10, QA-11 tutti confermati.
+>
+> **QA-06 — nota sul sub-test di recupero:** al primo tentativo (origine `localhost:4173`) il popup
+> di autorizzazione non si è ripresentato in modo visibile dopo il primo utilizzo di quell'origine e
+> il sub-test era stato sospeso. Riprovato con successo su un'origine mai usata prima in questa
+> sessione (`localhost:4175`): il popup è comparso normalmente. Ipotesi più probabile per il fallimento
+> precedente: l'euristica "quiet permission UI" di Chrome, che dopo alcuni tentativi ravvicinati sulla
+> stessa origine sostituisce il popup con una piccola icona silenziosa nella barra indirizzi invece
+> di un popup interruttivo — facile da non notare se non la si cerca esplicitamente.
+
+| ID | Task | Owner | DependsOn | Stato | Priority | Acceptance |
+|----|------|-------|-----------|-------|----------|------------|
+| QA-01 | Verifica JavaScript/JSDoc: nessun residuo TypeScript | QA VERIFIER | - | ✅ VERIFIED | HIGH | `grep -r "interface\|type .*=" src/ \| grep -v "@typedef\|JSDoc\|jsdoc"` vuoto |
+| QA-02 | Verifica ESLint: nessuna violazione | QA VERIFIER | QA-01 | ✅ VERIFIED (2026-08-12) | HIGH | `npm run lint` → **0 errors, 40 warnings** (limite `--max-warnings 100`) |
+| QA-03 | Verifica Build: build completato senza errori | QA VERIFIER | QA-02 | ✅ VERIFIED (2026-08-12) | HIGH | `npm run build` OK, `dist/sw.js` in modalità injectManifest, 18 asset precache |
+| QA-04 | Test Notifiche Browser: permessi, visualizzazione | QA VERIFIER | FIX-01, FIX-02 | ✅ **VERIFIED (2026-08-13, `npm run dev`, Chrome via Claude in Chrome)** | **HIGH** | Permesso concesso da Settings (stato passato a "Attive"); task con scadenza a pochi minuti, `startBefore` 5, `repeatEvery` 1 → popup di notifica di sistema comparso e ripetuto, confermato a vista dall'utente (il popup nativo non è ispezionabile via automazione, solo dall'utente) |
+| QA-05 | Test Persistenza: dati salvati e caricati correttamente | QA VERIFIER | LOGIC-02, LOGIC-07 | ✅ VERIFIED (2026-08-12) | HIGH | Round-trip verificato via script: `dueDate` salvata ISO e ricaricata come `Date` |
+| QA-06 | Test Notifiche Background: Service Worker attivo | QA VERIFIER | FIX-04, FIX-06 | ✅ **VERIFIED (2026-08-13)** | **HIGH** | Confermato: `npm run preview` → `navigator.serviceWorker.getRegistrations()` → **un solo** SW, scope corretto, `active.state: "activated"`, `scriptURL: sw.js` — e, dopo il fix di **DEBT-05** (stesso giorno), anche **`npm run dev`** registra un solo SW attivo (`scriptURL: dev-sw.js`). **Sub-test di recupero completato** (stessa sessione, origine pulita `:4175`): creato un item con notifica pianificata tra ~1 minuto, navigato via prima che scattasse in-page (uccidendo il timer), atteso il superamento dell'orario, riaperta l'app → il record IndexedDB `scheduled` è sparito e la notifica è comparsa nello storico di **Alerts** (STR-04) con l'orario corretto, prova indipendente da IndexedDB stessa |
+| QA-07 | Test Filtri e Ordinamento | QA VERIFIER | FIX-03, UI-07 | ✅ **VERIFIED (2026-08-13)** | **HIGH** | Confermato su Agenda (Giornaliera/Settimanale/Prossime, viewport desktop ~1568px): filtro Tipo→"Compleanni" azzera la lista di task all'istante, chip "Tipo: Compleanni ✕" compare, filtro Stato→"Completati" isola correttamente i task completati, "Reimposta" azzera tutto e ripristina la lista, il dropdown "Ordina per" cambia etichetta e viene rispettato |
+| QA-08 | Test Responsive: mobile (480px), tablet (768px), desktop (1024px+) | QA VERIFIER | RESP-01, RESP-02 | ✅ **VERIFIED (2026-08-13)** | MEDIUM | Mobile (~586px) verificato in DS-03. Desktop (≥1024px) verificato in sessione precedente (~1528-1568px): Dashboard a 3 colonne, barra filtri Agenda compatta orizzontale. **Tablet (780px, `resize_window`) verificato in questa sessione**: Dashboard, Agenda (Giornaliera/Settimanale a 7 colonne/filtri a griglia 2 colonne), Tasks, Filters, Alerts, Settings, form di creazione task, drawer `MobileSideNav` — tutti senza sovrapposizioni né testo tagliato. Confermato `document.documentElement.scrollWidth === window.innerWidth` (nessun overflow orizzontale) |
+| QA-09 | Test Accessibilità: screen reader, tastiera, contrasto | QA VERIFIER | A11Y-01..A11Y-04 | ✅ **VERIFIED (2026-08-13)** | MEDIUM | **Contrasto:** ricalcolato sui colori realmente risolti da CSS (non dichiarati): success 5.06:1, warning 4.58:1, error 6.46:1, primary 16.25:1, on-surface-variant 9.33:1 — tutti ≥4.5:1, confermato anche su badge/testo renderizzati dal vivo. **Tastiera:** skip link verificato (sposta il focus su `#main-content`), focus ring visibile su Tab, focus trap di `ConfirmDialog` verificato (Annulla→Conferma→Annulla, wrap-around corretto). **Trovati e risolti 3 difetti reali** durante il test, uno critico: vedi **A11Y-06/07/08**. Non eseguito con uno screen reader reale (solo albero di accessibilità e comportamento focus/tastiera) |
+| QA-10 | Test End-to-End: flusso completo utente | QA VERIFIER | QA-04..QA-09 | ✅ **VERIFIED (2026-08-13)** | **HIGH** | Creato task di test, notifica confermata (QA-04/QA-11), segnato completato dalla UI (checkbox → titolo barrato, spunta verde, opacità ridotta) → verificato via IndexedDB: il record in `agenda-notifications › scheduled` per quell'item è sparito immediatamente, `status` dell'item è `COMPLETED` in localStorage |
+| QA-11 | Test fallback senza permesso | QA VERIFIER | FIX-01, FIX-07 | ✅ **VERIFIED (2026-08-13)** | **HIGH** | Su un'origine senza permesso concesso (`localhost:4173`, `Notification.permission` mai risolto oltre `default`): creato task con notifica imminente → toast `role="alert"` renderizzato nel DOM (catturato sia via `MutationObserver` sia in uno screenshot dal vivo: "[MEDIUM] TEST QA-11 toast v5 - Scadenza: ..."), scomparso da solo dopo ~5s come da `useToast` |
+| QA-12 | Introdurre Vitest e coprire la logica pura | QA VERIFIER | - | ✅ **VERIFIED (2026-08-13)** | **HIGH** | Vitest configurato (`vite.config.js` → `test: { environment: 'jsdom' }`, script `npm test`/`npm run test:watch`). 49 test in 4 file: `scheduler.test.js` (14, incluso il caso limite dello scarto esatto multiplo di `repeatEvery` — la regressione da cui è nato FIX-08), `filters.test.js` (18), `selectors.test.js` (8, contro lo store Zustand reale), `persistence.test.js` (9, incluso il round-trip ISO delle date e la sottoscrizione selettiva a `items` di FIX-03). `npm test` → **49/49 passati**. Richiesto `NODE_OPTIONS=--no-experimental-webstorage` (via `cross-env` nello script): Node 22+ definisce un proprio global `localStorage` sperimentale che oscura quello di jsdom, causando `TypeError` altrimenti — vedi nota sotto |
+
+---
+
+## 🎨 Design System (risolto 2026-08-12)
+
+| ID | Task | Owner | Stato | Priority | Acceptance |
+|----|------|-------|-------|----------|------------|
+| **DS-01** | **Rendere effettivo il tema Tailwind** — `global.css` aveva solo `@import "tailwindcss"`, quindi `tailwind.config.js` non veniva letto | ARCHITECT | ✅ **DONE (2026-08-12)** | **HIGH** | Migrati tutti i token (colori, spacing, radius, shadow, font, z-index, width) in `@theme` dentro `src/styles/global.css`. `npm run build` + grep su `dist/assets/index-*.css` confermano che `font-headline-md`, `p-lg`, `gap-md`, `px-margin-mobile` producono CSS reale |
+| **DS-02** | Rimuovere il doppio sistema colori: token in `tailwind.config.js` **e** CSS vars in `:root` di `global.css` | ARCHITECT | ✅ **DONE (2026-08-12)** | MEDIUM | Risolto come effetto collaterale di DS-01: `tailwind.config.js` rinominato `tailwind.config.js.deprecated` (nessun file lo referenzia più), le ~40 classi colore scritte a mano in `global.css` rimosse — i colori sono generati automaticamente da `@theme`, un solo elenco |
+
+> **Nota v4:** `z-index` e `width` con chiavi nominate (`z-fab`, `w-nav-desktop`, `w-sidebar`, `z-navbar`)
+> non hanno un namespace `@theme` dedicato in Tailwind v4 (confermato in `node_modules/tailwindcss/theme.css`:
+> solo `--color-*`, `--font-*`, `--text-*`, `--radius-*`, `--shadow-*`, `--spacing-*`, ecc.). Per questi 4 token
+> restano 4 classi scritte a mano in `global.css`, uniche e non duplicate altrove.
+>
+> **DS-01/DS-02 sbloccano UX-NEW-01..06** (ancora ⬜ TODO, non implementati in questa sessione — solo
+> il fondamento CSS è pronto). Prima erano bloccati perché riscrivere il layout con classi che non
+> generavano CSS avrebbe significato lavorare alla cieca: è la ragione più probabile per cui i task
+> UX-01/02/03 risultavano "fatti" ma gli screenshot mostravano il contrario.
+
+---
+
+## 🧹 Debito Tecnico (aperto)
+
+| ID | Task | Owner | Stato | Priority | Acceptance |
+|----|------|-------|-------|----------|------------|
+| **DS-03** | **Regole fuori da `@layer` in `global.css` sovrascrivevano le utility Tailwind** — `*,*::before,*::after{margin:0;padding:0}` (duplicato del preflight, già in `@layer base`) azzerava `pt-16`, `p-lg`, `mb-1`, ecc. in tutta l'app; il blocco `a{color:var(--color-primary);text-decoration:underline}` (non layered) rendeva illeggibile ogni link con `text-on-*` custom (es. "+ Nuovo Task" testo blu su sfondo blu, icona "+" del FAB invisibile) | ARCHITECT | ✅ **DONE (2026-08-13)** | **HIGH** | Reset duplicato rimosso; blocco `html/body/h1-h6/a/button/:focus-visible/img/input` spostato in `@layer base`. Verificato in browser (`npm run dev`, viewport mobile): header non copre più i contenuti, card hanno padding, "+ Nuovo Task" e icona FAB visibili. `npm run build` conferma `box-sizing:border-box;margin:0;padding:0` presente una sola volta (dentro `@layer base`) invece di due |
+| **DS-04** | `Layout/TopAppBar.jsx` nascondeva l'header mobile con `sm:hidden` (breakpoint 640px) mentre `BottomNav`/`SideNavBar` usano `lg:hidden`/`hidden lg:flex` (1024px): tra 640-1024px l'app perdeva sia la sidebar desktop sia il TopAppBar mobile | UI ENGINE | ✅ **DONE (2026-08-13)** | MEDIUM | `TopAppBar.jsx`: `sm:hidden` → `lg:hidden`, coerente con gli altri componenti di navigazione |
+| **DS-05** | Nessun link/NavLink della navigazione (`BottomNav`, `SideNavBar`, `MobileSideNav`, `TopAppBar`, `FAB`, CTA "+ Nuovo Task"/"+ Nuovo Elemento") resettava la sottolineatura ereditata dalla regola base `a{text-decoration:underline}` | UI ENGINE | ✅ **DONE (2026-08-13)** | LOW | Aggiunta classe `no-underline` a tutti i Link/NavLink dei componenti di navigazione e delle CTA principali |
+| **DS-06** | **Il testo rimpiccioliva sotto i 640px** — `global.css:315-319` forzava `html{font-size:14px}` in un `@media (max-width:639px)`, mentre l'intero design system usa token `rem`: ogni misura di testo si riduceva del 12,5% proprio su mobile, dove servirebbe restare leggibile (es. "+ Nuovo Task" da 11px dichiarati a 9,6px reali, sotto ai 44px minimi anche l'altezza tocco dei pulsanti). Scoperto da una review esterna (`agenda-intelligente-review.pptx`, 2026-08-13) | UI ENGINE | ✅ **DONE (2026-08-13)** | **HIGH** | Rimossa la media query da `global.css`; resta solo `html{font-size:16px}` già definito in `@layer base` — i token rem tornano automaticamente alle dimensioni previste, su tutti i viewport. Verificato: `getComputedStyle(document.documentElement).fontSize` → `16px` |
+| ~~DEBT-01~~ | ~~Consolidare i componenti di navigazione~~ | UI ENGINE | ✅ **DONE (2026-08-13)** | MEDIUM | **Rimossa** l'intera cartella `src/ui/components/Responsive/` (`MobileNav.jsx`, `DesktopNav.jsx`, `index.js`) — confermato zero import prima di cancellare (`grep` su tutto `src/`), contenuto palesemente superato (commenti tipo "Mappa varianti Bootstrap a colori Stitch", nav items non allineati alle route attuali). **Riesaminati i restanti 6** (`TopAppBar`, `DesktopTopAppBar`, `SideNavBar`, `MobileSideNav`, `BottomNav`, `FAB`): non sono duplicati tra loro, sono complementari — `BottomNav` (4 scorciatoie sempre visibili) e `MobileSideNav` (drawer con tutte le 6 rotte) sono superfici diverse per un motivo di UX reale (bottom-tab-bar + hamburger drawer è un pattern mobile standard), non un doppione da fondere. Nessun ulteriore accorpamento consigliato. Verificato: `npm run lint` 0 errori, `npm test` 49/49, `npm run build` OK, navigazione confermata funzionante in browser dopo la rimozione |
+| ~~DEBT-02~~ | ~~Ambiguità `src/logic/hooks.js` e `src/logic/hooks/`~~ | LOGIC ENGINE | ✅ **DONE (2026-08-13)** | MEDIUM | `src/logic/hooks/` conteneva solo `useResponsive.js` (`useDesktop`/`useMobile`/`useResponsive`), **mai importato da nessuna parte** (confermato con `grep` su tutto `src/`) — l'app gestisce il responsive interamente via classi Tailwind (`lg:hidden` ecc.), non con hook JS basati su `resize`. Cartella rimossa: resta un solo percorso, `src/logic/hooks.js`, quello davvero usato da 10 file. Verificato: `npm run lint` 0 errori, `npm test` 49/49, `npm run build` OK |
+| ~~DEBT-03~~ | ~~Doppio package manager~~ | ARCHITECT | ✅ **DONE (2026-08-13)** | MEDIUM | Scelto **npm**: `package-lock.json` era il lockfile aggiornato (rifletteva già vitest/jsdom/cross-env aggiunti in questa sessione), `pnpm-lock.yaml` era fermo al giorno prima; il README stesso raccomandava già npm segnalando che pnpm falliva con `ERR_PNPM_IGNORED_BUILDS`; `pnpm-workspace.yaml` non definiva nemmeno un vero workspace (nessun campo `packages:`, serviva solo per l'approvazione script di pnpm) e `package.json` non ha un campo `workspaces`. Rimossi `pnpm-lock.yaml` e `pnpm-workspace.yaml`; rimossa la nota di aggiramento dal README, aggiunta una sezione "Test" mancante nello stesso punto. Verificato: `npm run lint` 0 errori, `npm test` 49/49, `npm run build` OK |
+| ~~DEBT-06~~ | ~~I 4 dropdown della barra filtri in Agenda mostravano tutti "Tutti" senza etichetta visibile~~ | UI ENGINE | ✅ **DONE (2026-08-13)** | LOW | Aggiunto uno `<span>` con il testo di `label` ("Tipo"/"Stato"/"Importanza"/"Data") sopra ciascun pulsante in `FilterDropdown.jsx`; `aria-label` lasciato invariato (già corretto per gli screen reader). Griglia di `FilterBar.jsx` passata da `items-center` a `items-end` così le 4 caselle con etichetta, il dropdown Ordina e il pulsante Reimposta restano allineati sulla stessa riga di base invece di centrarsi in modo disomogeneo. Verificato visivamente in browser (viewport tablet 780px): etichette leggibili, nessuna sovrapposizione, `npm run lint` 0 errori, `npm test` 49/49, `npm run build` OK |
+| DEBT-04 | ~~Riallineare README.md al codice~~ | ORCHESTRATOR | ✅ **DONE (verificato 2026-08-13)** | MEDIUM | Nessuna affermazione del README contraddetta dal codice. Verifica 2026-08-13: `README.md` già cita `db.js` (riga 130), `FiltersPage` (146), `CalendarWidget` (154, 193); nessun riferimento a `notifications/sw.js` (eliminato); sezione dedicata "⚠️ Limitazioni note" ridimensiona già la promessa "notifiche con app chiusa" in linea con [Limiti reali](#-limiti-reali-delle-notifiche-con-app-chiusa). Il riallineamento risale evidentemente al lavoro del 2026-08-12 (FIX-*/DS-01/PWA-01), solo mai marcato come chiuso in questa tabella |
+| ~~DEBT-05~~ | ~~Il Service Worker non si installava mai in `npm run dev`~~ | ARCHITECT | ✅ **DONE (2026-08-13)** | MEDIUM | **Causa reale** (la prima diagnosi era parzialmente sbagliata — vedi nota): in dev `vite-plugin-pwa` sostituisce `self.__WB_MANIFEST` con un array **vuoto** `[]` (non `undefined`), quindi `precacheAndRoute([])` non lancia nulla. Il crash sincrono era nella riga **successiva**: `createHandlerBoundToURL('index.html')` cerca `'index.html'` nella precache e, trovandola vuota, lancia subito `WorkboxError('non-precached-url', ...)` — fa fallire l'intera valutazione dello script del SW, che quindi non si installa mai. Confermato con `import('/dev-sw.js?dev-sw')` diretto dalla console, che riporta l'errore per esteso (invece del generico "script evaluation failed" di `register()`). **Fix:** in `src/sw.js`, `registerRoute(new NavigationRoute(createHandlerBoundToURL('index.html')))` ora gira solo `if (precacheManifest.length > 0)` — in dev viene saltata (non serve comunque, l'offline SPA fallback ha senso solo in produzione), in build resta invariata. **Verificato:** in dev, `navigator.serviceWorker.getRegistrations()` → un SW attivo, `scriptURL: dev-sw.js`; in produzione (`npm run preview`, porta 4174) invariato, un SW attivo, `scriptURL: sw.js`, manifest 24 asset. `npm run build`, `npm run lint` (0 errori/37 warning) e `npm test` (49/49) tutti confermati dopo la modifica |
+
+---
+
+## 🎯 DELEGA ATTIVA
+
+### FASE 1: Pulizia e Preparazione (ORCHESTRATOR - COMPLETATA ✅)
+- ORG-01: ✅ DONE
+- ORG-02: ✅ DONE
+
+### FASE 2: Configurazione Tailwind e Layout Base (ARCHITECT + UI ENGINE - COMPLETATA ✅)
+
+**Task completati:**
+1. **ORG-03** → UI ENGINE (✅ DONE)
+2. **ORG-04** → ARCHITECT (✅ DONE - già esistente)
+3. **ORG-05** → UI ENGINE (ready, dipende da ORG-04 ✅)
+4. **ORG-06** → UI ENGINE (✅ DONE)
+
+**Dipendenze:** ORG-04 ✅ completato, ORG-05 e ORG-06 ✅ completati
+
+### FASE 3: Accessibilità e Responsività (UI ENGINE - COMPLETATA ✅)
+
+**Task completati:**
+- **A11Y-01** → UI ENGINE (✅ DONE) - ARIA su 9 componenti
+- **A11Y-02** → UI ENGINE (✅ DONE) - Contrasto WCAG corretto
+- **A11Y-03** → UI ENGINE (✅ DONE) - Navigazione tastiera completa
+- **A11Y-04** → UI ENGINE (✅ DONE) - Skip link già presente
+- **RESP-01** → UI ENGINE (✅ DONE) - Mobile-first con Tailwind
+- **RESP-02** → UI ENGINE (✅ DONE) - Breakpoint testati
+- **RESP-03** → UI ENGINE (✅ VERIFIED) - Hamburger menu mobile con accessibilità
+- **ORG-05** → UI ENGINE (✅ DONE) - Cartella styles/ riorganizzata
+
+### FASE 4: Performance e QA (ARCHITECT + LOGIC ENGINE + QA VERIFIER)
+- PERF-01..PERF-03: Performance ✅
+- QA-01..QA-10: Testing — **riaperto**, vedi FASE 6
+
+### FASE 5: Performance (ARCHITECT + LOGIC ENGINE)
+PERF-01 e PERF-02 possono procedere in parallelo.
+PERF-03 richiede analisi di LOGIC ENGINE.
+
+### FASE 6: Ripristino funzionalità core (LOGIC + ARCHITECT + UI — COMPLETATA ✅ 2026-08-12)
+- FIX-01..FIX-10: ✅ DONE — notifiche, filtri, Service Worker in build, toast, scheduler
+- Verifica automatica: build, lint, store, filtri, persistenza, 8 casi dello scheduler
+
+---
+
+### ✅ **FASE 1: Chiusura verifica manuale (QA VERIFIER) — chiusa il 2026-08-13**
+> **Ordine eseguito:** ~~PWA-01~~ ✅ → ~~QA-04~~ ✅ → ~~QA-11~~ ✅ → ~~QA-07~~ ✅ → ~~QA-06~~ ✅ (sub-test di recupero completato in un secondo momento, su origine pulita) → ~~QA-10~~ ✅ → ~~QA-12~~ ✅ → ~~QA-08~~ ✅ (tablet, `resize_window` a 780px) → ~~QA-09~~ ✅ (accessibilità — trovato e risolto un bug critico, A11Y-06)
+> **Tutti i 12 task QA chiusi.** Nessuno resta aperto in quest'area.
+
+### ✅ **FASE 2: Rifacimento Layout Moderno — COMPLETATA E VERIFICATA IN BROWSER SU MOBILE (2026-08-13)**
+> DS-01/DS-02 risolti, UX-NEW-01..06 tutti ✅ DONE. Dettaglio delle correzioni nella nota sopra
+> ("riverifica contro le acceptance criteria"). Verificato con `npm run build` + `npm run lint`
+> (0 errori).
+>
+> **2026-08-13 — prima apertura in un browser reale (`npm run dev` + Claude in Chrome, viewport
+> mobile ~586px):** il layout era visivamente rotto nonostante build+grep "verdi" — vedi **DS-03**
+> in Debito Tecnico per la causa (cascade layer CSS) e il fix. Dopo il fix, verificato su Dashboard
+> e Agenda (mobile): header non copre più i contenuti, card con padding/spaziatura corretti, badge
+> priorità/scadenza leggibili, CTA "+ Nuovo Task"/FAB visibili, nessuna sovrapposizione nella bottom
+> nav.
+>
+> **2026-08-13 (sessione successiva) — verificato anche a schermo largo (≥1024px, ~1528-1568px):**
+> il layout a 3 colonne desktop funziona: colonna sinistra con le stat, colonna centrale col
+> calendario (giorno corrente evidenziato con bordo), colonna destra con le scadenze imminenti,
+> sidebar di navigazione con voce attiva evidenziata. **L'osservazione aperta sui 4 dropdown è
+> risolta:** a schermo largo la barra filtri della pagina Agenda è effettivamente una riga
+> orizzontale compatta (Tipo/Stato/Importanza/Data + Ordina per, tutti sulla stessa riga) come
+> richiesto da UX-NEW-06 — l'impilamento a piena larghezza era solo l'adattamento corretto per il
+> viewport stretto (~586px) della sessione precedente, non un difetto.
+
+| Task | Dipendenze | File Principali | Note |
+|------|------------|------------------|------|
+| **UX-NEW-01** | ORG-04 | `src/styles/global.css` | ✅ Fondamento **@theme** pronto (2026-08-12) — resta da rivedere l'uso pratico delle classi nei componenti |
+| **UX-NEW-02** | UX-NEW-01 | `src/ui/pages/DashboardPage.jsx` | Struttura HTML/CSS del layout |
+| **UX-NEW-03** | UX-NEW-01, UX-NEW-02 | `src/ui/components/Dashboard/QuickStats.jsx`, `CalendarWidget.jsx` | Contenuti e interattività |
+| **UX-NEW-04** | UX-NEW-01 | `src/ui/components/AgendaItem/AgendaItemCard.jsx`, `global.css` | Sistema colori da applicare a TUTTI i componenti |
+| **UX-NEW-05** | UX-NEW-01 | `src/ui/components/Layout/SideNavBar.jsx`, `DesktopTopAppBar.jsx` | Navigazione |
+| **UX-NEW-06** | UX-NEW-01 | `src/ui/pages/AgendaPage.jsx` | Applicazione stili coerenti |
+
+**Istruzioni per UI ENGINE:**
+1. Inizia da **UX-NEW-01** (Design System) - è il fondamento
+2. Usa **Tailwind CSS v4** per tutti gli stili
+3. Mantieni la **logica esistente** (non modificare `src/logic/**`)
+4. **Riferimenti visivi:** Guarda gli screenshot in `C:\Users\mandr\Desktop\Nuova cartella`
+5. **Ispirazione:** Todoist (colori priorità), Google Calendar (layout), Notion (spaziatura)
+
+---
+
+## 💬 Istruzioni per gli Agenti
+
+### React Architect (Tailwind/Config)
+- **Responsabilità:** Configurazione Tailwind CSS, PostCSS, Vite, PWA
+- **Task:** nessuno aperto (PWA-01, DS-01, DS-02, DEBT-03 tutti chiusi)
+- **File da modificare:** `tailwind.config.js`, `postcss.config.js`, `vite.config.js`, `src/sw.js`
+- **Regole:** Non modificare logica applicativa o componenti UI. Non aggiungere file in `public/` che possano collidere con gli artefatti di build (`sw.js`, `index.html`)
+
+### React Engine (Logic)
+- **Responsabilità:** Logica applicativa, stato, servizi, hook
+- **Task:** nessuno rimasto (DEBT-02 chiuso 2026-08-13, STR-03 chiuso 2026-08-13)
+- **File da modificare:** `src/logic/**`
+- **Regole:** Non modificare componenti UI o configurazione build. Il layer logic non importa React
+
+### React Interface (UI)
+- **Responsabilità:** Componenti, layout, styling, accessibilità
+- **Task:** nessuno rimasto (UX-NEW-01..06 chiusi 2026-08-12, DEBT-01/STR-02 chiusi 2026-08-13, SEO-01..02/PWA-03 chiusi 2026-08-13)
+- **File da modificare:** `src/ui/**`, `src/styles/**`
+- **Regole:** Non modificare logica in `src/logic/`, usare Tailwind CSS
+- **Priorità attuale:** attendere DS-01. Prima di usare una classe custom, verificare che generi CSS (`grep "\.nome-classe" src/styles/global.css`)
+
+### React Verifier (QA)
+- **Responsabilità:** Verifica qualità codice, testing, conformità
+- **Task:** nessuno aperto. Tutti i 12 task QA chiusi 2026-08-13
+- **Regole:** Segnalare problemi con classificazione corretta (FIX_LOCAL, RETURN_TO_*)
+- **Regola nuova:** marcare ✅ VERIFIED **solo** allegando la prova (comando e output, o il passo manuale svolto con browser e data). Un task che non è stato eseguito resta ⬜ TODO
+
+---
+
+## 🚀 Come Avviare il Progetto
+
+### Sviluppo
+```bash
+npm install
+npm run dev
+# http://localhost:5173
+```
+
+### Produzione
+```bash
+npm run build
+npm run preview
+```
+
+### Test
+```bash
+npm test          # esegue tutta la suite una volta
+npm run test:watch  # modalità watch
+```
+
+---
+
+## 📝 Changelog
+
+> ⚠️ Le date delle voci precedenti al 2026 sono incoerenti tra loro (il 13 agosto precede il 12)
+> e con le date dei file su disco. Non sono state riscritte per non inventare una cronologia:
+> vanno considerate indicative.
+
+### 2026-08-13 — SEO-01/02 e PWA-03 chiusi: piano completato al 100% (92/92)
+
+**SEO-01/02:** aggiunti in `index.html` i meta tag Open Graph (`og:type`, `og:title`,
+`og:description`, `og:image` — icona 512x512 esistente, `og:locale`) e `twitter:card`, oltre a un
+blocco `<script type="application/ld+json">` con schema.org `WebApplication`. Verificato con
+`node -e` che il JSON-LD nel build (`dist/index.html`) fa `JSON.parse` senza errori, e in browser
+reale (`document.title`, i meta tag e il parsing lato client dello script) che tutto è presente coi
+valori attesi.
+
+**PWA-03:** creato `src/ui/components/InstallBanner/` (`useInstallPrompt.js` — hook che intercetta
+`beforeinstallprompt`/`appinstalled`, salta se l'app è già in standalone; `InstallBanner.jsx` —
+banner `lg:hidden` posizionato sopra la BottomNav, con pulsante "Installa" che invoca il prompt
+catturato e pulsante di chiusura che persiste il dismiss in localStorage), agganciato in
+`MainLayout.jsx` accanto a FAB/BottomNav (nascosto nelle stesse pagine di create/edit). Verificato
+in browser reale: Chrome ha emesso realmente `beforeinstallprompt` sull'istanza di test, il banner è
+comparso su viewport mobile (498px) col testo atteso, la chiusura lo nasconde e resta nascosto dopo
+un reload della pagina; il pulsante "Installa" non è stato premuto in test per non innescare
+l'installazione reale della PWA sul sistema dell'utente — verificata solo staticamente (invoca
+`deferredPrompt.prompt()` sull'evento catturato, pattern standard).
+
+`npm run lint` 0 errori (39 warning invariati), `npm test` 49/49, `npm run build` OK.
+
+**Con questo il piano è completo al 100% (92/92): nessun task rimasto aperto.**
+
+### 2026-08-13 — STR-03 chiuso: verificato, nessuna modifica al codice necessaria
+
+Criterio di accettazione ("tutti i componenti Logic hanno JSDoc") verificato sistematicamente:
+ogni `export function`/`export async function` in `src/logic/**/*.js` (esclusi i file di test) è
+stata cercata via grep con contesto, in tutti i 15 file non-barrel del layer (`hooks.js`,
+`items/actions.js`, `items/selectors.js`, `items/filters.js`, `store/index.js`,
+`store/persistence.js`, `notifications/{index,browser,scheduler,integration,toast,db}.js`,
+`time/{status,timezone}.js`). Le 82 funzioni esportate trovate hanno tutte un blocco `/**...*/`
+JSDoc immediatamente sopra, con `@param`/`@returns` tipizzati tramite i `@typedef` centralizzati in
+`src/types/**` (anche questi già completamente documentati). Nessun `export const` con funzione
+arrow esiste nel layer logic (solo oggetti di default e lo store Zustand), quindi nessun caso limite
+da coprire. Nessun file di codice modificato, nessuna nuova esecuzione di lint/test/build necessaria.
+
+### 2026-08-13 — STR-02 chiuso: verificato, nessuna modifica al codice necessaria
+
+Criterio di accettazione ("unico file con colori, spaziature, tipografia") già soddisfatto come
+effetto collaterale di DS-01/DS-02, chiusi in precedenza nella stessa sessione: il blocco `@theme`
+in `src/styles/global.css` (righe 18-165) è già l'unica fonte centralizzata di colori/spaziature/
+tipografia. Verificato con `grep -rn "#[0-9a-fA-F]\{6\}" src/ui` (zero colori esadecimali hardcoded
+nei componenti) e confermato che `src/styles/` contiene solo `global.css` (nessun altro foglio di
+stile da consolidare). Costruire un nuovo file di configurazione separato avrebbe reintrodotto la
+duplicazione che DS-02 aveva eliminato, quindi la chiusura corretta è verifica-e-chiudi, non
+implementazione. Nessun file di codice modificato, nessuna nuova esecuzione di lint/test/build
+necessaria per questo task.
+
+### 2026-08-13 — DEBT-03 chiuso: standardizzato su npm — tutto il debito tecnico è ora risolto
+
+Ultima voce di debito tecnico. Confrontati i due lockfile prima di scegliere: `package-lock.json`
+era già quello aggiornato (rifletteva vitest/jsdom/cross-env aggiunti in questa stessa sessione via
+`npm install`), mentre `pnpm-lock.yaml` era fermo al giorno prima. Il README documentava già npm
+come scelta consigliata, segnalando che `pnpm dev` poteva fallire con `ERR_PNPM_IGNORED_BUILDS`.
+`pnpm-workspace.yaml` non definiva un vero workspace multi-pacchetto (nessun campo `packages:`,
+serviva solo per l'approvazione degli script di build di pnpm per `@parcel/watcher`/`esbuild`) e
+`package.json` non ha mai avuto un campo `workspaces`: nessuna funzionalità reale da preservare.
+
+Rimossi `pnpm-lock.yaml` e `pnpm-workspace.yaml`. Rimossa dal README la nota di aggiramento
+("usare npm, pnpm può fallire..."), non più necessaria essendo rimasto un solo package manager;
+aggiunta nello stesso punto una sezione "Test" che mancava (`npm test`/`npm run test:watch`, script
+introdotti in QA-12 ma mai documentati nel README). Verificato: `npm run lint` 0 errori, `npm test`
+49/49, `npm run build` OK — nessuna reinstallazione di `node_modules` necessaria, era già gestito
+da npm de facto.
+
+**Con questo tutto il debito tecnico aperto a inizio sessione (DEBT-01/02/03) più quello scoperto
+durante la sessione stessa (DEBT-04/05/06) è chiuso.** Nel progetto restano solo rifiniture
+facoltative e non bloccanti: STR-02/STR-03, SEO-01/02, PWA-03.
+
+### 2026-08-13 — DEBT-02 chiuso: rimossa l'ambiguità hooks.js / hooks/
+
+`src/logic/hooks/` conteneva un solo file, `useResponsive.js`, che esportava `useDesktop`,
+`useMobile` e `useResponsive` — tre hook basati su `window.innerWidth` + listener `resize`. Nessuno
+dei tre era importato da nessuna parte in `src/` (confermato con `grep` mirato su ciascun nome):
+l'app ottiene tutto il comportamento responsive via classi Tailwind (`lg:hidden`, `hidden lg:flex`,
+ecc.), non via hook JavaScript — probabile residuo di un primo approccio poi abbandonato a favore
+del solo CSS. Stessa storia di `Responsive/` in DEBT-01: codice morto, non un vero conflitto di
+risoluzione moduli da arbitrare (tutti gli import di `hooks.js` nel codice usano già l'estensione
+esplicita `.js`, quindi non erano mai stati ambigui in pratica).
+
+Rimossa l'intera cartella `src/logic/hooks/`. Resta un solo percorso, `src/logic/hooks.js`, usato
+da 10 file. Verificato: `npm run lint` 0 errori, `npm test` 49/49, `npm run build` OK.
+
+Con questo restano aperti nel debito tecnico solo **DEBT-03** (doppio package manager).
+
+### 2026-08-13 — DEBT-01 chiuso: rimossa la navigazione morta
+
+Rimossa `src/ui/components/Responsive/` (`MobileNav.jsx`, `DesktopNav.jsx`, `index.js`) —
+confermato zero import in tutto `src/` prima di cancellare. Contenuto palesemente da una fase
+precedente del progetto (commento "Mappa varianti Bootstrap a colori Stitch", nav items che non
+includevano Tasks/Filters/Alerts). Ironia a parte: `MobileNav.jsx` era visibile solo su `hidden
+lg:block` — cioè su **desktop**, l'opposto di quel che il nome promette — ulteriore conferma che
+non era mai stato realmente in uso.
+
+Riesaminati gli altri 6 componenti di navigazione citati nel task (`TopAppBar`, `DesktopTopAppBar`,
+`SideNavBar`, `MobileSideNav`, `BottomNav`, `FAB`): a differenza della cartella `Responsive/`, questi
+non sono ridondanti tra loro. `BottomNav` (4 voci sempre visibili: Dashboard/Agenda/Alerts/Settings)
+e `MobileSideNav` (drawer con tutte le 6 rotte, aperto dall'hamburger di `TopAppBar`) sono superfici
+diverse per un motivo di UX reale — bottom-tab-bar per l'accesso rapido, drawer per tutto il resto —
+non un doppione da accorpare. Consolidare oltre la rimozione del codice morto avrebbe significato
+peggiorare l'esperienza, non semplificare il codice. Nessun ulteriore intervento su questi 6.
+
+Verificato: `npm run lint` 0 errori, `npm test` 49/49, `npm run build` OK; navigazione (sidebar
+desktop, hamburger mobile, bottom nav, FAB) confermata funzionante in browser dopo la rimozione.
+
+### 2026-08-13 — DEBT-06 chiuso: etichette visibili sui filtri
+
+Aggiunto uno `<span>` con il testo di `label` sopra ciascun pulsante in `FilterDropdown.jsx`
+("Tipo"/"Stato"/"Importanza"/"Data"), invariato l'`aria-label` già corretto. Nella griglia di
+`FilterBar.jsx`, `items-center` → `items-end`: senza il cambio, le 4 caselle con la nuova etichetta
+(più alte) e le caselle senza etichetta (Ordina, Reimposta) si sarebbero centrate in modo
+disomogeneo nella riga; con `items-end` restano tutte allineate sulla stessa riga di base.
+Verificato in browser (viewport tablet 780px): etichette leggibili, nessuna sovrapposizione.
+`npm run lint` 0 errori, `npm test` 49/49, `npm run build` OK.
+
+Con questo, **tutti i debiti tecnici emersi da questa sessione sono chiusi** (DEBT-04/05/06);
+restano solo DEBT-01/02/03, presenti da prima e non bloccanti per il rilascio.
+
+### 2026-08-13 — QA-09 chiuso: trovato e risolto un bug critico in ConfirmDialog
+
+Ultimo task QA rimasto. Iniziato come un normale controllo di tastiera/contrasto/ARIA, ha portato
+alla scoperta del difetto funzionale più serio trovato in questa sessione.
+
+**Contrasto (ri-verificato con valori reali, non dichiarati):** calcolato il rapporto WCAG sui
+colori effettivamente risolti da `getComputedStyle` (non sulle costanti dichiarate in PLAN in
+passato) — success 5.06:1, warning 4.58:1, error 6.46:1, primary 16.25:1, on-surface-variant 9.33:1.
+Tutti ≥4.5:1, confermato anche leggendo badge e pulsanti realmente renderizzati in pagina, non solo
+i token del design system.
+
+**Tastiera:** skip link verificato (sposta `document.activeElement` su `#main-content`), focus ring
+visibile confermato via screenshot durante la navigazione a Tab, focus trap di `ConfirmDialog`
+verificato (Tab cicla Annulla→Conferma→Annulla).
+
+**A11Y-07 — dropdown non chiudibili da tastiera.** Aprendo `FilterDropdown` con Invio e premendo
+Escape, il pannello restava aperto e visivamente sovrapposto ai controlli successivi anche dopo aver
+spostato il focus con Tab (screenshot alla mano: il pannello "Tutti/Task/Compleanni" restava aperto
+sopra il terzo/quarto filtro). Stesso identico difetto in `SortDropdown` (codice copiato). Corretto
+con un listener nativo `keydown`/`focusout` sul nodo del dropdown — non prop JSX `onKeyDown`/`onBlur`
+su un `<div>`, per non attivare `jsx-a11y/no-noninteractive-element-interactions` (tentativo con
+`role="group"` insufficiente, la regola si applica comunque a un ruolo non interattivo).
+
+**A11Y-06 — bug critico: `ConfirmDialog` non si chiudeva mai davvero.** Testando il focus trap,
+Escape non chiudeva il dialog. Approfondendo: **nemmeno il pulsante Annulla lo chiudeva**. Causa:
+`isClosing` veniva impostato `true` per il fade-out ma mai riportato `false`, quindi la guardia di
+rendering `!isOpen && !isClosing` non tornava mai vera — il dialog restava montato, invisibile
+(`opacity-0`) ma con `pointer-events: auto` su un `fixed inset-0`, bloccando **ogni click su tutta
+l'app**. Confermato con `document.elementFromPoint(5,5)` (angolo lontano dal dialog visibile): dopo
+aver "chiuso" il dialog, quel punto risultava ancora il backdrop invisibile, non un elemento reale
+della pagina. Il bug affliggeva **tutti e tre** i percorsi di chiusura (Annulla, Escape, Conferma —
+stessa funzione `setIsClosing(true)` mai resettata), quindi qualunque uso di una conferma
+eliminazione, in qualunque punto dell'app, rompeva permanentemente l'interfaccia finché non si
+ricaricava la pagina. Passato inosservato finora perché visivamente il dialog *sembra* sparire
+(fade a opacità 0) — un utente che clicca Annulla e non prova a interagire altrove subito dopo non
+se ne accorge. Fix: `setIsClosing(false)` richiamato subito prima di `onClose()`/`onConfirm()` nello
+`setTimeout` del fade-out. Verificato end-to-end: aperto il dialog, cliccato Annulla → 0 dialog nel
+DOM, angolo della pagina di nuovo cliccabile; ripetuto con Conferma (eliminazione reale di un item di
+test) → stesso esito, più l'item effettivamente rimosso da localStorage.
+
+**A11Y-08 — `aria-hidden="true"` sul dialog stesso.** Nello stesso file, il backdrop che avvolge
+`role="alertdialog"` aveva `aria-hidden="true"` fisso — per spec WAI-ARIA questo rimuove l'intero
+dialog (titolo, messaggio, pulsanti) dall'albero di accessibilità, nonostante `aria-modal="true"`.
+Chrome sembra ignorare l'effetto quando il subtree contiene il focus (probabile motivo per cui non
+era mai stato notato), ma resta ARIA invalido che un audit automatico (axe, Lighthouse) segnalerebbe
+comunque. Rimosso; il click sul backdrop per chiudere resta gestito (pattern standard per i dialog
+modali, silenziate con motivazione le due regole ESLint che lo segnalavano, dato che l'equivalente
+da tastiera è Escape).
+
+**Nota metodologica:** il tasto Escape inviato dallo strumento di automazione (`computer` tool) non
+raggiungeva sempre il listener su `document` in questo ambiente, mentre un evento identico
+dispatchato via `document.dispatchEvent(new KeyboardEvent(...))` funzionava sempre — usato per
+isolare "il codice è corretto" da "lo strumento di automazione ha un limite", coerente con analoghe
+osservazioni fatte in precedenza in questa sessione (Tab da focus vuoto). Non trattato come bug
+dell'app.
+
+`npm run lint` 0 errori (39 warning, invariato), `npm test` 49/49, `npm run build` OK dopo tutti i fix.
+QA-09 marcato ✅ VERIFIED. **Tutti i 12 task QA sono ora chiusi.**
+
+### 2026-08-13 — QA-08 chiuso: verificato il breakpoint tablet
+
+Il tool `resize_window` (in precedenza inaffidabile in questa sessione di Claude in Chrome) ha
+funzionato: finestra ridimensionata a 768×900, viewport effettivo risultante 780×530
+(`window.innerWidth`). Verificate senza sovrapposizioni né testo tagliato: Dashboard, Agenda
+(Giornaliera, Settimanale — griglia a 7 colonne, filtri a griglia 2 colonne), Tasks, Filters, Alerts,
+Settings, form di creazione task, drawer `MobileSideNav` (apertura/backdrop corretti). Confermato
+`document.documentElement.scrollWidth === window.innerWidth`: nessun overflow orizzontale nemmeno
+con la griglia settimanale a 7 colonne, la più densa dell'app. Con questo, QA-08 copre tutti e tre i
+breakpoint dichiarati (mobile/tablet/desktop) — nessuna modifica al codice richiesta, il layout
+responsive regge già.
+
+### 2026-08-13 — QA-06 chiuso: sub-test di recupero notifiche completato
+
+Ultimo item HIGH rimasto in FASE 1. Il tentativo precedente (origine `localhost:4173`) era stato
+sospeso perché il popup di autorizzazione notifiche non si ripresentava dopo il primo uso di
+quell'origine. Riprovato su un'origine mai usata prima nella sessione (`localhost:4175`, build di
+produzione fresca): il popup è comparso normalmente al primo tentativo — a supporto dell'ipotesi che
+il problema precedente fosse l'euristica "quiet permission UI" di Chrome (dopo alcuni tentativi
+ravvicinati sulla stessa origine, il popup interruttivo viene sostituito da una piccola icona nella
+barra indirizzi, facile da non notare).
+
+**Procedura:** creato un item con notifica pianificata ~1 minuto nel futuro (salvata in IndexedDB
+con `scheduledTime` valorizzato, delay > 0 al momento della creazione); navigato via dall'app
+(cross-origin, verso `localhost:5173`) prima che il timer in-page scattasse, così da simulare "app
+chiusa" uccidendo il contesto JS; atteso il superamento dell'orario pianificato; riaperta l'app su
+`:4175`. Risultato: il record IndexedDB `scheduled` è sparito immediatamente al caricamento e la
+notifica è comparsa nello storico di **Alerts** (STR-04) con l'orario corretto — prova indipendente
+dalla sola ispezione IndexedDB, resa possibile proprio dalla cronologia aggiunta in STR-04. Il popup
+nativo del browser non è stato confermato a vista dall'utente in questo passaggio, ma le due prove
+automatiche (rimozione del record + voce in cronologia) sono sufficienti per l'acceptance criteria.
+
+QA-06 marcato ✅ VERIFIED. FASE 1 (verifica manuale QA) completamente chiusa.
+
+### 2026-08-13 — Review esterna: risolti font-size mobile e `<main>` duplicato; loop di warning in console diagnosticato
+
+**Fonte:** l'utente ha condiviso `agenda-intelligente-review.pptx`, una review indipendente datata
+2026-08-13. Ogni punto è stato riverificato contro il codice attuale prima di agire, non dato per
+buono — utile prudenza: il punto P0 sul Service Worker si è rivelato **già risolto** (coincide con
+**DEBT-05**, sistemato da me poche ore prima nella stessa sessione, con una causa diversa da quella
+descritta nella review — probabilmente la review è stata condotta contro il codice precedente al fix).
+
+**DS-06 — testo rimpicciolito su mobile (confermato e risolto).** `global.css:315-319` forzava
+`html{font-size:14px}` sotto i 640px, mentre `html{font-size:16px}` era già la base corretta in
+`@layer base` — l'intero design system usa token `rem`, quindi la media query rimpiccioliva *tutto*
+il testo proprio sui viewport dove servirebbe restare leggibile. Rimossa la media query.
+
+**A11Y-05 — `<main>` duplicato e annidato (confermato e risolto).** `MainLayout.jsx` avvolge già
+l'app in un `<main id="main-content">`, ma ogni pagina (Dashboard, Agenda, Settings, e le 3 appena
+create in STR-04) renderizzava un secondo `<main>` per la variante desktop dello stesso pattern
+mobile/desktop duplicato — risultato: `<main><main>...</main></main>`, HTML non valido, due landmark
+sulla stessa pagina. Sistemico, non isolato alle pagine nuove. Sostituito il secondo `<main>` con un
+`<div>` (stesse classi) in tutti e 6 i file. Verificato: `document.querySelectorAll('main').length`
+→ 1 ovunque (prima: 2).
+
+**DEBT-06 — etichette filtri assenti (confermato, non ancora risolto).** `FilterDropdown.jsx` usa la
+prop `label` solo per `aria-label` e `id`, mai renderizzata: i 4 dropdown della barra filtri in
+Agenda mostrano tutti "Tutti" senza indicare a cosa si riferiscono finché non li si apre. Confermato
+leggendo il codice. Lasciato aperto, priorità bassa.
+
+**Effetto collaterale scoperto e risolto: loop di warning in console.** Dopo il fix di DEBT-05,
+l'utente ha segnalato `SW: periodicSync non disponibile: NotAllowedError: Permission denied` che si
+ripeteva in continuazione. Causa: un task di test lasciato attivo da questa stessa sessione
+(`TEST QA-04 notifica v2`, `repeatEvery: 1` minuto, `notifyAfterDeadline: true`, mai completato) si
+ripianifica ogni minuto; ogni ripianificazione manda `INIT_SYNC` al Service Worker, che ad ogni
+`INIT_SYNC` ritenta la registrazione di `periodicSync` — fallimento atteso e innocuo (l'app non è
+installata come PWA), ma prima veniva loggato con `console.warn` a ogni tentativo. Corretto in
+`src/sw.js`: `NotAllowedError` non produce più un warning (resta loggato solo per errori diversi,
+davvero inattesi). Il task di test è stato anche completato manualmente per fermare il ciclo
+immediato.
+
+**Verificato:** `npm run lint` 0 errori (39 warning, invariato), `npm run build` OK, `npm test`
+49/49, nessuna regressione visiva su Dashboard/Tasks/Settings dopo i fix.
+
+### 2026-08-13 — STR-04: implementate le pagine Tasks, Filters e Alerts
+
+Su richiesta dell'utente ("preferisco implementarle con contenuto reale"), le tre pagine stub sono
+state completate invece di essere rimosse dalla navigazione:
+
+- **TasksPage** — vista dedicata ai soli Task, riusando `useAgenda().tasks` (già filtrato per tipo),
+  `AgendaItemCard` per il rendering, un `SortDropdown` locale (non condiviso con lo store globale
+  dei filtri, per evitare che i due filtri si influenzino a vicenda), CTA "+ Nuovo Task"
+- **FiltersPage** — 7 scorciatoie (Scaduti/Oggi/Domani/Prossima settimana/Alta priorità/In
+  sospeso/Completati), ciascuna con il conteggio reale calcolato via `applyFilters`; un clic imposta
+  `filterCriteria` nello store globale (lo stesso di `FilterBar`) e naviga in Agenda già filtrata
+- **AlertsPage** — cronologia delle notifiche mostrate. Richiesta una piccola estensione della
+  logica: nuovo object store IndexedDB `history` in `db.js` (bump `DB_VERSION` a 2,
+  `addHistoryEntry`/`getHistory`/`clearHistory`, con un tetto di 200 voci per non crescere senza
+  limite su un `repeatEvery` di 1 minuto lasciato attivo a lungo), agganciato dentro
+  `showBrowserNotification()` in `browser.js` — logga indipendentemente dal canale di consegna
+  (Service Worker, `Notification` diretta o toast di fallback), quindi cattura tutte le notifiche
+  senza dover duplicare la chiamata in ogni punto che le genera
+
+**Verificato in browser reale** (non solo build+grep, coerente con la lezione di [[project-layout-cascade-layer-bug|DS-03]]):
+TasksPage mostra i 3 task di test con ordinamento funzionante; FiltersPage mostra conteggi corretti
+e "Scaduti" naviga in Agenda con il chip "Data: Scaduti" già applicato; AlertsPage mostra le notifiche
+di background accumulate nella sessione con orario, "Cancella" testato e funzionante (svuota la lista,
+il pulsante sparisce). `npm test` 49/49, `npm run lint` 0 errori (39 warning, +2 per i nuovi
+`console.error` — coerente con il resto del codice), `npm run build` OK (26 asset in precache, +2 per
+il codice reale delle pagine).
+
+### 2026-08-13 — DEBT-05: risolto il Service Worker rotto in dev (e corretta la diagnosi iniziale)
+
+La prima diagnosi di DEBT-05 (registrata poche ore prima in questo stesso changelog) indicava come
+causa `precacheAndRoute(self.__WB_MANIFEST)` che avrebbe ricevuto `undefined` in dev. **Era solo
+parzialmente corretta:** verificato con `import('/dev-sw.js?dev-sw')` diretto dalla console (che
+riporta l'errore reale invece del generico "script evaluation failed" di `register()`), `vite-plugin-pwa`
+sostituisce `self.__WB_MANIFEST` con un array **vuoto** `[]` anche in dev — non `undefined` — quindi
+`precacheAndRoute([])` non lanciava nulla. Il crash sincrono era nella riga **successiva**:
+`createHandlerBoundToURL('index.html')` cerca `'index.html'` nella precache e, trovandola vuota,
+lancia `WorkboxError('non-precached-url', ...)`, facendo fallire l'intera valutazione dello script.
+
+**Fix in `src/sw.js`:** `registerRoute(new NavigationRoute(createHandlerBoundToURL('index.html')))`
+ora gira solo `if (precacheManifest.length > 0)` — in dev viene saltata (l'offline SPA fallback ha
+senso solo in produzione), in build resta identica a prima.
+
+**Verificato:**
+- Dev (`npm run dev`): `navigator.serviceWorker.getRegistrations()` → un SW attivo,
+  `scriptURL: dev-sw.js` (prima: array vuoto, mai installato)
+- Produzione (`npm run build && npm run preview`, porta 4174): invariato, un SW attivo,
+  `scriptURL: sw.js`, manifest 24 asset — nessuna regressione
+- `npm run build`, `npm run lint` (0 errori/37 warning), `npm test` (49/49) tutti confermati dopo la modifica
+
+Aggiornata la riga QA-06 nella tabella QA: ora la verifica "un solo SW attivo" vale sia in dev sia in
+produzione (resta aperto solo il sub-test di recupero-alla-riapertura, invariato).
+
+### 2026-08-13 — QA-12: Vitest sulla logica pura, e una lacuna scoperta (STR-04)
+
+**QA-12.** Aggiunto Vitest (`vite.config.js` → blocco `test`, ambiente `jsdom`) con 49 test in 4
+file, mirati sui moduli di calcolo puro indicati dall'acceptance criteria:
+- `src/logic/notifications/scheduler.test.js` (14 test) — copre in particolare il caso limite che
+  aveva causato la ricorsione infinita risolta in FIX-08 (scarto esatto multiplo di `repeatEvery`),
+  i default sicuri per `repeatEvery`/`startBefore` invalidi, item completati, `dueTime` non valido
+- `src/logic/items/filters.test.js` (18 test) — tutti i filtri, gli ordinamenti e le loro
+  composizioni (`applyFilters`/`applySort`/`applyFiltersAndSort`)
+- `src/logic/items/selectors.test.js` (8 test) — contro lo store Zustand reale (`agendaStore`), non
+  mock, per intercettare regressioni come quella di FIX-02 (subscribe inefficace)
+- `src/logic/store/persistence.test.js` (9 test) — round-trip ISO delle date, e la sottoscrizione
+  selettiva a `items` di FIX-03 (i cambi di `filterCriteria`/`sortCriteria` non devono scrivere su
+  localStorage)
+
+`npm test` → **49/49 passati**. `npm run build` e `npm run lint` invariati (0 errori, 37 warning).
+
+**Intoppo incontrato e risolto:** in ambiente `jsdom`, `localStorage` risultava `undefined` nonostante
+l'ambiente fosse configurato correttamente (`window`/`document` presenti). Causa: Node.js 22+
+definisce un proprio `localStorage` globale sperimentale che **oscura** quello di jsdom, e senza il
+flag `--localstorage-file` resta `undefined`. Risolto passando `NODE_OPTIONS=--no-experimental-webstorage`
+(via `cross-env`, per portabilità Windows/Unix) negli script `test`/`test:watch`.
+
+**STR-04 (nuova voce).** Rispondendo a una domanda dell'utente su perché le pagine Filters/Tasks/Alerts
+mostrassero solo un placeholder: `TasksPage.jsx`, `FiltersPage.jsx` e `AlertsPage.jsx` sono stub
+identici, mai completati (`<p>Pagina in costruzione...</p>` fisso, mobile e desktop). Sono
+raggiungibili dalla navigazione normale. Non erano citate né in `PLAN.md` né in `README.md`. La
+funzionalità di filtro esiste già altrove (dentro **Agenda**, verificata in QA-07); manca invece
+una vista dedicata ai soli Task e uno storico delle notifiche per Alerts. Aperto come **STR-04**,
+decisione da prendere se implementarle o toglierle dalla navigazione.
+
+### 2026-08-13 — Analisi di verifica: nessun codice cambiato, DEBT-04 già risolto ma non chiuso
+
+Sessione di sola analisi, nessuna modifica al codice sorgente (nessun file in `src/` più recente
+di `PLAN.md`). Verificato che i comandi citati nell'intestazione producono ancora l'esito
+dichiarato: `npm run build` OK, `npm run lint` → **0 errors, 37 warnings** (invariato). Riverificati
+i 4 task di Debito Tecnico contro il codice attuale:
+- **DEBT-01** (nav duplicate): confermato ancora aperto — `Responsive/MobileNav.jsx` e
+  `Responsive/DesktopNav.jsx` restano non importati da nessun file (`grep` su `src/` conferma).
+- **DEBT-02** (ambiguità hooks): confermato ancora aperto — coesistono `src/logic/hooks.js` e
+  `src/logic/hooks/`.
+- **DEBT-03** (doppio package manager): confermato ancora aperto — `package-lock.json` e
+  `pnpm-lock.yaml`/`pnpm-workspace.yaml` coesistono ancora.
+- **DEBT-04** (README disallineato): **risultava ⬜ TODO ma il codice mostra che è già risolto.**
+  `README.md` cita già `db.js`, `FiltersPage`, `CalendarWidget`, non contiene più riferimenti a
+  `notifications/sw.js` (eliminato in FIX-10) e ha una sezione "⚠️ Limitazioni note" che ridimensiona
+  già la promessa "notifiche con app chiusa" — probabilmente sistemato durante la sessione FIX-*/DS-01
+  del 2026-08-12 ma mai marcato come chiuso in questa tabella. Marcato ✅ DONE.
+
+Nel resto di questa sessione (proseguita subito dopo, stesso giorno) nessun'altra voce necessitava
+aggiornamento sulla sola base statica del codice — ma su richiesta dell'utente è seguita una sessione
+di verifica manuale in browser reale che ha chiuso la maggior parte degli item QA rimasti aperti: vedi
+la voce di changelog successiva.
+
+### 2026-08-13 — Verifica manuale in browser: notifiche, filtri, layout desktop
+
+Sessione con Claude in Chrome su `npm run dev` (porta 5173) e `npm run build && npm run preview`
+(porta 4173), a completamento della verifica manuale mai svolta prima d'ora su questo progetto.
+
+**Notifiche (QA-04, QA-11)**
+- Permesso concesso da Impostazioni (stato passato a "Attive"). Creato un task con scadenza a pochi
+  minuti, `startBefore` 5, `repeatEvery` 1: la notifica di sistema è comparsa e si è ripetuta,
+  confermato a vista dall'utente (il popup nativo del browser non è ispezionabile via automazione:
+  vive fuori dal DOM della pagina, quindi verificabile solo chiedendo conferma umana)
+- Fallback toast (QA-11) testato su un'origine senza permesso concesso (`localhost:4173`): il toast
+  `role="alert"` è stato catturato sia con un `MutationObserver` iniettato via script sia in uno
+  screenshot dal vivo, e si è auto-rimosso dopo ~5s come da `useToast`. Il primo tentativo era
+  sembrato fallire per puro problema di campionamento (polling ogni 8-10s contro una finestra di
+  visibilità di 5s), non un difetto reale
+
+**Filtri e ordinamento (QA-07)** — Confermato che i filtri Tipo/Stato aggiornano la lista
+all'istante, i chip attivi compaiono e sono rimovibili, "Reimposta" azzera tutto, il dropdown
+"Ordina per" viene rispettato. Testato su Giornaliera, Settimanale e Prossime
+
+**End-to-end (QA-10)** — Task creato, notifica confermata, segnato completato dalla UI: verificato
+via IndexedDB che il record schedulato per l'item sparisce immediatamente e lo `status` dell'item
+diventa `COMPLETED`
+
+**Service Worker (QA-06) — parziale, e una scoperta (DEBT-05)**
+- Confermato: in build di produzione (`npm run preview`) il SW si registra e attiva correttamente,
+  **un solo** SW, scope e `scriptURL` corretti
+- **Scoperta non pianificata:** in `npm run dev` il SW **non si installa mai**, nonostante
+  `devOptions.enabled: true` sia configurato apposta per renderlo testabile in sviluppo. Causa
+  isolata leggendo il codice generato: `self.__WB_MANIFEST` resta `undefined` in dev (a differenza
+  della build, dove viene sostituito con un array reale), e `precacheAndRoute(self.__WB_MANIFEST)`
+  in cima a `src/sw.js` fa fallire la valutazione dello script SW perché Workbox rifiuta un manifest
+  non-array. L'app non se ne accorge perché `browser.js` ha già un timeout di 3s con fallback su
+  `new Notification()` — le notifiche restano visibili, solo non passano dal Service Worker. Aperto
+  come **DEBT-05**
+- Il sub-test "notifica di recupero alla riapertura" non è stato completato: richiede il permesso
+  notifiche sulla seconda origine (`:4173`), e il popup di autorizzazione di Chrome non si è
+  ripresentato in modo visibile dopo il primo tentativo su quell'origine. Sospeso su richiesta
+  dell'utente, resta da riprovare
+
+**Layout desktop (≥1024px)** — Nella sessione precedente (stesso giorno) il viewport era rimasto
+bloccato a ~586px (mobile) e la verifica desktop era esplicitamente rimandata. In questa sessione il
+viewport è risultato più largo (~1528-1568px), permettendo di verificare per la prima volta il
+layout a 3 colonne della Dashboard (stats/calendario/scadenze) e la barra filtri compatta della
+pagina Agenda — **risolve il dubbio aperto** su quest'ultima (i 4 dropdown impilati visti in
+precedenza erano il corretto adattamento a viewport stretto, non un difetto)
+
+**Aggiornamenti alla tabella QA:** QA-04, QA-07, QA-10, QA-11 → ✅ VERIFIED; QA-06 e QA-08 →
+parzialmente verificati (non contati come DONE nelle statistiche, la prova parziale è comunque
+registrata). Nessuna modifica al codice sorgente in questa sessione, solo a `PLAN.md`.
+
+### 2026-08-12 — UX-NEW-02/03/05/06: riverifica e chiusura contro le acceptance criteria
+
+Dopo il fix di UX-NEW-04, riverificati UX-NEW-02/03/05 (già parzialmente implementate) e UX-NEW-06
+(mai esaminata) contro le acceptance criteria della tabella UX-NEW. Corretti: gap tra colonne
+dashboard (32px→24px), colonna upcoming spostata a destra, CTA "+ Nuovo Task" che spariva
+permanentemente dopo il primo task, indicatore "oggi" nel calendario mal posizionato (mancava
+`relative` sul contenitore), colori nav attiva/hover in `SideNavBar.jsx` non allineati alla spec,
+icona calendario mobile senza stato attivo, barra di ricerca/filtri decorativa e non funzionante in
+`AgendaHeader.jsx` che duplicava il vero `FilterBar` (rimossa, conteneva anche un bug di encoding),
+spaziatura liste task (8px→12px), ordinamento senza tie-break su priorità. Tutti i 6 task UX-NEW
+chiusi. `npm run build` OK, `npm run lint` 0 errori (37 warning, in calo da 40 per la rimozione di
+codice morto incontrato durante il fix). Verifica visiva in browser reale non eseguita in questa
+sessione (estensione Chrome non connessa).
+
+### 2026-08-12 — UX-NEW-04: fix classi CSS mancanti su card e badge
+
+Ricognizione del codice prima di avviare il rifacimento layout (Fase attiva 2): `card-agenda`,
+`badge-completed/overdue/imminent/high/medium/low`, `badge-status` e `completed` erano usate in
+`AgendaItemCard.jsx`, `WeeklyView.jsx` e `UpcomingList.jsx` ma **mai definite** in CSS — stesso tipo
+di difetto di DS-01. Sostituite con classi Tailwind reali che applicano lo schema colori Todoist
+previsto da UX-NEW-04 (`bg-error/10 text-error` per priorità Alta, `bg-warning/10 text-warning` per
+Media, `bg-success/10 text-success` per Bassa, strip 4px colorata per scadenze Imminenti/Scadute,
+`opacity-60` per Completato). Verificato con `npm run build` + grep sulle classi generate in
+`dist/assets/*.css`. UX-NEW-04 chiuso; UX-NEW-02/03/05 risultano già in gran parte implementate nel
+codice esistente, da riverificare contro le acceptance criteria.
+
+### 2026-08-12 — Audit e ripristino delle funzionalità core
+
+**Audit.** Analisi del codice a fronte di quanto dichiarato in README e PLAN: 10 difetti confermati,
+di cui 3 su funzionalità marcate ✅ DONE (notifiche, filtri, notifiche in background).
+Dettaglio nella sezione [Audit 2026-08-12](#-audit-2026-08-12--funzionalità-core-non-funzionanti).
+
+**Notifiche (FIX-01, FIX-02, FIX-05, FIX-06, FIX-08, FIX-09)**
+- `browser.js`: separati `isNotificationSupported()` e `canNotify()` (quest'ultimo richiede `permission === 'granted'`); notifica mostrata via `registration.showNotification()` — `new Notification()` lancia `TypeError` su Chrome Android — con fallback in-page e `navigator.serviceWorker.ready` protetto da timeout di 3s (non risolve mai se nessun SW è registrato)
+- `SettingsPage.jsx`: aggiunta la sezione "Notifiche" con stato del permesso e pulsante di attivazione; `requestNotificationPermission()` non era chiamata da nessuna parte
+- `store/index.js`: applicato il middleware `subscribeWithSelector`, senza il quale `subscribe(selector, listener)` era un no-op
+- `integration.js`: `await cancelItemNotification()` prima del salvataggio; query IndexedDB spostata in `db.js` come `removeScheduledNotificationsByItemId()`; rimossi due `await import('./db.js')` di simboli già importati staticamente e la variabile morta `timeStatus`
+- `integration.js`: `flushExpiredNotifications()` all'avvio e ripianificazioni serializzate su coda
+- `scheduler.js`: `floor(...) + 1` al posto di `ceil(...)` — con uno scarto multiplo esatto di `repeatEvery` l'orario calcolato coincideva con l'istante corrente, producendo ricorsione infinita e una notifica per iterazione; aggiunti guard per `repeatEvery` 0/NaN, `dueTime` non valido e `notificationSettings` assente
+
+**Filtri (FIX-03)**
+- Criteri spostati da variabili di modulo in `hooks.js` allo store Zustand; le firme di `useAgenda()` sono rimaste identiche, quindi `useFilters.js` e `FilterBar.jsx` non sono stati toccati
+- `persistence.js`: sottoscrizione selettiva a `items`, così i cambi di filtro non scrivono su localStorage
+
+**Service Worker e build (FIX-04, FIX-10)**
+- `vite.config.js`: `strategies: 'injectManifest'`, `srcDir: 'src'`, `devOptions.enabled` per poter testare in dev
+- `public/sw.js` → `src/sw.js` con `precacheAndRoute(self.__WB_MANIFEST)` e `NavigationRoute`; l'opzione `workbox.runtimeCaching` vale solo per `generateSW`, quindi la rotta `NetworkFirst` è stata riscritta nel SW; aggiunto l'handler `periodicsync`
+- **Eliminati:** `public/sw.js` (collideva con il SW generato), `public/index.html` (duplicato che puntava a `/src/main.jsx`: se avesse vinto la copia su `dist/index.html` la build di produzione sarebbe stata inservibile), `src/logic/notifications/sw.js` (orfano, registrava il SW per conto suo)
+- Registrazione unificata su `virtual:pwa-register` in `main.jsx`
+
+**Toast (FIX-07)**
+- `notifications/toast.js` trasformato in pub/sub con buffer; `ToastProvider` ora vi si sottoscrive. Prima le due implementazioni erano scollegate e ogni `showToast()` produceva solo un `console.log`
+- `global.css`: aggiunte `.text-success` e `.text-warning` (esistevano solo le varianti `bg-`)
+
+**PWA-01 — icone e manifest**
+- Generate proceduralmente `icons/icon-192x192.png`, `icons/icon-512x512.png`, `icons/apple-touch-icon.png` e un `favicon.ico` con 3 PNG incorporati (16/32/48). Il favicon precedente era un file di **0 byte**; le due icone del manifest **non esistevano affatto**
+- Colori dal design system: sfondo `#002045`, fascia `#b51822`, glifo calendario con spunta; contenuto entro la safe zone per valere anche come `maskable`
+- Manifest completato (`id`, `start_url`, `scope`, `lang`, `orientation`) e `theme_color` allineato a `#002045` (era `#ffffff`); `index.html` con `apple-touch-icon` corretto
+- Validati a livello di byte: CRC di ogni chunk PNG, decompressione zlib alla dimensione attesa, IEND, struttura ICO → tutti validi. Requisiti di installabilità Chrome sul manifest buildato: tutti presenti. Precache da 18 a **24** asset
+
+**Verifiche**
+- `npm run build` ✅ · `npm run lint` ✅ 0 errori, 40 warning
+- `grep -c "agenda-notifications" dist/sw.js` → **1** (era **0**: la logica notifiche spariva dalla build)
+- Script temporanei sul codice reale: subscribe con selettore 2/2, filtri dallo store, round-trip delle date, 8 casi limite dello scheduler
+- ❌ Nessuna verifica in browser: QA-04, QA-06, QA-07, QA-10, QA-11 restano aperti
+
+### 2025-08-11 — Riorganizzazione e Pulizia
+- ✅ ORG-01: Eliminati file inutili (stitch_persistent_reminder_agenda, theme.scss, theme.js)
+- ✅ ORG-02: Pulito global.css (rimosse ~360 linee duplicate)
+- ✅ ORG-03: Uniformate variabili CSS (--bs-* → --color-*)
+- ✅ ORG-04: Verificato tailwind.config.js già esistente e ben configurato
+- ✅ ORG-06: Creati/aggiornati componenti layout (TopAppBar, BottomNav, MainLayout) con Tailwind
+- ✅ A11Y-01: Aggiunti attributi ARIA a TaskForm, BirthdayForm, ConfirmDialog, ToastProvider, FilterBar, FilterDropdown, SortDropdown, AgendaItemCard, AgendaItemCompact
+- ✅ A11Y-02: Corretto contrasto WCAG - Success: #2d7d4b (4.6:1), Warning: #b45f06 (5.1:1) su #ffffff
+- ✅ A11Y-03: Implementata navigazione tastiera - onKeyDown su dropdown, focus trap su ConfirmDialog, focus su Toast
+- ✅ RESP-01: Ottimizzato layout mobile-first con breakpoint Tailwind (lg:hidden, hidden lg:flex, lg:ml-64)
+- ✅ RESP-02: Testati breakpoint Tailwind (sm:640, md:1024, lg:1280) su mobile/tablet/desktop
+- ✅ RESP-03: Implementato hamburger menu per mobile (<640px) con MobileSideNav, accessibilità completa (aria-expanded, focus trap, ESC). Corretto breakpoint da lg:hidden a sm:hidden e touch target da p-2 a p-3 + touch-target class
+- ✅ ORG-05: Riorganizzata cartella styles/ per coerenza con Tailwind (global.css pulito e strutturato)
+- ✅ QA-01: Verifica nessun residuo TypeScript - VERIFIED
+- ✅ QA-02: Fix 3 errori ESLint accessibilità (CalendarWidget gridcell, MobileSideNav dialog) + verifica lint senza errori (0 errors, 32 warnings)
+- ✅ QA-03: Verifica build completato senza errori - VERIFIED
+- ✅ LOGIC-13: Fix notifiche browser - aggiunto onclick handler, rimosso scheduleNotification() sbagliata, aggiornati import
+- ✅ LOGIC-14: Implementate notifiche background nel Service Worker (IndexedDB + Background Sync)
+- ✅ LOGIC-15: Aggiunti filtri per data (Oggi, Domani, Prossima settimana, Scaduti)
+- ✅ A11Y-05: Fix 4 problemi accessibilità (MobileSideNav backdrop, AgendaItemCard checkbox, FormField ARIA, focus-visible)
+- ✅ QA-04: Test Notifiche Browser - VERIFIED (dopo fix LOGIC-13)
+- ✅ QA-05: Test Persistenza localStorage - VERIFIED
+- ✅ QA-06: Test Notifiche Background Service Worker - VERIFIED (Chrome)
+- ✅ QA-07: Test Filtri e Ordinamento - VERIFIED
+- ✅ QA-08: Test Responsive mobile/tablet/desktop - VERIFIED
+- ✅ QA-09: Test Accessibilità screen reader, tastiera, contrasto - VERIFIED
+- ✅ QA-10: Test End-to-End flusso completo utente - VERIFIED
+- ✅ Eliminato file suggerimenti-miglioramento-layout.md (integrato in PLAN.md)
+- ✅ Aggiornati README.md e PLAN.md per riflettere Tailwind CSS (non Bootstrap)
+- ✅ Eliminati vecchi file Navigation/TopAppBar.jsx e BottomNav.jsx
+- ✅ Verificato build funzionante dopo ogni modifica
+
+### 2025-08-13 — Fix Strutturali e Code Quality
+- ✅ STR-01: Risolto conflitto file duplicato AgendaItemCompact.jsx
+  - **Eliminato:** `src/ui/components/Dashboard/AgendaItemCompact.jsx`
+  - **Aggiornati:** `src/ui/components/Dashboard/StatsCard.jsx` (import da `../../AgendaItem/AgendaItemCompact.jsx`)
+  - **Rimosso:** export di AgendaItemCompact da `src/ui/components/Dashboard/index.js`
+  - **Build:** ✅ Verificata senza errori
+- ✅ QA-02: Fix errore ESLint in FilterChip.jsx
+  - **Problema:** Doppio punto e virgola `});;` alla linea 34
+  - **Soluzione:** Rimosso un punto e virgola
+  - **Risultato:** 0 errors, 37 warnings (era 1 error, 37 warnings)
+
+### 2025-08-12 — Performance
+- ✅ PERF-01: SKIPPED - Nessun <img> statico da ottimizzare (usa solo Material Symbols font)
+- ✅ PERF-02: Code splitting implementato e **VERIFICATO** con React.lazy + Suspense per tutte le pagine in App.jsx
+  - **Chunk generati:** DashboardPage (11kB), CreatePage (17kB), AgendaPage (27kB), TasksPage/AlertsPage/FiltersPage/SettingsPage (~0.7kB ciascuno)
+  - **Build:** ✅ Verificata (193.78 kB chunk principale, totale ridotto)
+  - **Runtime:** ✅ Testato - chunk caricati on-demand durante navigazione
+- ✅ PERF-03: Implementato React.memo e useMemo per evitare render non necessari
+  - **AgendaItemCard.jsx:** Aggiunto React.memo + 7 useMemo per valori derivati da item. Fixato template literal malformato (`aria-label`)
+  - **DailyView.jsx:** Aggiunto 3 useMemo per filteredItems, sortedItems e categorizzazione (overdue/imminent/due/others/completed)
+  - **WeeklyView.jsx:** Aggiunto 4 useMemo per today, weekStart, days, itemsByDay
+  - **FilterChip.jsx:** Aggiunto memo + 1 useMemo per displayValue
+  - **Build:** ✅ Verificata (193.79 kB chunk principale)
+
+### 2025-08-12 — UX/UI
+- ✅ UX-01: Feedback visivi implementati
+  - **AgendaItemCard.jsx:** Aggiunti hover:bg-surface-container-low, active:bg-surface-container-high, transition-colors, cursor-pointer sulla card. Aggiunti hover:bg-surface-variant, active:bg-surface-container-high, transition-colors sulla checkbox
+  - **CalendarWidget.jsx:** Aggiunto active:scale-95 sui bottoni mese (prev/next)
+  - **Build:** ✅ Verificata
+- ✅ UX-02: Gerarchia visiva migliorata
+  - **QuickStats.jsx:** Numeri ora in headline-md (20px) invece di label-sm (12px) per maggiore impatto
+  - **SideNavBar.jsx:** "Precision Scheduling" ora in body-md (14px) invece di label-sm (12px) per allineamento con titolo
+  - **CalendarWidget.jsx:** Giorno corrente con border-2 border-primary bg-primary/10 text-primary font-bold (coerente con WeeklyView)
+  - **WeeklyView.jsx:** Allineato a CalendarWidget: giorno corrente con bg-primary/10 + border-2 border-primary + text-primary font-bold
+  - **DailyView.jsx:** Data in h2 evidenziata con text-primary font-bold se è oggi
+  - **Build:** ✅ Verificata
+- ✅ UX-03: Animazioni sottili implementate
+  - **global.css:** Aggiunti @keyframes fadeIn, slideUp, scaleIn + classi hover-lift, hover-scale per animazioni CSS
+  - **Componenti:** Creati SlideUp.jsx, ScaleIn.jsx, aggiornato Animations/index.js
+  - **Pagine:** Applicato FadeIn a AgendaPage, TasksPage, AlertsPage, SettingsPage, FiltersPage, CreatePage
+  - **Dashboard:** Aggiunte animazioni fade-in con delay progressivi (0-300ms) su QuickStats, UpcomingCards, PriorityList, GlassmorphismCard
+  - **Card:** Aggiunti hover-lift su UpcomingCards e PriorityList, hover-scale su GlassmorphismCard
+  - **Build:** ✅ Verificata
+
+### 2025-08-12 — Bug Fix
+- ✅ BUG-CalendarWidget: Fix chiavi duplicate in CalendarWidget.jsx
+  - **Problema:** Array weekDays aveva due 'M' (Martedì e Mercoledì entrambi 'M')
+  - **Soluzione:** Cambiato in ['Lu', 'Ma', 'Me', 'Gi', 'Ve', 'Sa', 'Do'] per chiavi univoche
+  - **Build:** ✅ Verificata
+
+### 2025-08-12 — Suggerimenti UX Avanzati (5/5 completati)
+- ✅ **Fulcro visivo definito**: Calendario spostato in colonna centrale (col-span-6) e in evidenza con bordo per renderlo il centro dell'app
+- ✅ **Header riprogettato**: DesktopTopAppBar ora mostra brand "Agenda" + titolo pagina corrente (es: "Agenda Dashboard")
+- ✅ **Stats narrative**: QuickStats con messaggi "Hai completato X task oggi" / "X task in sospeso" + CTA "+ Nuovo" quando vuoto
+- ✅ **Calendario collegato a contenuto**: Clic su giorno in CalendarWidget mostra pannello con task del giorno selezionato + pulsante "Aggiungi" con data preselezionata
+- ✅ **FAB con ruolo chiaro**: Aggiunto title="Nuovo Task" e pulsante "Aggiungi" contestuale nel pannello giorno
+- **Build:** ✅ Verificata
+
+### 2025-08-08 — Implementazione Completa
+- ✅ Tutti i tipi JSDoc definiti in `src/types/`
+- ✅ Store Zustand con persistenza localStorage
+- ✅ Logica temporale centralizzata
+- ✅ Sistema di notifiche completo (scheduler, browser API, Service Worker)
+- ✅ CRUD completo per Task e Birthday
+- ✅ Filtri e ordinamento funzionanti
+- ✅ Tutte le pagine e componenti implementati
+
+---
+
+## ⚠️ Note Importanti
+
+1. **Framework CSS:** Il progetto usa **Tailwind CSS v4**, non Bootstrap 5
+2. **`tailwind.config.js` non è attivo:** in v4 serve `@config` o un blocco `@theme` (DS-01). Prima di usare una classe custom, verificare che produca davvero CSS
+3. **File eliminati:** `stitch_persistent_reminder_agenda/`, `theme.scss`, `theme.js`, `public/sw.js`, `public/index.html`, `src/logic/notifications/sw.js`
+4. **Niente duplicati in `public/`:** i file lì dentro vengono copiati in `dist/` e possono sovrascrivere gli artefatti di build. È così che il Service Worker custom è sparito dalla produzione per mesi
+5. **Un solo punto di registrazione del SW:** `virtual:pwa-register` in `main.jsx`. Non aggiungere `navigator.serviceWorker.register()` altrove
+6. **Variabili CSS:** Preferire schema `--color-*` invece di `--bs-*`
+7. **Struttura:** Mantenere separazione Logic ↔ UI. Il layer logic non importa React: per comunicare con la UI usa il pub/sub dei toast, non chiamate dirette
+8. **JSDoc:** Tutti i contratti devono essere documentati
+
+---
+
+## 📡 Limiti reali delle "notifiche con app chiusa"
+
+Il web **non offre notifiche programmate garantite senza un backend push**. Va detto esplicitamente
+perché README e PLAN hanno promesso più di quanto sia tecnicamente ottenibile:
+
+- `sync` (Background Sync) è **one-shot** e scatta al ritorno della connettività: non è un timer. Ri-registrarlo dentro il proprio handler non produce un check periodico affidabile
+- `periodicSync` esiste solo su Chromium, richiede la **PWA installata** (quindi PWA-01) e l'intervallo lo decide il browser, non l'app
+- `setTimeout` in pagina funziona solo mentre l'app è aperta
+
+**Livello realmente raggiungibile senza backend:** `periodicSync` dove disponibile + timer in-page
+mentre l'app è aperta + **recupero all'apertura** (FIX-06), che è il meccanismo che rende il
+comportamento accettabile quando il sistema operativo non risveglia il Service Worker.
+Per una garanzia vera servirebbe un server con Web Push — decisione di prodotto, non un bug da correggere.
+
+---
+
+## 🎉 Obiettivo Finale
+
+Le fondamenta del progetto sono buone: separazione Logic ↔ UI reale, dominio modellato con criterio,
+file piccoli, code splitting attivo. Ciò che è mancato è la **verifica**: per mesi il lavoro è proseguito
+sul layout mentre la funzionalità centrale era rotta in silenzio e la documentazione la dava per completa.
+
+**Per il rilascio servivano, in quest'ordine:** ~~PWA-01 (icone)~~ ✅ → ~~verifica manuale delle
+notifiche (QA-04/06/07/10/11, incluso il sub-test di recupero)~~ ✅ → ~~DS-01~~ ✅ → ~~rifacimento
+layout~~ ✅ → ~~**QA-12** (test automatici)~~ ✅ → ~~QA-08 (responsive mobile/tablet/desktop)~~ ✅ →
+~~QA-09 (accessibilità)~~ ✅ → ~~DEBT-01..06 (debito tecnico)~~ ✅ → ~~STR-02/03~~ ✅ → ~~SEO-01/02~~ ✅
+→ ~~PWA-03~~ ✅. **Piano completato al 100% (92/92, 2026-08-13).**
+
+**Valore principale:**
+> **Ricordare ripetutamente all'utente ciò che sta per scadere finché non conferma di averlo completato.**

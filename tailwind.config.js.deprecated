@@ -1,0 +1,174 @@
+/** @type {import('tailwindcss').Config} */
+
+export default {
+  darkMode: 'class',
+  content: [
+    './index.html',
+    './src/**/*.{js,ts,jsx,tsx}',
+  ],
+  theme: {
+    extend: {
+      // Color palette from Stitch Cognitive Protocol / Material Design 3
+      colors: {
+        // Primary palette
+        primary: '#002045',
+        'primary-container': '#1a365d',
+        'primary-fixed': '#d6e3ff',
+        'primary-fixed-dim': '#adc7f7',
+        'on-primary': '#ffffff',
+        'on-primary-container': '#86a0cd',
+        'on-primary-fixed': '#001b3c',
+        'on-primary-fixed-variant': '#2d476f',
+        
+        // Secondary palette
+        secondary: '#b51822',
+        'secondary-container': '#d93537',
+        'secondary-fixed': '#ffdad7',
+        'secondary-fixed-dim': '#ffb3ad',
+        'on-secondary': '#ffffff',
+        'on-secondary-container': '#fffbff',
+        'on-secondary-fixed': '#410004',
+        'on-secondary-fixed-variant': '#930013',
+        
+        // Tertiary palette
+        tertiary: '#002713',
+        'tertiary-container': '#003f23',
+        'tertiary-fixed': '#91f8b8',
+        'tertiary-fixed-dim': '#74db9d',
+        'on-tertiary': '#ffffff',
+        'on-tertiary-container': '#4bb278',
+        'on-tertiary-fixed': '#002110',
+        'on-tertiary-fixed-variant': '#00522f',
+        
+        // Error palette
+        error: '#ba1a1a',
+        'error-container': '#ffdad6',
+        'on-error': '#ffffff',
+        'on-error-container': '#93000a',
+        
+        // Surface colors
+        surface: '#f7fafc',
+        'surface-container-lowest': '#ffffff',
+        'surface-container-low': '#f1f4f6',
+        'surface-container': '#ebeef0',
+        'surface-container-high': '#e5e9eb',
+        'surface-container-highest': '#e0e3e5',
+        'surface-dim': '#d7dadc',
+        'surface-variant': '#e0e3e5',
+        'surface-tint': '#455f88',
+        'surface-bright': '#f7fafc',
+        
+        // On colors
+        'on-surface': '#181c1e',
+        'on-surface-variant': '#43474e',
+        
+        // Background
+        background: '#f7fafc',
+        'on-background': '#181c1e',
+        
+        // Inverse colors
+        'inverse-surface': '#2d3133',
+        'inverse-on-surface': '#eef1f3',
+        'inverse-primary': '#adc7f7',
+        
+        // Outline colors
+        outline: '#74777f',
+        'outline-variant': '#c4c6cf',
+        
+        // Other colors - WCAG AA compliant
+        success: '#2d7d4b', // 4.6:1 contrast on #ffffff
+        warning: '#b45f06', // 5.1:1 contrast on #ffffff
+        info: '#00522f',
+        danger: '#ba1a1a',
+      },
+      
+      // Border radius
+      borderRadius: {
+        DEFAULT: '0.25rem',  // 4px
+        sm: '0.25rem',      // 4px
+        md: '0.375rem',     // 6px
+        lg: '0.5rem',       // 8px
+        xl: '0.75rem',      // 12px
+        '2xl': '1rem',       // 16px
+        '3xl': '1.5rem',     // 24px
+        full: '9999px',
+      },
+      
+      // Spacing (4px baseline grid)
+      spacing: {
+        xs: '4px',
+        sm: '8px',
+        md: '16px',
+        lg: '24px',
+        xl: '32px',
+        '2xl': '48px',
+        '3xl': '64px',
+        'margin-mobile': '20px',
+        gutter: '16px',
+        base: '4px',
+      },
+      
+      // Font family
+      fontFamily: {
+        sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+        body: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+        'headline-lg': ['Inter'],
+        'headline-md': ['Inter'],
+        'display-date': ['Inter'],
+        'label-caps': ['Inter'],
+        'label-sm': ['Inter'],
+        'body-md': ['Inter'],
+        'body-lg': ['Inter'],
+      },
+      
+      // Font sizes matching Stitch typography tokens
+      fontSize: {
+        'display-date': ['2.125rem', { lineHeight: '2.5rem', letterSpacing: '-0.02em', fontWeight: '700' }],
+        'headline-lg': ['1.5rem', { lineHeight: '2rem', fontWeight: '600' }],
+        'headline-md': ['1.25rem', { lineHeight: '1.75rem', fontWeight: '600' }],
+        'body-lg': ['1rem', { lineHeight: '1.5rem', fontWeight: '400' }],
+        'body-md': ['0.875rem', { lineHeight: '1.25rem', fontWeight: '400' }],
+        'label-caps': ['0.75rem', { lineHeight: '1rem', letterSpacing: '0.05em', fontWeight: '700' }],
+        'label-sm': ['0.6875rem', { lineHeight: '0.875rem', fontWeight: '500' }],
+      },
+      
+      // Shadows
+      boxShadow: {
+        DEFAULT: '0 4px 12px rgba(0, 0, 0, 0.05)',
+        sm: '0 1px 2px rgba(0, 0, 0, 0.05)',
+        lg: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
+        fab: '0 4px 12px rgba(0, 0, 0, 0.15)',
+        'glass-sm': '0 2px 8px rgba(0, 0, 0, 0.08)',
+      },
+      
+      // Transition
+      transitionDuration: {
+        DEFAULT: '200ms',
+      },
+      transitionTimingFunction: {
+        DEFAULT: 'cubic-bezier(0.2, 0.8, 0.2, 1)',
+      },
+      
+      // Z-index
+      zIndex: {
+        fab: '1000',
+        navbar: '50',
+      },
+      
+      // Width and height for specific elements
+      width: {
+        'nav-desktop': '16rem',  // 64px * 4 = 256px, but using 16rem (256px)
+        'sidebar': '64px',
+      },
+      
+      // Animation
+      animation: {
+        spin: 'spin 1s linear infinite',
+      },
+    },
+  },
+  plugins: [
+    require('@tailwindcss/forms'),
+    require('@tailwindcss/container-queries'),
+  ],
+}

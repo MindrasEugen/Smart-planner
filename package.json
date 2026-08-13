@@ -1,0 +1,49 @@
+{
+  "name": "agenda-intelligente",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "lint": "eslint . --ext js,jsx --report-unused-disable-directives --max-warnings 100",
+    "preview": "vite preview",
+    "test": "cross-env NODE_OPTIONS=--no-experimental-webstorage vitest run",
+    "test:watch": "cross-env NODE_OPTIONS=--no-experimental-webstorage vitest",
+    "icons": "node scripts/generate-icons.mjs public",
+    "icons:verify": "node scripts/verify-icons.mjs dist"
+  },
+  "dependencies": {
+    "@mindraseugen/utility-kit": "^1.0.0",
+    "date-fns": "^2.30.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-router-dom": "^6.20.0",
+    "uuid": "^9.0.0",
+    "zustand": "^4.4.7"
+  },
+  "devDependencies": {
+    "@tailwindcss/container-queries": "^0.1.1",
+    "@tailwindcss/forms": "^0.5.11",
+    "@tailwindcss/postcss": "^4.3.3",
+    "@vitejs/plugin-react": "^4.2.1",
+    "autoprefixer": "^10.5.4",
+    "cross-env": "^10.1.0",
+    "eslint": "^8.55.0",
+    "eslint-plugin-jsx-a11y": "^6.8.0",
+    "eslint-plugin-react": "^7.33.2",
+    "eslint-plugin-react-hooks": "^4.6.0",
+    "jsdom": "^30.0.1",
+    "postcss": "^8.5.26",
+    "sass": "^1.77.8",
+    "tailwindcss": "^4.3.3",
+    "vite": "^5.0.8",
+    "vite-plugin-pwa": "^0.17.0",
+    "vitest": "^4.1.10",
+    "workbox-expiration": "^7.0.0",
+    "workbox-precaching": "^7.0.0",
+    "workbox-routing": "^7.0.0",
+    "workbox-strategies": "^7.0.0",
+    "workbox-window": "^7.0.0"
+  }
+}
