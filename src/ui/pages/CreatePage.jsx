@@ -35,19 +35,20 @@ export default function CreatePage({ mode }) {
   }
 
   return (
-    // Come le altre pagine: senza il contenitore lg:overflow-y-auto un form
-    // più alto del viewport resta bloccato (main ha lg:overflow-visible,
-    // nessun antenato scrolla) e i campi/pulsanti oltre il fondo sono
-    // irraggiungibili su desktop.
+    // Come le altre pagine: il contenitore desktop usa lg:flex-1 + lg:overflow-y-auto
+    // per scrollare un form più alto del viewport (main ha lg:overflow-visible,
+    // nessun antenato scrolla altrimenti) — ma lg:flex-1 non ha alcun effetto
+    // senza un genitore flex: per questo la root qui sotto ha anche lg:flex
+    // lg:flex-col (bug reale trovato in produzione il 2026-08-14, vedi DS-07).
     // NB: niente max-w-3xl qui — in questo progetto `--spacing-3xl: 64px` è
     // un token di spaziatura custom, e max-w-3xl lo risolve come max-width
     // (64px!) invece dei classici 48rem, comprimendo il form a un filo
     // invisibile. Stesso identico contenitore di tutte le altre pagine.
-    <div className="px-margin-mobile lg:px-xl py-lg lg:py-xl h-full">
+    <div className="px-margin-mobile lg:px-xl py-lg lg:py-xl h-full lg:flex lg:flex-col">
       <div className="lg:hidden">
         <FadeIn>{content}</FadeIn>
       </div>
-      <div className="hidden lg:block lg:flex-1 lg:overflow-y-auto lg:custom-scrollbar">
+      <div className="hidden lg:block lg:flex-1 lg:min-h-0 lg:overflow-y-auto lg:custom-scrollbar">
         <FadeIn>{content}</FadeIn>
       </div>
     </div>

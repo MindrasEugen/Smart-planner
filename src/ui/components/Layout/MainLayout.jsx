@@ -49,7 +49,7 @@ export default function MainLayout({ children }) {
             permanentemente coperto anche scrollando fino in fondo. */}
         <main
           id="main-content"
-          className="flex-1 pt-16 lg:pt-0 lg:mt-16 pb-48 lg:pb-0 overflow-y-auto lg:overflow-visible"
+          className="flex-1 lg:min-h-0 pt-16 lg:pt-0 lg:mt-16 pb-48 lg:pb-0 overflow-y-auto lg:overflow-visible"
         >
           <div className="h-full min-h-full">
             {children || <Outlet />}

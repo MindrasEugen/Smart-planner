@@ -98,11 +98,6 @@ const UPCOMING_FEATURES = [
     stato: 'In valutazione',
   },
   {
-    titolo: 'Feedback dall’app',
-    descrizione: "Segnala un bug o proponi un'idea direttamente da qui, senza uscire dall'app.",
-    stato: 'In arrivo',
-  },
-  {
     titolo: 'Annunci discreti',
     descrizione:
       "Spazi pubblicitari limitati, pensati per sostenere lo sviluppo senza appesantire l'esperienza.",
@@ -160,7 +155,7 @@ function ComingSoonSettings() {
 
 export default function SettingsPage() {
   return (
-    <div className="px-margin-mobile lg:px-xl py-lg lg:py-0 h-full">
+    <div className="px-margin-mobile lg:px-xl py-lg lg:py-0 h-full lg:flex lg:flex-col">
       {/* Mobile layout */}
       <div className="lg:hidden">
         <FadeIn>
@@ -172,7 +167,7 @@ export default function SettingsPage() {
       </div>
 
       {/* Desktop layout */}
-      <div className="hidden lg:block lg:flex-1 lg:overflow-y-auto lg:custom-scrollbar">
+      <div className="hidden lg:block lg:flex-1 lg:min-h-0 lg:overflow-y-auto lg:custom-scrollbar">
         <FadeIn>
           <h1 className="font-headline-lg text-on-surface mb-xl">Impostazioni</h1>
           <NotificationSettings />

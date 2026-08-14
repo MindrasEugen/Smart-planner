@@ -75,14 +75,14 @@ export default function TasksPage() {
   );
 
   return (
-    <div className="px-margin-mobile lg:px-xl py-lg lg:py-xl h-full">
+    <div className="px-margin-mobile lg:px-xl py-lg lg:py-xl h-full lg:flex lg:flex-col">
       {/* Mobile layout */}
       <div className="lg:hidden">
         <FadeIn>{content}</FadeIn>
       </div>
 
       {/* Desktop layout */}
-      <div className="hidden lg:block lg:flex-1 lg:overflow-y-auto lg:custom-scrollbar">
+      <div className="hidden lg:block lg:flex-1 lg:min-h-0 lg:overflow-y-auto lg:custom-scrollbar">
         <FadeIn>{content}</FadeIn>
       </div>
     </div>

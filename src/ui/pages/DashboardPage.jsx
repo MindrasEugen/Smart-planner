@@ -55,7 +55,7 @@ export default function DashboardPage() {
     // hanno un <h1> il cui margin-bottom crea uno stacco visivo dal
     // DesktopTopAppBar; Dashboard non ha un <h1> desktop, quindi senza
     // padding proprio le card iniziano incollate al bordo della top bar.
-    <div className="px-margin-mobile lg:px-xl pt-6 lg:pt-xl pb-8 lg:pb-0 h-full">
+    <div className="px-margin-mobile lg:px-xl pt-6 lg:pt-xl pb-8 lg:pb-0 h-full lg:flex lg:flex-col">
       {/* Mobile: layout a colonna singola */}
       <FadeIn>
         <div className="lg:hidden space-y-xl">
@@ -68,7 +68,7 @@ export default function DashboardPage() {
 
       {/* Desktop: layout a 3 colonne */}
       <FadeIn>
-        <div className="hidden lg:flex lg:flex-col lg:flex-1 lg:overflow-y-auto lg:custom-scrollbar">
+        <div className="hidden lg:flex lg:flex-col lg:flex-1 lg:min-h-0 lg:overflow-y-auto lg:custom-scrollbar">
           <div className="lg:grid lg:grid-cols-12 gap-lg h-full max-w-7xl mx-auto w-full">
             {/* Colonna sinistra: Stats */}
             <div className="lg:col-span-3 flex flex-col gap-xl">
