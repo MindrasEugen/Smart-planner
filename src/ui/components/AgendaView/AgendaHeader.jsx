@@ -39,9 +39,17 @@ export default function AgendaHeader({
           tutti lg), non md: altrimenti tra 768 e 1023px questo header passa
           alla riga singola desktop mentre il resto della pagina è ancora in
           modalità mobile. */}
-      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-lg gap-md">
-        <div className="flex flex-wrap items-center gap-md">
-          <h1 className="font-headline-md text-on-surface mb-0">
+      <div className="flex flex-col lg:flex-row justify-between items-center mb-lg gap-md">
+        {/* w-full lg:w-auto: senza una larghezza esplicita su mobile, il
+            genitore items-start (necessario per non stirare i due gruppi in
+            altezza) lascia questo blocco largo quanto il suo contenuto —
+            flex-wrap non ha nulla su cui avvolgersi e la riga (data lunga +
+            2 pulsanti) eccede il viewport invece di andare a capo.
+            justify-center: centra il gruppo (data + Oggi + Scegli data)
+            nella riga a piena larghezza invece di lasciarlo allineato a
+            sinistra. */}
+        <div className="flex flex-wrap items-center justify-center lg:justify-start gap-md w-full lg:w-auto">
+          <h1 className="font-headline-md text-on-surface mb-0 text-center">
             {formatDate(currentDate)}
           </h1>
           <button
@@ -79,24 +87,29 @@ export default function AgendaHeader({
           </div>
         </div>
         
-        <div className="flex items-center gap-sm">
-          <button
-            onClick={() => onDateChange(new Date(currentDate.getTime() - 86400000))}
-            className="w-8 h-8 rounded-full flex items-center justify-center bg-surface-container-high hover:bg-surface-variant border border-outline-variant transition-colors"
-            title="Giorno precedente"
-          >
-            <span className="material-symbols-outlined text-[18px] text-on-surface-variant">chevron_left</span>
-          </button>
-          <button
-            onClick={() => onDateChange(new Date(currentDate.getTime() + 86400000))}
-            className="w-8 h-8 rounded-full flex items-center justify-center bg-surface-container-high hover:bg-surface-variant border border-outline-variant transition-colors"
-            title="Giorno successivo"
-          >
-            <span className="material-symbols-outlined text-[18px] text-on-surface-variant">chevron_right</span>
-          </button>
+        {/* Sotto lg: frecce giorno prec./succ. su una riga, "Nuovo Elemento"
+            sulla riga sotto (a larghezza piena) — da lg in su restano
+            affiancati su un'unica riga, c'è spazio a sufficienza. */}
+        <div className="flex flex-col lg:flex-row items-stretch lg:items-center gap-sm">
+          <div className="flex items-center justify-center gap-sm">
+            <button
+              onClick={() => onDateChange(new Date(currentDate.getTime() - 86400000))}
+              className="w-8 h-8 rounded-full flex items-center justify-center bg-surface-container-high hover:bg-surface-variant border border-outline-variant transition-colors"
+              title="Giorno precedente"
+            >
+              <span className="material-symbols-outlined text-[18px] text-on-surface-variant">chevron_left</span>
+            </button>
+            <button
+              onClick={() => onDateChange(new Date(currentDate.getTime() + 86400000))}
+              className="w-8 h-8 rounded-full flex items-center justify-center bg-surface-container-high hover:bg-surface-variant border border-outline-variant transition-colors"
+              title="Giorno successivo"
+            >
+              <span className="material-symbols-outlined text-[18px] text-on-surface-variant">chevron_right</span>
+            </button>
+          </div>
           <Link
             to="/create/task"
-            className="no-underline flex items-center gap-1 px-4 py-1.5 bg-primary hover:bg-primary-container rounded-xl text-on-primary font-label-sm transition-colors"
+            className="no-underline flex items-center justify-center lg:justify-start gap-1 px-4 py-1.5 bg-primary hover:bg-primary-container rounded-xl text-on-primary font-label-sm transition-colors"
           >
             <span className="material-symbols-outlined text-[16px]">add</span>
             Nuovo Elemento

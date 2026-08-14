@@ -15,7 +15,7 @@ const navItems = [
 export default function BottomNav() {
   return (
     <nav
-      className="lg:hidden bg-surface/80 dark:bg-surface-dim/80 backdrop-blur-md fixed bottom-0 w-full z-50 border-t border-outline-variant h-16"
+      className="lg:hidden bg-surface dark:bg-surface-dim fixed bottom-0 w-full z-50 border-t border-outline-variant h-16"
       style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
     >
       <div className="flex justify-around items-center w-full px-4 h-full">

@@ -1,17 +1,24 @@
 # PLAN — Agenda Intelligente con Notifiche Persistenti
 
-> **Stato:** ✅ **PIANO COMPLETATO AL 100% (92/92, 2026-08-13)**. Percorso della giornata: la verifica statica (build+grep) di DS-01/UX-NEW aveva dato esito positivo, ma il rendering in browser era rotto (vedi [DS-03](#-debito-tecnico-aperto)); corretto, poi notifiche/filtri/layout/accessibilità verificati manualmente uno per uno (vedi [QA](#-task-testing-priorità-alta--riaperti-dopo-laudit-chiusi-il-2026-08-13)), infine chiuso tutto il debito tecnico (DEBT-01..06), la struttura (STR-01..04), SEO (meta tag + JSON-LD) e PWA-03 (banner "Installa App")
-> **Ultimo aggiornamento:** 2026-08-13
+> **Stato:** ✅ **Core plan chiuso al 100% (92/92, 2026-08-13)** — invariato. In più, dal 2026-08-14 è
+> aperta una **fase di roadmap separata** (vedi sotto) con lavoro reale in corso.
+> **Ultimo aggiornamento:** 2026-08-14
 >
-> 🔭 **Il progetto non è considerato definitivamente chiuso**: dalla sessione di brainstorming del
-> 2026-08-14 (vedi `agenda-intelligente-roadmap-handoff.md`) è stata aggiunta una **nuova fase di
-> roadmap, 8 task `ROAD-01..08`** (sezione [🗺️ Roadmap — Prossimi Sviluppi](#️-roadmap--prossimi-sviluppi-handoff-2026-08-14)),
-> tutti ancora ⬜ TODO — non conteggiati nel 92/92 core plan, che resta chiuso. Include, tra l'altro,
-> la formalizzazione di quella che prima era solo un'intenzione non tracciata: la **quick add AI**
-> (creazione task da linguaggio naturale — l'utente scrive/detta una frase e l'AI pre-compila
-> titolo/data/ora/importanza nel form), ora **ROAD-06**, ancora solo scaffolding UI/prompt/schema,
-> senza backend né chiave API (serve un proxy per non esporla lato client, dato che oggi l'app è
-> puramente client-side).
+> 🗺️ **Roadmap** (sezione [🗺️ Roadmap — Prossimi Sviluppi](#️-roadmap--prossimi-sviluppi-handoff-2026-08-14)):
+> **ROAD-01/02/03 chiusi** (deploy Static Site su Render, sezione "Prossimamente", form feedback →
+> GitHub Issues) — Priorità 1 completa. ROAD-04..08 (Priorità 2/3: AdSense, quick add AI, profili
+> utente) ancora ⬜ TODO, volutamente in attesa (dipendono da account/DB esterni). Nessuna voce di
+> roadmap è conteggiata nel 92/92 core plan.
+>
+> 🐛 **Sei bug reali trovati e corretti il 2026-08-14** dopo il deploy (DS-07..DS-12: scroll
+> verticale/orizzontale rotti su mobile reale, pagina bianca dopo deploy, layout Agenda) — vedi
+> [Debito Tecnico](#-debito-tecnico-aperto) e il changelog dello stesso giorno. **Tutti verificati
+> su emulatore Android reale**, non solo browser desktop. **Non ancora pubblicati**: le modifiche
+> restano locali, non committate, finché non richiesto esplicitamente.
+>
+> 🔭 La **quick add AI** (creazione task da linguaggio naturale) è ora formalizzata come **ROAD-06**
+> (scaffolding UI/prompt/schema, senza backend né chiave API — serve un proxy per non esporla lato
+> client, dato che l'app è puramente client-side).
 > **Notifiche:** ✅ Ripianificazione, permessi, Service Worker in build e recupero all'apertura — **RIPARATI** | ✅ Notifica in-app e toast di fallback **verificati a mano in browser (QA-04, QA-11)** | ✅ Service Worker attivo confermato sia in dev sia in build di produzione (**DEBT-05 chiuso**)
 > **Filtri:** ✅ Criteri spostati nello store Zustand — **RIPARATI e verificati a mano in browser (QA-07)**
 > **Accessibilità:** ✅ QA-09 verificato (2026-08-13) — trovato e risolto un **bug critico** in `ConfirmDialog` (A11Y-06): il dialog di conferma non si chiudeva mai davvero (Annulla/Escape/Conferma), lasciando un overlay invisibile che bloccava tutti i click sull'intera app finché non si ricaricava la pagina. Risolti anche dropdown non chiudibili da tastiera (A11Y-07) e un `aria-hidden` errato che nascondeva il dialog stesso agli screen reader (A11Y-08)
@@ -486,6 +493,9 @@ npm run icons:verify   # valida i file in dist/
 | **DS-07** | **Le pagine desktop non scrollavano mai, a prescindere dal contenuto** — ogni pagina avvolge il proprio contenuto desktop in un div `lg:flex-1 lg:overflow-y-auto`, ma il suo genitore (il contenitore radice della pagina, `h-full` senza `flex`) non era un flex container: `flex-1` non ha alcun effetto su un figlio il cui genitore non è `display:flex`, quindi il div si auto-dimensionava sul contenuto e non c'era mai un reale overflow da scrollare (`scrollHeight === clientHeight` sempre). A monte, `<main>` in `MainLayout.jsx` ha `lg:overflow-visible`: per specifica CSS un flex item con `overflow:visible` ha un'altezza minima automatica pari al **min-content** (non 0), quindi `<main>` si espandeva oltre il viewport per contenere tutto il contenuto della pagina, propagando l'altezza sbagliata a tutta la catena `h-full` sottostante. Bug presente su **tutte** le pagine (Dashboard/Agenda/Tasks/Filters/Alerts/Settings/Create), mai emerso perché il contenuto era sempre stato abbastanza corto da stare nel viewport — scoperto dall'utente il 2026-08-14 dopo l'aggiunta delle nuove sezioni di Settings (ROAD-02/03), che hanno reso il contenuto abbastanza alto da esporlo | UI ENGINE | ✅ **DONE (2026-08-14)** | **HIGH** | Aggiunto `lg:min-h-0` a `<main>` in `MainLayout.jsx` (permette all'elemento di restringersi sotto il suo min-content pur restando `overflow-visible`); aggiunto `lg:flex lg:flex-col` al contenitore radice di tutte le 7 pagine e `lg:min-h-0` al loro div `lg:flex-1 lg:overflow-y-auto` (permette a quel div di restringersi al posto di crescere con il contenuto). Verificato in browser reale a viewport ridotto (650px di altezza): `Settings` — prima `scrollHeight === clientHeight` (1069 === 1069, nessuno scroll possibile) nonostante il contenuto eccedesse la viewport; dopo, `main.clientHeight` correttamente vincolato a 586px, `canScroll: true`, scroll reale con la rotellina del mouse fino a `scrollTop: 482` (quasi il massimo). Nessuna regressione su Dashboard/Agenda (screenshot + console puliti). `npm run lint` 0 errori/39 warning, `npm run build` OK |
 | **DS-08** | **Pagina bianca per un utente con una tab già aperta subito dopo un nuovo deploy** — `registerType: 'autoUpdate'` + `self.skipWaiting()` incondizionato su `install` in `src/sw.js` fanno sì che il nuovo Service Worker si attivi quasi subito e forzi un `location.reload()`; se in quel momento un `import()` dinamico di una pagina lazy sta ancora puntando a un chunk con hash della build precedente (già sparito da Render, che sostituisce l'intera `dist`), la fetch fallisce 404, Vite emette `vite:preloadError` mai gestito, e senza `ErrorBoundary` l'albero React crasha silenziosamente. Segnalato dall'utente due volte di fila subito dopo due deploy consecutivi, mai riprodotto nei tab di verifica (sempre senza SW precedente) — spiegazione architetturale, non confermata con un secondo deploy live | ARCHITECT | ✅ **DONE (2026-08-14)** | **HIGH** | Aggiunto in `main.jsx` il listener ufficiale di Vite per questo scenario, `vite:preloadError` → `location.reload()`, con guard `sessionStorage` anti-loop e reset 5s dopo il mount riuscito. `npm run lint` 0 errori/39 warning, `npm run build` OK. **Da confermare al prossimo redeploy reale** (non verificabile senza una tab già aperta sulla build precedente al momento del deploy) |
 | **DS-09** | **Scroll orizzontale su desktop in due punti** — (1) `UpcomingCards.jsx` (sezione "Scadenze Imminenti", colonna destra della dashboard desktop): scritto come carosello mobile con card a larghezza fissa `min-w-[280px]` dentro `flex overflow-x-auto snap-x`, ma renderizzato invariato anche nella colonna desktop (~280-320px, `lg:col-span-3` su 12): troppo stretta perfino per una singola card, scrollbar orizzontale con testo tagliato a metà — riprodotto dal vivo su Render (`scrollWidth` 1176px vs `clientWidth` 284px). (2) `ViewToggle.jsx` (Giornaliera/Settimanale/Prossime in Agenda): `overflow-x-auto` aggiunto deliberatamente in una sessione precedente perché su schermi stretti la riga eccedeva il contenitore, tagliata silenziosamente dall'`overflow-hidden` della shell radice in `MainLayout.jsx` — non riprodotto dal vivo in questa sessione (resize del viewport del browser di automazione non funzionante), ma il codice stesso documentava il problema in un commento. Nuova regola esplicita del progetto: mai scroll orizzontale su desktop, gli elementi si ridimensionano o si impilano; su mobile solo scroll verticale | UI ENGINE | ✅ **DONE (2026-08-14)** | **HIGH** | **UpcomingCards**: da `lg:` in su il contenitore passa da riga (`flex`) a colonna (`lg:flex-col`), scroll orizzontale disattivato (`lg:overflow-x-visible lg:snap-none`), le card passano da `min-w-[280px]` fisso a `lg:w-full lg:min-w-0` (il carosello con snap/swipe resta invariato sotto `lg:`, dove ha senso). **ViewToggle**: rimosso `overflow-x-auto`; i 3 pulsanti diventano `flex-1 min-w-0` (si dividono lo spazio disponibile e si restringono insieme, mai overflow) con l'etichetta in `truncate` come rete di sicurezza estrema; l'`overflow-hidden` della shell radice lasciato invariato (serve all'architettura di scroll dell'intera app, DS-07/DS-08 — non è la causa da rimuovere, la vera causa era il componente che eccedeva). Cercati altri `overflow-x-auto`/`overflow-x-scroll` in tutto `src/`: nessun altro caso (solo `body{overflow-x:hidden}` in `global.css`, safety net globale legittimo, invariato). **Verificato in browser reale** (3 task creati via UI, uno con titolo di 89 caratteri, viewport 1528px): sezione desktop "Scadenze Imminenti" → `containerScrollWidth === containerClientWidth` (284px, nessun overflow), `flexDirection: column`, card impilate verticalmente (top 128px e 390px, non affiancate), titolo lungo interamente visibile su più righe, screenshot di conferma. **ViewToggle**: contenitore forzato via JS a 1024/600/375/320/280px → `scrollWidth === clientWidth` a **ogni** larghezza testata, etichette sempre leggibili per intero senza troncamento anche al limite di 280px. `npm run lint` 0 errori/39 warning, `npm run build` OK |
+| **DS-10** | **Su mobile reale il footer/FAB copriva permanentemente il fondo del contenuto scrollabile, anche a scroll ultimato** — causa reale (diagnosticata e risolta con un emulatore Android + Chrome DevTools Protocol via `adb`, non con l'automazione desktop): il wrapper `<div className="h-full min-h-full">` subito dentro `<main>` in `MainLayout.jsx` aveva `h-full` (height:100%, un'altezza **fissa**). Quando il contenuto reale di una pagina supera quell'altezza fissa, trabocca solo **visivamente** (`overflow: visible`, nessun contenitore interno ha un proprio scroll) senza spostare il flusso: `pb-48` su `<main>` veniva quindi calcolato rispetto all'altezza di *layout* del wrapper (mai più alta del viewport), non rispetto a dove il contenuto finiva davvero — l'ultimo testo di ogni pagina lunga restava a ~25px dal fondo invece dei 192px attesi. Il tentativo iniziale di sostituire `pb-48` con uno spacer reale (`<div className="h-48" />` dopo il wrapper) non ha funzionato per lo stesso motivo: anche lo spacer, come sibling del wrapper a altezza fissa, veniva posizionato in base all'altezza di *layout* del wrapper, non a quella del suo contenuto traboccato. `h-dvh` (invece di `h-screen`) in due punti resta comunque applicato come miglioramento corretto ma separato (mismatch reale tra `100vh` e l'altezza visibile sui browser mobili con barra indirizzi dinamica) — non era la causa di questo bug specifico | UI ENGINE | ✅ **DONE (2026-08-14), verificata su device reale** | **HIGH** | Wrapper cambiato da `h-full` a **`min-h-full lg:h-full`**: sotto `lg` (`min-height:100%`) il div può crescere oltre il viewport quando il contenuto lo richiede, trascinando `pb-48` di `<main>` nel punto corretto; da `lg` in su torna `h-full` (altezza vincolata) perché **DS-11** (rifacimento layout dashboard/pagine desktop, stesso giorno) dipende da questa stessa catena `h-full`/`min-h-0` per il proprio scroll interno (`lg:overflow-y-auto`) — con solo `min-h-full` su desktop quello scroll smetteva di funzionare (regressione trovata e corretta nello stesso giro di verifica). **Verificato con emulatore Android reale (Pixel 6, Chrome) via CDP** (`adb forward tcp:9222`, misure `getBoundingClientRect()`/`scrollHeight` dirette + screenshot): prima del fix, testo finale a 25px dalla BottomNav (sovrapposto); dopo, gap di ~177px, sezione "Prossimamente" interamente visibile, confermato anche visivamente. Desktop rivereificato dopo il fix: `canScroll: true` su Settings, nessuna regressione su Dashboard (screenshot + console puliti). `npm run lint` 0 errori/39 warning, `npm run build` OK |
+| **DS-11** | **Contenuto tagliato orizzontalmente in Agenda/Filtri su mobile reale, nessuno scroll** — `AgendaHeader.jsx`: gruppo sinistro (data + bottoni "Oggi"/"Scegli data") con `flex-wrap` dentro un genitore `items-start` (necessario per non stirare i due gruppi in altezza), che però lascia i figli larghi quanto il contenuto invece che a piena larghezza — `flex-wrap` senza una larghezza di contenitore su cui avvolgersi non va mai a capo, eccede il viewport, `body{overflow-x:hidden}` taglia il bordo destro. Confermato dall'utente non essere zoom (pinch-zoom non risolve) e isolato ad Agenda (non la shell globale) | UI ENGINE | ✅ **DONE (2026-08-14), verificata su device reale** | **HIGH** | Aggiunto `w-full lg:w-auto` al gruppo sinistro in `AgendaHeader.jsx`. `FilterBar`/`FilterDropdown`/`ViewToggle` riesaminati, già corretti (non la causa). **Verificato con emulatore Android reale (Pixel 6, Chrome) via CDP**: `document.documentElement.scrollWidth === clientWidth === innerWidth` (412px, tutti uguali) → **zero overflow orizzontale**. Screenshot di conferma sulla stessa identica schermata del bug originale (Agenda, filtri aperti): "Tutti"/"Reimposta"/ViewToggle ora interamente contenuti nello schermo, bordi arrotondati visibili su tutti i lati (prima tagliati di netto a destra) |
+| **DS-12** | **Overflow orizzontale residuo dopo DS-11, e icone `ViewToggle` non nascondibili** — (1) il wrapper radice in `MainLayout.jsx` (`flex-1 lg:ml-64 flex flex-col h-dvh relative`) è un flex item della shell radice senza `min-w-0`: si rifiutava di restringersi sotto la larghezza minima naturale del contenuto di Agenda (439px misurati contro 412px di viewport reale), tagliato silenziosamente da `overflow-hidden` — stesso pattern di ViewToggle/AgendaHeader ma non ancora applicato alla radice. (2) `hidden sm:inline` sull'icona del `ViewToggle` non aveva effetto: il foglio di stile Material Symbols (fuori da ogni `@layer` Tailwind) impone `display:inline-block` con priorità più alta di qualunque utility `@layer`-based. Segnalato dall'utente confrontando gli screenshot ("il lato destro non è centrato"), diagnosticato con emulatore Android + CDP (misure dirette, non screenshot) | UI ENGINE | ✅ **DONE (2026-08-14), verificata su device reale** | **HIGH** | `min-w-0` aggiunto al wrapper radice di `MainLayout.jsx`. `hidden sm:inline` spostato su uno `<span>` che avvolge l'icona invece che sull'icona stessa. Verificato via CDP: `main` esatto a 412.19px, `ViewToggle` simmetrico (392px destro = 20px sinistro), icone assenti dal DOM visibile sotto `sm:`. Screenshot di conferma |
 | ~~DEBT-05~~ | ~~Il Service Worker non si installava mai in `npm run dev`~~ | ARCHITECT | ✅ **DONE (2026-08-13)** | MEDIUM | **Causa reale** (la prima diagnosi era parzialmente sbagliata — vedi nota): in dev `vite-plugin-pwa` sostituisce `self.__WB_MANIFEST` con un array **vuoto** `[]` (non `undefined`), quindi `precacheAndRoute([])` non lancia nulla. Il crash sincrono era nella riga **successiva**: `createHandlerBoundToURL('index.html')` cerca `'index.html'` nella precache e, trovandola vuota, lancia subito `WorkboxError('non-precached-url', ...)` — fa fallire l'intera valutazione dello script del SW, che quindi non si installa mai. Confermato con `import('/dev-sw.js?dev-sw')` diretto dalla console, che riporta l'errore per esteso (invece del generico "script evaluation failed" di `register()`). **Fix:** in `src/sw.js`, `registerRoute(new NavigationRoute(createHandlerBoundToURL('index.html')))` ora gira solo `if (precacheManifest.length > 0)` — in dev viene saltata (non serve comunque, l'offline SPA fallback ha senso solo in produzione), in build resta invariata. **Verificato:** in dev, `navigator.serviceWorker.getRegistrations()` → un SW attivo, `scriptURL: dev-sw.js`; in produzione (`npm run preview`, porta 4174) invariato, un SW attivo, `scriptURL: sw.js`, manifest 24 asset. `npm run build`, `npm run lint` (0 errori/37 warning) e `npm test` (49/49) tutti confermati dopo la modifica |
 
 ---
@@ -679,6 +689,140 @@ npm run test:watch  # modalità watch
 > ⚠️ Le date delle voci precedenti al 2026 sono incoerenti tra loro (il 13 agosto precede il 12)
 > e con le date dei file su disco. Non sono state riscritte per non inventare una cronologia:
 > vanno considerate indicative.
+
+### 2026-08-14 — DS-10/DS-11: due bug mobile reali su dispositivo fisico (screenshot dell'utente)
+
+L'utente ha inviato screenshot dal proprio telefono (non simulazioni), rivelando due problemi mai
+verificati su hardware reale finora (la verifica mobile precedente, QA-08, usava `resize_window`
+dell'automazione browser — scoperto in questa sessione che **non cambia realmente
+`window.innerWidth`**, quindi quella verifica potrebbe non aver mai testato una vera larghezza
+mobile).
+
+**DS-10 — Footer che copre il fondo del contenuto** (screenshot: Settings, "Profili utente
+personali" tagliato dietro alla BottomNav). Prima ipotesi (`h-screen`→`h-dvh`) insufficiente da sola.
+Causa reale, trovata con un **emulatore Android (Pixel 6) pilotato via `adb` + Chrome DevTools
+Protocol** (WebSocket diretto su `ws://localhost:9222/devtools/page/...`, non l'automazione desktop
+usata finora): il wrapper `<div className="h-full min-h-full">` dentro `<main>` aveva `h-full`, che
+fissa un'altezza **esatta** — contenuto più alto del viewport trabocca solo visivamente
+(`overflow:visible`), senza spostare il flusso, per cui `pb-48` veniva calcolato rispetto all'altezza
+di *layout* del wrapper, mai a quella reale del contenuto. Un primo tentativo (spacer reale al posto
+del padding) non ha funzionato per lo stesso motivo — anche uno spacer sibling di un box ad altezza
+fissa si posiziona in base a quell'altezza fissa, non al contenuto traboccato. **Fix**: `h-full` →
+`min-h-full lg:h-full` (cresce col contenuto sotto `lg`, resta vincolato da `lg` in su perché DS-07
+dipende dalla stessa catena per lo scroll interno desktop — regressione trovata e corretta nello
+stesso giro). **Verificato con misure dirette via CDP** (`getBoundingClientRect`, non screenshot):
+prima del fix, testo finale a 25px dalla BottomNav (sovrapposto); dopo, gap di ~177px, "Prossimamente"
+interamente visibile — confermato anche visivamente.
+
+**DS-11 — Contenuto tagliato orizzontalmente, solo in Agenda/Filtri** (screenshot: pulsanti
+Giornaliera/Settimanale/Prossime e box filtro "Tutti" tagliati di netto sul bordo destro, nessuna
+scrollbar). Confermato dall'utente: **non è zoom** (pinch-zoom non risolve, resta tagliato uguale)
+e **solo su Agenda**, non altrove. Trovato in `AgendaHeader.jsx`: il contenitore mobile usa
+`items-start` (necessario per non stirare i due gruppi pulsanti in altezza) — ma su un flex-col,
+`items-start` lascia i figli larghi quanto il loro contenuto invece di stirarli a piena larghezza,
+e il gruppo sinistro (data lunga + pulsante "Oggi" + pulsante "Scegli data") ha `flex-wrap` **senza
+una larghezza di contenitore su cui avvolgersi** — non va mai a capo, eccede il viewport,
+`body{overflow-x:hidden}` taglia silenziosamente il bordo destro anche di FilterBar/ViewToggle
+sottostanti (pur essendo loro stessi corretti). **Fix**: `w-full lg:w-auto` al gruppo sinistro.
+**Verificato con lo stesso emulatore Android**: `document.documentElement.scrollWidth ===
+clientWidth === innerWidth` (412px, tutti uguali) → zero overflow orizzontale; screenshot sulla
+stessa identica schermata del bug originale conferma bordi arrotondati completi su tutti i lati.
+
+Entrambe le diagnosi iniziali (basate solo su ragionamento CSS, senza device reale) erano parzialmente
+o completamente sbagliate — solo l'emulatore + CDP ha permesso di trovare la causa vera. `npm run
+lint` 0 errori/39 warning, `npm run build` OK per entrambi. Nessuna regressione desktop (DS-07
+rivereificato dopo il fix di DS-10).
+
+### 2026-08-14 — DS-12 + rifiniture Agenda: secondo giro di test su emulatore, causa radice trovata
+
+L'utente ha notato, guardando gli screenshot del test precedente, che il lato destro dello schermo
+non era simmetrico al sinistro — un margine visibile a sinistra, quasi nullo a destra. Rifatto il
+test da zero (emulatore con `-wipe-data`, per evitare l'accumulo di tab dei giri precedenti) e
+misurato con CDP invece che a occhio: **il wrapper radice in `MainLayout.jsx`
+(`flex-1 lg:ml-64 flex flex-col h-dvh relative`, il div che contiene `<main>`) era largo 439px
+contro un viewport reale di 412px** — 27px in eccesso, tagliati silenziosamente da
+`overflow-hidden` sulla shell. Causa: è un flex item della shell radice (anch'essa `flex`) senza
+`min-w-0` — con `min-width:auto` di default, si rifiuta di restringersi sotto la larghezza minima
+naturale del proprio contenuto (qui: 439px, dovuta ad Agenda). Stesso pattern già corretto oggi in
+ViewToggle/AgendaHeader, ma non ancora applicato alla radice dell'intero layout. **Fix**: aggiunto
+`min-w-0` al wrapper. Verificato via CDP: `main` torna a 412.19px esatti, `ViewToggle` termina a
+392px, simmetrico ai 20px di margine sinistro.
+
+**DS-12 — le icone del `ViewToggle` restavano visibili nonostante `hidden sm:inline`**: verificato
+via CDP che la classe `hidden` non produceva `display:none` sull'icona nonostante fosse applicata
+correttamente nel DOM. Causa: lo stesso bug di cascata già documentato altrove nel progetto (vedi
+commento storico in `TopAppBar.jsx`) — il foglio di stile di Material Symbols, caricato via `<link>`
+fuori da ogni `@layer` Tailwind, include `display: inline-block` che batte sempre le utility
+`@layer utilities` come `hidden`, indipendentemente dall'ordine nel file. **Fix**: `hidden
+sm:inline` spostato su uno `<span>` che AVVOLGE l'icona, invece di applicarlo direttamente allo
+`<span className="material-symbols-outlined">`. Verificato via CDP (icone non più nel DOM
+visibile sotto `sm:`) e screenshot: "Giornaliera"/"Settimanale"/"Prossime" ora per intero, senza
+ellissi né icone, su un viewport di 412px.
+
+**Rifiniture su richiesta dell'utente, tutte verificate con screenshot sull'emulatore**:
+`AgendaHeader.jsx` — "+ Nuovo Elemento" spostato su una riga propria sotto alle frecce
+giorno prec./succ. (`flex-col` sotto `lg:`, affiancati da `lg:` in su); l'intero gruppo di
+controlli (data, Oggi, Scegli data, frecce, Nuovo Elemento) centrato invece che allineato a
+sinistra (`items-start`→`items-center` sul contenitore, `justify-center` sui due sotto-gruppi);
+titolo data (`<h1>`) centrato anche quando va a capo su due righe (`text-center`). `BottomNav.jsx`
+— trasparenza rimossa del tutto (`bg-surface/95` → `bg-surface` pieno, `backdrop-blur-md` rimosso
+perché non più necessario).
+
+`npm run lint` 0 errori/39 warning, `npm run build` OK per l'intero giro.
+
+### 2026-08-14 — Due rifiniture: BottomNav più opaca, ViewToggle senza icone su schermi stretti
+
+Su richiesta dell'utente: `BottomNav.jsx` da `bg-surface/80` a **`bg-surface/95`** (meno trasparenza,
+meno leggibile il contenuto che scorre sotto durante lo scroll). Verificata solo via lint/build,
+modifica di un solo valore di opacità Tailwind, rischio nullo.
+
+L'utente, guardando gli screenshot dei test DS-11 su emulatore, ha notato che pur senza più overflow
+le etichette "Giornaliera"/"Settimanale" del `ViewToggle` restavano troncate con ellissi
+("Giornali...", "Settima...") a 412px di larghezza — non un bug (nessun taglio, nessun overflow) ma
+comunque non ideale. **Fix**: icona nascosta sotto `sm:` (`hidden sm:inline`), liberando spazio per
+il testo; `truncate` resta come ultima rete di sicurezza. **Non riverificata visivamente**:
+l'ambiente di test (emulatore + Chrome, 9 tab accumulate dopo l'uso prolungato in questa sessione) è
+diventato instabile (pagine bloccate, errori di connessione intermittenti) prima di poter catturare
+uno screenshot di conferma — mi sono fermato invece di insistere con uno strumento che non rispondeva
+più in modo affidabile. Da confermare al prossimo test. `npm run lint` 0 errori/39 warning, `npm run
+build` OK.
+
+### Nota metodologica — verifica mobile su device reale (DS-10, DS-11, DS-12)
+
+Per superare il limite di `resize_window` dell'automazione browser (non modifica realmente
+`window.innerWidth`), usato un emulatore Android reale (AVD `Pixel_6`) pilotato da riga di comando
+via `adb` (screenshot, tap/swipe), con `npm run dev -- --host` per renderlo raggiungibile
+(`10.0.2.2` = alias dell'host). La verifica decisiva è stata via **Chrome DevTools Protocol**
+(`adb forward tcp:9222 localabstract:chrome_devtools_remote` + un piccolo script Node con
+`Runtime.evaluate`): misure DOM esatte (`getBoundingClientRect`, `scrollWidth`) invece di stime a
+occhio dagli screenshot — l'unico modo per trovare le vere cause di DS-10/DS-11/DS-12, dato che le
+prime ipotesi basate solo su ragionamento CSS erano parzialmente o completamente sbagliate.
+
+### 2026-08-14 — Terzo episodio di pagina bianca dopo deploy: DS-08 escluso, ipotesi non confermata
+
+Terzo report dell'utente, stesso sintomo ("pagina non carica, rimane bianca") dopo l'ultimo deploy
+(DS-09). Diagnosi più approfondita rispetto a DS-08: **tab nuova appena aperta** (non una tab
+rimasta su una build precedente) — esclude la race SW/`vite:preloadError` di **DS-08**, che infatti
+era già live su questo stesso deploy senza effetto. Caricata dopo **~1 minuto**, poi normale.
+Verificato **Static Site** confermato su Render (non Web Service, escluso lo spin-down/cold-start
+che ROAD-01 doveva prevenire). Build di produzione locale (`npm run build` + `npm run preview`, non
+solo dev) carica istantaneamente e senza errori su tab fresca; asset live su Render tutti
+raggiungibili (200) e coerenti tra loro (stesso `index.html`/JS/CSS ogni volta). **Non riprodotto
+dal vivo**, quindi nessuna prova diretta della causa.
+
+**Ipotesi più plausibile rimasta** (non confermata): `index.html` carica Google Fonts (Material
+Symbols + Inter) con `<link rel="stylesheet">` **bloccanti il rendering**, senza `preconnect` — se
+la connessione verso `fonts.googleapis.com`/`fonts.gstatic.com` fosse stata lenta in quel momento
+(rete, DNS), il browser resta bloccato prima di dipingere qualunque cosa finché non risolve o va in
+timeout. Icone Material Symbols non deferibili senza rischio di flash of unstyled content (mostrano
+il nome testuale grezzo, es. "add", finché il font non carica), quindi non reso asincrono — solo
+aggiunto `rel="preconnect"` verso entrambi i domini in `index.html`, mitigazione standard consigliata
+da Google, a rischio pressoché nullo indipendentemente dal fatto che sia davvero la causa. `npm run
+build` OK.
+
+**Se ricapita**: l'unico modo per avere una risposta certa è aprire DevTools → Network nel momento
+esatto dell'incidente e vedere quale richiesta resta "pending" — impossibile da remoto senza quella
+traccia dal vivo.
 
 ### 2026-08-14 — DS-09 chiuso: scroll orizzontale su desktop (Scadenze Imminenti + ViewToggle)
 

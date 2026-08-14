@@ -17,6 +17,14 @@
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     
+    <!-- Preconnect: instaura in anticipo DNS/TLS verso i domini dei font,
+         così i <link rel="stylesheet"> sotto (bloccanti il rendering, servono
+         a evitare che le icone Material Symbols compaiano come testo grezzo
+         prima che il font carichi) partono più velocemente invece di aprire
+         la connessione da zero al momento della richiesta. -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+
     <!-- Material Symbols -->
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
     <!-- Inter Font -->

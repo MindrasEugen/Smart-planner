@@ -17,9 +17,21 @@ export default function ViewToggle({ currentView, onViewChange }) {
     <div className="bg-surface-container-low rounded-xl p-1 mb-lg">
       {/* Ogni pulsante è flex-1: si restringe per condividere lo spazio
           disponibile invece di eccedere il contenitore (mai scroll
-          orizzontale). L'etichetta ha `truncate` come rete di sicurezza
-          sui viewport più stretti, così al limite si accorcia con ellissi
-          invece di spingere il bordo destro fuori dal layout. */}
+          orizzontale). L'icona è nascosta sotto sm: (~640px) per lasciare
+          più spazio al testo: su un telefono stretto (~412px) le 3
+          etichette italiane con icona troncavano comunque con ellissi
+          ("Giornali...", "Settima...") pur restando dentro lo schermo —
+          verificato su emulatore Android reale il 2026-08-14. `truncate`
+          resta come ultima rete di sicurezza sui viewport ancora più
+          stretti.
+          `hidden sm:inline` va sul wrapper, MAI direttamente sullo <span
+          className="material-symbols-outlined">: quel foglio di stile
+          (caricato via <link>, fuori da ogni @layer Tailwind) impone
+          `display: inline-block` con priorità più alta di qualunque
+          utility Tailwind `@layer`-based — `hidden` non riesce a
+          sovrascriverlo sull'icona stessa (stesso bug di cascata già
+          risolto altrove nel progetto, qui riscoperto sull'icona invece
+          che su colori/margini). */}
       <div className="flex gap-sm">
         {viewOptions.map((option) => (
           <button
@@ -31,7 +43,9 @@ export default function ViewToggle({ currentView, onViewChange }) {
                 : 'bg-surface-container-lowest text-on-surface-variant hover:bg-surface-variant border border-outline-variant'
             }`}
           >
-            <span className="material-symbols-outlined text-[16px] shrink-0">{option.icon}</span>
+            <span className="hidden sm:inline-flex shrink-0">
+              <span className="material-symbols-outlined text-[16px]">{option.icon}</span>
+            </span>
             <span className="truncate">{option.label}</span>
           </button>
         ))}
