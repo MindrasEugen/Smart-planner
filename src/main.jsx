@@ -13,6 +13,18 @@ import './styles/global.css';
 // Material Symbols e Inter font sono caricati tramite CDN in index.html
 // Tema custom basato su Google Stitch Cognitive Protocol Design System
 
+// Un import() dinamico (le pagine sono lazy-loaded) fallisce con un chunk
+// il cui hash non esiste più sul server subito dopo un nuovo deploy, se
+// questa tab era rimasta aperta sulla build precedente: senza gestirlo,
+// React non ha un ErrorBoundary e l'albero crasha con una pagina bianca.
+// Vite emette 'vite:preloadError' in questo caso: un solo reload basta,
+// perché scarica il nuovo index.html con i riferimenti ai chunk aggiornati.
+window.addEventListener('vite:preloadError', () => {
+  if (sessionStorage.getItem('vite-preload-error-reloaded')) return;
+  sessionStorage.setItem('vite-preload-error-reloaded', '1');
+  window.location.reload();
+});
+
 // UNICO punto di registrazione del Service Worker (src/sw.js).
 // Va prima delle notifiche: queste attendono la registrazione per poter
 // mostrare le notifiche di sistema.
@@ -36,6 +48,11 @@ ReactDOM.createRoot(document.getElementById('root')).render(
     </BrowserRouter>
   </React.StrictMode>
 );
+
+// Riabilita il reload automatico per un futuro (diverso) deploy: senza questo,
+// il guard sessionStorage sopra bloccherebbe il reload di un secondo incidente
+// nella stessa sessione del browser.
+setTimeout(() => sessionStorage.removeItem('vite-preload-error-reloaded'), 5000);
 
 // Pulizia al reload (opzionale)
 if (import.meta.hot) {
