@@ -74,7 +74,7 @@ export default function MobileSideNav({ isOpen, onClose }) {
   return (
     <>
       <div
-        className="fixed inset-0 bg-black/50 z-40 backdrop-blur-sm"
+        className="fixed inset-0 bg-black/50 z-modal backdrop-blur-sm"
         onClick={onClose}
         onKeyDown={(e) => {
           if (e.key === 'Enter' || e.key === ' ') {
@@ -89,7 +89,7 @@ export default function MobileSideNav({ isOpen, onClose }) {
       <div
         id={navId}
         ref={menuRef}
-        className="fixed left-0 top-0 h-full w-64 bg-surface dark:bg-surface-dim z-50 shadow-xl transform transition-transform duration-300 ease-in-out translate-x-0"
+        className="fixed left-0 top-0 h-full w-64 bg-surface dark:bg-surface-dim z-modal shadow-xl transform transition-transform duration-300 ease-in-out translate-x-0"
         aria-label="Menu principale"
         role="dialog"
         aria-modal="true"

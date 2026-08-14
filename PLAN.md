@@ -13,8 +13,11 @@
 > 🐛 **Sei bug reali trovati e corretti il 2026-08-14** dopo il deploy (DS-07..DS-12: scroll
 > verticale/orizzontale rotti su mobile reale, pagina bianca dopo deploy, layout Agenda) — vedi
 > [Debito Tecnico](#-debito-tecnico-aperto) e il changelog dello stesso giorno. **Tutti verificati
-> su emulatore Android reale**, non solo browser desktop. **Non ancora pubblicati**: le modifiche
-> restano locali, non committate, finché non richiesto esplicitamente.
+> su emulatore Android reale**, non solo browser desktop. **Pubblicati**: commit e deploy su Render
+> eseguiti dall'utente il 2026-08-14.
+>
+> 📝 **Da testare nella prossima sessione** (segnalato dall'utente il 2026-08-14, non urgente):
+> vedi [Note per la prossima sessione](#-note-per-la-prossima-sessione-2026-08-14).
 >
 > 🔭 La **quick add AI** (creazione task da linguaggio naturale) è ora formalizzata come **ROAD-06**
 > (scaffolding UI/prompt/schema, senza backend né chiave API — serve un proxy per non esporla lato
@@ -544,6 +547,42 @@ npm run icons:verify   # valida i file in dist/
 (ROAD-04 + ROAD-05) come blocco unico quando si è pronti a richiedere l'account AdSense, poi
 Priorità 3 (ROAD-06, ROAD-07) solo quando si deciderà di introdurre un database reale (es. Supabase,
 già in uso per ButlerAI).
+
+---
+
+## 📝 Note per la prossima sessione (2026-08-14)
+
+Segnalate dall'utente il 2026-08-14, esplicitamente **non urgenti** — da riprendere e testare nella
+prossima sessione, non nell'immediato.
+
+### 1. Overlap z-index: `MobileSideNav` va sotto la `BottomNav`
+
+Il drawer laterale mobile (hamburger menu) copre correttamente il `TopAppBar` quando si apre, ma
+**finisce sotto la `BottomNav`** in fondo alla pagina invece di coprirla. Causa: `MobileSideNav`,
+`TopAppBar` e `BottomNav` usano tutti lo stesso `z-50` — a parità di z-index vince l'ordine nel DOM,
+non l'intenzione, e `BottomNav` viene renderizzata dopo (quindi sopra) il drawer.
+
+**Fix già scritto in locale, non ancora testato** (l'utente ha chiesto di fermarsi prima di riavviare
+l'emulatore per verificarlo): aggiunto un nuovo livello `.z-modal { z-index: 1100 }` in
+`global.css` (sopra `.z-fab { z-index: 1000 }`, così un drawer/modal aperto copre davvero tutto,
+FAB incluso — altrimenti resterebbe cliccabile "attraverso" il backdrop), applicato a backdrop e
+drawer in `MobileSideNav.jsx` al posto di `z-40`/`z-50`. **Da verificare su emulatore Android reale
+alla prossima sessione**: aprire il drawer e controllare che copra sia `TopAppBar` che `BottomNav`
+su tutte le pagine.
+
+### 2. Icona "person" nel TopAppBar: serve un vero sistema di avatar?
+
+L'utente ha notato che l'icona a forma di persona nel `TopAppBar` (e replicata altrove) lascia
+pensare a una funzionalità di profilo/avatar non ancora esistente — al momento è puramente
+decorativa, non porta a nessuna pagina né apre alcun menu. Due direzioni possibili, da decidere
+insieme prima di implementare:
+- Avatar predefiniti selezionabili (nessun upload, nessuno storage esterno necessario)
+- Upload di una foto personale (richiede persistenza — oggi l'app è local-first/IndexedDB, quindi
+  fattibile anche senza backend salvando in IndexedDB come Blob, ma cambia lo scope)
+
+Si collega a **ROAD-07** (scaffolding profili utente, oggi solo struttura dati/tipi, nessuna UI) —
+probabilmente l'avatar va deciso e formalizzato come parte di quel task, non a sé stante. Nessun
+codice scritto per questo punto: è solo una domanda di prodotto da sciogliere.
 
 ---
 

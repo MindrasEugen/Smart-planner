@@ -1,6 +1,6 @@
 # Agenda Intelligente con Notifiche Persistenti
 
-> **Stato:** ✅ **Piano completo al 100% (2026-08-13)** — tutte le funzionalità core, i task QA e il debito tecnico chiusi e verificati manualmente in browser. Dettaglio completo in [`PLAN.md`](PLAN.md).
+> **Stato:** ✅ **Piano core completo al 100% (2026-08-13)** — tutte le funzionalità core, i task QA e il debito tecnico chiusi e verificati manualmente in browser. **Live su Render**: https://smart-planner-vjgl.onrender.com. Dettaglio completo in [`PLAN.md`](PLAN.md).
 >
 > Progetto **React 18 + JavaScript + JSDoc + Tailwind CSS v4 + PWA** per la gestione di scadenze con sistema di promemoria persistenti.
 >
@@ -8,14 +8,18 @@
 > **Piano di lavoro e stato dei task:** [`PLAN.md`](PLAN.md)
 >
 > 🔭 **Non è considerato un progetto definitivamente chiuso**: dal 2026-08-14 è tracciata una
-> **roadmap di 8 nuovi task** (`ROAD-01..08` in [`PLAN.md`](PLAN.md#️-roadmap--prossimi-sviluppi-handoff-2026-08-14)),
-> tutti ancora da fare — deploy su Render, sezione "Prossimamente" e form di feedback nelle
-> Settings (da attivare subito), consenso privacy/cookie e placeholder AdSense (creati ma non
-> montati, in attesa dell'approvazione dell'account Google AdSense), e scaffolding non collegato
-> per la **quick add AI** (creazione task da linguaggio naturale — l'utente scrive/detta una frase
-> e l'AI pre-compila titolo/data/ora/importanza nel form; serve ancora un backend/proxy per non
-> esporre la chiave API lato client) e per un futuro sistema di profili utente, entrambi in attesa
-> di un database reale.
+> **roadmap di 8 nuovi task** (`ROAD-01..08` in [`PLAN.md`](PLAN.md#️-roadmap--prossimi-sviluppi-handoff-2026-08-14)).
+> **ROAD-01/02/03 già live**: deploy su Render come Static Site, sezione "Prossimamente" e form di
+> feedback → GitHub Issues nelle Settings. Ancora da fare: consenso privacy/cookie e placeholder
+> AdSense (creati ma non montati, in attesa dell'approvazione dell'account Google AdSense), e
+> scaffolding non collegato per la **quick add AI** (creazione task da linguaggio naturale —
+> l'utente scrive/detta una frase e l'AI pre-compila titolo/data/ora/importanza nel form; serve
+> ancora un backend/proxy per non esporre la chiave API lato client) e per un futuro sistema di
+> profili utente, entrambi in attesa di un database reale.
+>
+> 📱 Il 2026-08-14 sono stati trovati e corretti 6 bug di layout mobile mai emersi prima (verificati
+> su emulatore Android reale, non solo browser desktop) — dettaglio in [`PLAN.md`](PLAN.md#-debito-tecnico-aperto)
+> (DS-07..DS-12).
 
 ---
 
@@ -46,6 +50,9 @@ Il valore principale dell'app è:
 | **Design System** | Tema personalizzato da Google Stitch | ✅ `@theme` in `global.css` — unica sorgente di verità |
 | **SEO** | Meta tag Open Graph + structured data JSON-LD | ✅ Funzionante |
 | **Test automatici** | Vitest, layer logic | ✅ 49/49 (`npm test`) |
+| **Deploy** | Static Site su Render | ✅ Live — https://smart-planner-vjgl.onrender.com |
+| **Sezione "Prossimamente"** | Anteprima roadmap nelle Settings, pilotata da un array | ✅ Funzionante |
+| **Feedback** | Form categorizzato → issue GitHub precompilata, nessun backend | ✅ Funzionante |
 
 ---
 

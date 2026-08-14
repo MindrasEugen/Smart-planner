@@ -172,6 +172,9 @@
  */
 .z-fab { z-index: 1000; }
 .z-navbar { z-index: 50; }
+/* Sopra a z-fab: un drawer/modal deve coprire davvero tutto quando aperto,
+   FAB incluso — altrimenti resta cliccabile "attraverso" il backdrop. */
+.z-modal { z-index: 1100; }
 .w-nav-desktop { width: 16rem; }
 .w-sidebar { width: 64px; }
 
