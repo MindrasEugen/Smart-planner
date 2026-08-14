@@ -7,11 +7,15 @@
 > **Design Reference:** Google Stitch Cognitive Protocol
 > **Piano di lavoro e stato dei task:** [`PLAN.md`](PLAN.md)
 >
-> 🔭 **Non è considerato un progetto definitivamente chiuso**: è pianificata una fase futura per
-> integrare un'**AI che aiuti a compilare i task** (es. creazione da linguaggio naturale — l'utente
-> scrive/detta una frase e l'AI pre-compila titolo/data/ora/importanza nel form). Provider AI,
-> architettura (serve un backend/proxy per non esporre la chiave API lato client, dato che oggi
-> l'app è puramente client-side) e scope preciso sono ancora da decidere.
+> 🔭 **Non è considerato un progetto definitivamente chiuso**: dal 2026-08-14 è tracciata una
+> **roadmap di 8 nuovi task** (`ROAD-01..08` in [`PLAN.md`](PLAN.md#️-roadmap--prossimi-sviluppi-handoff-2026-08-14)),
+> tutti ancora da fare — deploy su Render, sezione "Prossimamente" e form di feedback nelle
+> Settings (da attivare subito), consenso privacy/cookie e placeholder AdSense (creati ma non
+> montati, in attesa dell'approvazione dell'account Google AdSense), e scaffolding non collegato
+> per la **quick add AI** (creazione task da linguaggio naturale — l'utente scrive/detta una frase
+> e l'AI pre-compila titolo/data/ora/importanza nel form; serve ancora un backend/proxy per non
+> esporre la chiave API lato client) e per un futuro sistema di profili utente, entrambi in attesa
+> di un database reale.
 
 ---
 
@@ -340,4 +344,5 @@ Attivazione del permesso notifiche e stato corrente dell'autorizzazione.
 
 ## 📄 Riferimenti
 - **Piano dettagliato, audit e stato dei task:** [`PLAN.md`](PLAN.md)
+- **Roadmap prossimi sviluppi (ROAD-01..08):** [`PLAN.md` § Roadmap](PLAN.md#️-roadmap--prossimi-sviluppi-handoff-2026-08-14)
 - **Design Reference:** Google Stitch — Cognitive Protocol

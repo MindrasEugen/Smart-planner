@@ -3,12 +3,15 @@
 > **Stato:** ✅ **PIANO COMPLETATO AL 100% (92/92, 2026-08-13)**. Percorso della giornata: la verifica statica (build+grep) di DS-01/UX-NEW aveva dato esito positivo, ma il rendering in browser era rotto (vedi [DS-03](#-debito-tecnico-aperto)); corretto, poi notifiche/filtri/layout/accessibilità verificati manualmente uno per uno (vedi [QA](#-task-testing-priorità-alta--riaperti-dopo-laudit-chiusi-il-2026-08-13)), infine chiuso tutto il debito tecnico (DEBT-01..06), la struttura (STR-01..04), SEO (meta tag + JSON-LD) e PWA-03 (banner "Installa App")
 > **Ultimo aggiornamento:** 2026-08-13
 >
-> 🔭 **Il progetto non è considerato definitivamente chiuso**: è pianificata una fase futura per
-> integrare un'**AI che aiuti a compilare i task** (es. creazione da linguaggio naturale — l'utente
-> scrive/detta una frase e l'AI pre-compila titolo/data/ora/importanza nel form). Nessun task formale
-> ancora aperto per questo: provider AI, architettura (serve un backend/proxy per non esporre la
-> chiave API lato client, dato che oggi l'app è puramente client-side) e scope preciso sono ancora
-> da decidere. Vedi conversazione del 2026-08-13 per il contesto.
+> 🔭 **Il progetto non è considerato definitivamente chiuso**: dalla sessione di brainstorming del
+> 2026-08-14 (vedi `agenda-intelligente-roadmap-handoff.md`) è stata aggiunta una **nuova fase di
+> roadmap, 8 task `ROAD-01..08`** (sezione [🗺️ Roadmap — Prossimi Sviluppi](#️-roadmap--prossimi-sviluppi-handoff-2026-08-14)),
+> tutti ancora ⬜ TODO — non conteggiati nel 92/92 core plan, che resta chiuso. Include, tra l'altro,
+> la formalizzazione di quella che prima era solo un'intenzione non tracciata: la **quick add AI**
+> (creazione task da linguaggio naturale — l'utente scrive/detta una frase e l'AI pre-compila
+> titolo/data/ora/importanza nel form), ora **ROAD-06**, ancora solo scaffolding UI/prompt/schema,
+> senza backend né chiave API (serve un proxy per non esporla lato client, dato che oggi l'app è
+> puramente client-side).
 > **Notifiche:** ✅ Ripianificazione, permessi, Service Worker in build e recupero all'apertura — **RIPARATI** | ✅ Notifica in-app e toast di fallback **verificati a mano in browser (QA-04, QA-11)** | ✅ Service Worker attivo confermato sia in dev sia in build di produzione (**DEBT-05 chiuso**)
 > **Filtri:** ✅ Criteri spostati nello store Zustand — **RIPARATI e verificati a mano in browser (QA-07)**
 > **Accessibilità:** ✅ QA-09 verificato (2026-08-13) — trovato e risolto un **bug critico** in `ConfirmDialog` (A11Y-06): il dialog di conferma non si chiudeva mai davvero (Annulla/Escape/Conferma), lasciando un overlay invisibile che bloccava tutti i click sull'intera app finché non si ricaricava la pagina. Risolti anche dropdown non chiudibili da tastiera (A11Y-07) e un `aria-hidden` errato che nascondeva il dialog stesso agli screen reader (A11Y-08)
@@ -82,6 +85,7 @@ browser reale lo stesso giorno. **Il piano è ora completo al 100% (92/92).**
 | **DEBITO TECNICO (DEBT)** | **6** | **6** | **100%** | Tutto il debito tecnico chiuso 2026-08-13 |
 | **RIFACIMENTO LAYOUT (UX-NEW)** | **6** | **6** | **100%** | Tutti chiusi 2026-08-12 |
 | **TOTALE** | **92** | **92** | **100%** | Tutti i task chiusi 2026-08-13 |
+| **ROADMAP (ROAD)** | **8** | **3** | **38%** | Nuova fase aggiunta 2026-08-14 (handoff brainstorming), **non conteggiata nel TOTALE sopra** — il core plan resta chiuso al 100%. ROAD-01 (deploy), ROAD-02 (sezione Prossimamente) e ROAD-03 (form feedback) chiusi — Priorità 1 completa. Vedi sezione [🗺️ Roadmap](#️-roadmap--prossimi-sviluppi-handoff-2026-08-14) |
 
 > La percentuale è scesa rispetto all'88% dichiarato prima, ma non è stato perso lavoro. Tre ragioni:
 > **(a)** 6 task QA marcati ✅ VERIFIED sono tornati a ⚠️ DA RIVERIFICARE perché attestavano
@@ -483,6 +487,53 @@ npm run icons:verify   # valida i file in dist/
 
 ---
 
+## 🗺️ Roadmap — Prossimi Sviluppi (handoff 2026-08-14)
+
+> Fonte: sessione di brainstorming del 2026-08-14 con Claude (Cowork), raccolta in
+> `agenda-intelligente-roadmap-handoff.md` (rimosso dopo l'estrazione in questo documento — il
+> contenuto vive qui). Il core plan (92/92, vedi sopra) resta chiuso: questi sono **nuovi** task,
+> non conteggiati nel TOTALE.
+>
+> **Priorità 1** va implementata e **attivata subito** (nessun account esterno o DB necessario).
+> **Priorità 2** va creata ma tenuta **spenta/non montata** in UI finché non si ottiene l'account
+> Google AdSense. **Priorità 3** va **scaffoldata ma non collegata**: struttura pronta, nessun wiring
+> reale, perché dipende da un database futuro (l'app resta local-first/IndexedDB per ora).
+
+### Priorità 1 — da implementare e attivare subito
+
+| ID | Task | Owner | DependsOn | Stato | Priority | Acceptance |
+|----|------|-------|-----------|-------|----------|------------|
+| **ROAD-01** | **Deploy su Render come Static Site** | ORCHESTRATOR | - | ✅ **DONE (2026-08-14)** | **HIGH** | Live su **https://smart-planner-vjgl.onrender.com** come Static Site (non Web Service): SPA React/Vite puramente client-side, evita lo spin-down/cold-start dei Web Service gratuiti, a costo zero. Build command `npm run build`, publish directory `dist`. Verificato in browser reale: Dashboard carica senza errori console; navigazione diretta a `/agenda` (simula refresh su rotta non-home) renderizza la pagina invece di un 404 → rewrite rule `/* → /index.html` configurata correttamente; Service Worker registrato e **attivo** (`scriptURL: /sw.js`, `state: activated`); `/manifest.webmanifest` raggiungibile (200), servito con `content-type: binary/octet-stream` invece di `application/manifest+json` (dettaglio minore, non blocca l'installabilità su Chrome) |
+| **ROAD-02** | **Sezione "Prossimamente" in Settings** | UI ENGINE | - | ✅ **DONE (2026-08-14)** | **HIGH** | Nuova sezione in `SettingsPage.jsx` (componente `ComingSoonSettings`), contenuto pilotato dall'array `UPCOMING_FEATURES` (`{ titolo, descrizione, stato }`, non JSX hardcoded). 4 voci: quick add intelligente (in valutazione), feedback dall'app (in arrivo — ROAD-03), annunci discreti (in valutazione), profili utente personali (in valutazione). Linguaggio vago sui tempi, nessuna data. **Bug di layout trovato e corretto durante la verifica**: il badge di stato allineato a fine riga (`justify-between` su tutta la larghezza della card) finiva dietro al FAB fisso in basso a destra — spostato accanto al titolo (`flex items-center gap-2`), indipendente dalla larghezza viewport. Verificato in browser reale (`npm run dev`): le 4 voci renderizzano coi testi attesi, nessun overlap col FAB (controllato via `getBoundingClientRect()` su ciascun `<li>` contro il FAB, tutti `overlap:false`), nessun errore console. `npm run lint` 0 errori/39 warning (invariato), `npm run build` OK |
+| **ROAD-03** | **Form di feedback categorizzato → GitHub Issues** | UI ENGINE | ROAD-02 | ✅ **DONE (2026-08-14)** | **HIGH** | `src/ui/components/Feedback/FeedbackForm.jsx`, montato in Settings: select categoria (**Bug** → label `bug` / **Idea-richiesta funzione** → `enhancement` / **Feedback tecnico** → `feedback tecnico`) + textarea descrizione, entrambi `required`; l'invio apre in una nuova tab `github.com/MindrasEugen/Smart-planner/issues/new?title=...&body=...&labels=...` precompilato in base alla categoria, poi resetta il form. Nessun backend: solo `window.open` con `URLSearchParams`. **Bug trovato e corretto durante la verifica**: uno stato `errors`/`setErrors` con validazione JS personalizzata era codice morto — i `required` HTML nativi su select/textarea bloccano già il submit (e quindi il mio `onSubmit`) prima che potesse mai eseguirsi, confermato con `element.validity.valid`/`validationMessage`; rimosso, la validazione nativa del browser basta. Verificato in browser reale (`npm run dev`, monkey-patch di `window.open` per catturare l'URL senza aprire una issue vera): submit vuoto bloccato (nessun `open` chiamato), le 3 categorie generano titolo/label/host/path corretti (`github.com/MindrasEugen/Smart-planner/issues/new`), form resettato dopo l'invio, nessun errore in console dopo un reload pulito. `npm run lint` 0 errori/39 warning (invariato), `npm run build` OK |
+
+### Priorità 2 — creati ma **NON attivi** (bloccati da approvazione account esterno, non da DB)
+
+| ID | Task | Owner | DependsOn | Stato | Priority | Acceptance |
+|----|------|-------|-----------|-------|----------|------------|
+| **ROAD-04** | **ConsentBanner (consenso privacy/cookie)** | UI ENGINE | attivare in coppia con ROAD-05 | ⬜ TODO | MEDIUM | `ConsentBanner.jsx`: barra/modal Accetta/Rifiuta, salvata in `localStorage` (chiave `cookie-consent`). Google Consent Mode v2: `gtag('consent','default',{ad_storage:'denied',analytics_storage:'denied'})` di default, `update` a `granted` su accettazione. Aggiunta pagina/sezione Privacy Policy raggiungibile dalle Settings (uso previsto di cookie e Google AdSense). **Il banner NON va montato nell'app** finché gli annunci (ROAD-05) non sono attivi — non c'è ancora nulla per cui chiedere consenso |
+| **ROAD-05** | **AdBanner (placeholder Google AdSense)** | UI ENGINE | - | ⬜ TODO | MEDIUM | `AdBanner.jsx`: spazio a dimensione fissa riservato (90px altezza) in fondo a Settings, per evitare layout shift quando conterrà l'annuncio reale. Per ora placeholder statico ("Spazio pubblicitario"). La vera integrazione (`adsbygoogle`) + ROAD-04 vanno attivate **insieme**, solo dopo approvazione account Google AdSense (prerequisito fuori dal codice: creare l'account, aggiungere `ads.txt` in `public/`) |
+
+### Priorità 3 — scaffolding creato, **non collegato** (dipende da un database futuro)
+
+| ID | Task | Owner | DependsOn | Stato | Priority | Acceptance |
+|----|------|-------|-----------|-------|----------|------------|
+| **ROAD-06** | **Quick add AI — struttura base** | UI ENGINE + LOGIC ENGINE | - | ⬜ TODO | LOW | `QuickAddInput.jsx` (campo testo libero + bottone, stile coerente con `TaskForm.jsx`); prompt template per estrazione AI (titolo/descrizione/data/ora/importanza da testo libero, con la data corrente passata esplicitamente nel prompt); schema JSON atteso in risposta, per pre-compilare `TaskForm.jsx`. **Non creare/collegare** la funzione serverless né inserire alcuna API key — richiede decisione separata su hosting (Render Web Service, piano Starter $7/mese per tenerla sempre attiva) e su come proteggerla da abusi |
+| **ROAD-07** | **Sistema di profili utente — scaffolding minimo** | LOGIC ENGINE | - | ⬜ TODO | LOW | Solo struttura dati e punti di estensione: tipo/interfaccia JSDoc per un futuro `UserProfile`, commenti nei punti dove in futuro si aggancerebbe un'autenticazione. **Nessun login/autenticazione reale**, nessun DB collegato. Sblocca in futuro: sincronizzazione multi-dispositivo, gestione quote per la quick add AI (ROAD-06), controllo d'accesso reale alle feature premium |
+
+### Meta
+
+| ID | Task | Owner | DependsOn | Stato | Priority | Acceptance |
+|----|------|-------|-----------|-------|----------|------------|
+| **ROAD-08** | **Aggiornare PLAN.md e README.md a fine implementazione** | ORCHESTRATOR | ROAD-01..07 | ⬜ TODO | MEDIUM | Dopo aver implementato le voci sopra (anche solo alcune): `README.md` — tabella feature + limiti noti aggiornati riflettendo cosa è stato effettivamente attivato; `PLAN.md` — stato di ogni `ROAD-*` aggiornato distinguendo chiaramente "fatto/attivo" da "creato ma non collegato" (Priorità 2/3, usare la nota `✅ DONE (non attivo)` accanto al task) da "da fare" |
+
+**Ordine di lavoro consigliato:** Priorità 1 nell'ordine ROAD-01 → ROAD-02 → ROAD-03, poi Priorità 2
+(ROAD-04 + ROAD-05) come blocco unico quando si è pronti a richiedere l'account AdSense, poi
+Priorità 3 (ROAD-06, ROAD-07) solo quando si deciderà di introdurre un database reale (es. Supabase,
+già in uso per ButlerAI).
+
+---
+
 ## 🎯 DELEGA ATTIVA
 
 ### FASE 1: Pulizia e Preparazione (ORCHESTRATOR - COMPLETATA ✅)
@@ -625,6 +676,48 @@ npm run test:watch  # modalità watch
 > ⚠️ Le date delle voci precedenti al 2026 sono incoerenti tra loro (il 13 agosto precede il 12)
 > e con le date dei file su disco. Non sono state riscritte per non inventare una cronologia:
 > vanno considerate indicative.
+
+### 2026-08-14 — ROAD-03 chiuso: form di feedback → GitHub Issues (Priorità 1 completa)
+
+Nuovo `FeedbackForm.jsx` montato in Settings: categoria (Bug/Idea-richiesta funzione/Feedback
+tecnico) + descrizione, l'invio apre `github.com/MindrasEugen/Smart-planner/issues/new` precompilato
+(titolo, corpo, label) in una nuova tab, nessun backend. Trovato e rimosso durante la verifica un
+pezzo di validazione JS morta: il `required` nativo su select/textarea blocca già il submit prima
+che l'`onSubmit` React (e quindi il mio stato `errors`) potesse mai eseguirsi. Verificato in browser
+reale con `window.open` monkey-patchato per catturare l'URL senza aprire issue vere: submit vuoto
+bloccato, le 3 categorie generano URL corretti, form resettato dopo l'invio. `npm run lint` 0
+errori/39 warning, `npm run build` OK. **Con questo si chiude tutta la Priorità 1 della roadmap
+(ROAD-01/02/03).**
+
+### 2026-08-14 — ROAD-02 chiuso: sezione "Prossimamente" in Settings
+
+Nuovo componente `ComingSoonSettings` in `SettingsPage.jsx`, contenuto pilotato dall'array
+`UPCOMING_FEATURES` (4 voci: quick add intelligente, feedback dall'app, annunci discreti, profili
+utente — tutte "in valutazione" tranne il feedback, "in arrivo"). Durante la verifica in browser
+trovato un bug di layout: il badge di stato a fine riga finiva dietro al FAB fisso in basso a
+destra su desktop — risolto spostando il badge accanto al titolo invece che a `justify-between`
+su tutta la card. Verificato: nessun overlap (`getBoundingClientRect` su ogni voce), `npm run lint`
+0 errori/39 warning, `npm run build` OK.
+
+### 2026-08-14 — ROAD-01 chiuso: deploy live su Render
+
+Pubblicato come Static Site su Render: **https://smart-planner-vjgl.onrender.com**. Verificato in
+browser reale (Claude in Chrome): Dashboard senza errori console, navigazione diretta a `/agenda`
+renderizza la pagina invece di un 404 (rewrite rule `/* → /index.html` attiva), Service Worker
+registrato e `state: activated` (`scriptURL: /sw.js`), `/manifest.webmanifest` raggiungibile (200,
+content-type non ideale ma non bloccante). Nessun codice modificato, solo configurazione su Render.
+
+### 2026-08-14 — Aggiunta la roadmap post-completamento: 8 nuovi task ROAD-01..08
+
+Estratte le informazioni dall'handoff di brainstorming `agenda-intelligente-roadmap-handoff.md`
+(sessione con Claude Cowork) e formalizzate in una nuova sezione [🗺️ Roadmap — Prossimi
+Sviluppi](#️-roadmap--prossimi-sviluppi-handoff-2026-08-14): **ROAD-01..03** (Priorità 1, da
+attivare subito — deploy Render Static Site, sezione "Prossimamente" in Settings, form feedback →
+GitHub Issues), **ROAD-04/05** (Priorità 2, creati ma non montati — ConsentBanner + AdBanner,
+bloccati da approvazione Google AdSense), **ROAD-06/07** (Priorità 3, scaffolding non collegato —
+quick add AI e profili utente, bloccati da un database futuro), **ROAD-08** (meta: aggiornare
+README/PLAN a implementazione avvenuta). Nessun codice toccato, solo pianificazione. Il file di
+handoff è stato rimosso dopo l'estrazione: il contenuto vive interamente in questo documento.
 
 ### 2026-08-13 — SEO-01/02 e PWA-03 chiusi: piano completato al 100% (92/92)
 
