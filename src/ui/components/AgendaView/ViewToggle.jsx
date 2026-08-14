@@ -15,23 +15,24 @@ const viewOptions = [
 export default function ViewToggle({ currentView, onViewChange }) {
   return (
     <div className="bg-surface-container-low rounded-xl p-1 mb-lg">
-      {/* overflow-x-auto: le 3 etichette italiane non vanno a capo (parole
-          singole) — senza scroll orizzontale la riga eccede il viewport su
-          schermi stretti e il bordo destro viene tagliato silenziosamente
-          dall'overflow-hidden del layout root */}
-      <div className="flex gap-sm overflow-x-auto">
+      {/* Ogni pulsante è flex-1: si restringe per condividere lo spazio
+          disponibile invece di eccedere il contenitore (mai scroll
+          orizzontale). L'etichetta ha `truncate` come rete di sicurezza
+          sui viewport più stretti, così al limite si accorcia con ellissi
+          invece di spingere il bordo destro fuori dal layout. */}
+      <div className="flex gap-sm">
         {viewOptions.map((option) => (
           <button
             key={option.id}
             onClick={() => onViewChange(option.id)}
-            className={`flex items-center gap-1 px-3 py-1.5 rounded-lg font-label-sm transition-colors active:scale-95 shrink-0 ${
+            className={`flex-1 min-w-0 flex items-center justify-center gap-1 px-2 sm:px-3 py-1.5 rounded-lg font-label-sm transition-colors active:scale-95 ${
               currentView === option.id
                 ? 'bg-primary text-on-primary'
                 : 'bg-surface-container-lowest text-on-surface-variant hover:bg-surface-variant border border-outline-variant'
             }`}
           >
-            <span className="material-symbols-outlined text-[16px]">{option.icon}</span>
-            <span>{option.label}</span>
+            <span className="material-symbols-outlined text-[16px] shrink-0">{option.icon}</span>
+            <span className="truncate">{option.label}</span>
           </button>
         ))}
       </div>

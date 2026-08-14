@@ -55,16 +55,20 @@ export default function UpcomingCards({ items }) {
       <h2 className="font-label-caps text-label-caps text-on-surface-variant mb-md uppercase tracking-wider">
         Scadenze Imminenti
       </h2>
-      <div className="flex overflow-x-auto pb-4 -mx-margin-mobile px-margin-mobile gap-gutter snap-x lg:-mx-0 lg:px-0">
+      {/* Carosello orizzontale con snap solo sotto lg: (mobile/tablet) —
+          la colonna destra desktop è ~280-320px, troppo stretta anche per
+          una singola card da 280px: da lg: in su diventa una lista verticale
+          a larghezza piena, senza overflow-x. */}
+      <div className="flex overflow-x-auto pb-4 -mx-margin-mobile px-margin-mobile gap-gutter snap-x lg:flex-col lg:overflow-x-visible lg:snap-none lg:mx-0 lg:px-0 lg:pb-0 lg:gap-sm">
         {items.map((item) => {
           const timeStatus = getTimeStatus(item);
           const { badgeBg, badgeText, badgeTextColor, badgeIcon, stripColor } = getStatusInfo(timeStatus);
           const formattedTime = formatTime(item.dueTime);
 
           return (
-            <div 
+            <div
               key={item.id}
-              className="snap-start min-w-[280px] bg-surface-container-lowest rounded-xl border border-outline-variant p-lg shadow-[0_4px_12px_rgba(0,0,0,0.05)] relative overflow-hidden flex-shrink-0 active:scale-95 transition-transform duration-200 hover-lift"
+              className="snap-start min-w-[280px] lg:min-w-0 lg:w-full bg-surface-container-lowest rounded-xl border border-outline-variant p-lg shadow-[0_4px_12px_rgba(0,0,0,0.05)] relative overflow-hidden flex-shrink-0 active:scale-95 transition-transform duration-200 hover-lift"
             >
               {/* Strip colorato a sinistra */}
               <div className={`absolute top-0 left-0 w-1 h-full ${stripColor}`} />
