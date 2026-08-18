@@ -6,7 +6,7 @@ const DISMISSED_KEY = 'agenda_install_banner_dismissed';
  * Verifica se l'app e' gia' in esecuzione come PWA installata
  * @returns {boolean} True se in modalita' standalone (installata)
  */
-function isStandalone() {
+export function isStandalone() {
   return (
     window.matchMedia('(display-mode: standalone)').matches ||
     window.navigator.standalone === true
@@ -17,16 +17,23 @@ function isStandalone() {
  * Hook per gestire il prompt di installazione PWA (evento `beforeinstallprompt`).
  * L'evento va intercettato e salvato: il browser non lo ripropone su richiesta,
  * va invocato esplicitamente tramite `prompt()` sull'evento originale.
- * @returns {{ canInstall: boolean, promptInstall: () => Promise<void>, dismiss: () => void }}
+ * @returns {{
+ *   canInstall: boolean,
+ *   isInstallable: boolean,
+ *   isInstalled: boolean,
+ *   promptInstall: () => Promise<void>,
+ *   dismiss: () => void,
+ * }}
  */
 export function useInstallPrompt() {
   const [deferredPrompt, setDeferredPrompt] = useState(null);
   const [dismissed, setDismissed] = useState(
     () => localStorage.getItem(DISMISSED_KEY) === 'true'
   );
+  const [isInstalled, setIsInstalled] = useState(() => isStandalone());
 
   useEffect(() => {
-    if (isStandalone()) return;
+    if (isInstalled) return;
 
     const handleBeforeInstallPrompt = (e) => {
       e.preventDefault();
@@ -34,7 +41,7 @@ export function useInstallPrompt() {
     };
     const handleAppInstalled = () => {
       setDeferredPrompt(null);
-      setDismissed(true);
+      setIsInstalled(true);
     };
 
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
@@ -43,7 +50,7 @@ export function useInstallPrompt() {
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
       window.removeEventListener('appinstalled', handleAppInstalled);
     };
-  }, []);
+  }, [isInstalled]);
 
   const promptInstall = useCallback(async () => {
     if (!deferredPrompt) return;
@@ -58,7 +65,11 @@ export function useInstallPrompt() {
   }, []);
 
   return {
+    // `isInstallable` non tiene conto del dismiss del banner: usata dalle Settings,
+    // dove l'utente deve poter installare anche dopo aver chiuso il banner una volta.
+    isInstallable: Boolean(deferredPrompt),
     canInstall: Boolean(deferredPrompt) && !dismissed,
+    isInstalled,
     promptInstall,
     dismiss,
   };

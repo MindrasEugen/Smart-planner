@@ -13,6 +13,8 @@ import {
   getExpiredNotifications,
   createNotificationId,
 } from './db.js';
+import { syncItemsToServer } from './sync.js';
+import { getPushEnabled } from '../preferences.js';
 
 // Timeout in-page attivi, per item (fallback mentre l'app e' aperta)
 const scheduledNotifications = new Map();
@@ -239,6 +241,18 @@ export async function flushExpiredNotifications() {
 }
 
 /**
+ * Sincronizza gli item col backend push, solo se l'utente ha attivato le
+ * notifiche push (altrimenti syncItemsToServer e' comunque un no-op se il
+ * backend non e' configurato in questo build, vedi isSyncConfigured)
+ * @param {AgendaItem[]} items - Array di item
+ */
+function syncToServerIfPushEnabled(items) {
+  if (getPushEnabled()) {
+    syncItemsToServer(items);
+  }
+}
+
+/**
  * Monitora lo store e pianifica le notifiche automaticamente
  * @returns {Function} Funzione di cleanup
  */
@@ -250,13 +264,26 @@ export function startNotificationMonitor() {
     (items) => queueReschedule(items)
   );
 
+  // Sincronizza col backend push a ogni modifica degli item (debounced in sync.js):
+  // e' cio' che permette al server di sapere cosa notificare anche ad app chiusa
+  const unsubscribePushSync = agendaStore.subscribe(
+    (state) => state.items,
+    (items) => syncToServerIfPushEnabled(items)
+  );
+
   // Recupera le scadenze passate, poi pianifica gli item esistenti
   flushExpiredNotifications()
-    .then(() => queueReschedule(agendaStore.getState().items))
+    .then(() => {
+      const items = agendaStore.getState().items;
+      queueReschedule(items);
+      // Corregge eventuali disallineamenti col backend dopo un periodo offline
+      syncToServerIfPushEnabled(items);
+    })
     .catch((e) => console.error('Errore inizializzazione notifiche:', e));
 
   return () => {
     unsubscribe();
+    unsubscribePushSync();
     cancelAllScheduledNotifications().catch((e) =>
       console.error('Errore cleanup notifiche:', e)
     );

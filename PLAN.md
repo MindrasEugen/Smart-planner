@@ -2,7 +2,19 @@
 
 > **Stato:** ✅ **Core plan chiuso al 100% (92/92, 2026-08-13)** — invariato. In più, dal 2026-08-14 è
 > aperta una **fase di roadmap separata** (vedi sotto) con lavoro reale in corso.
-> **Ultimo aggiornamento:** 2026-08-14
+> **Ultimo aggiornamento:** 2026-08-18
+>
+> 🐛 **Bug da uso reale, sessioni 2026-08-15 → 2026-08-18** (handoff originario del 2026-08-14, poi
+> `BUGS.md`, ora integrato per intero in questo file — vedi sezione
+> [🐛 Bug reali trovati in uso reale](#-bug-reali-trovati-in-uso-reale--sessioni-2026-08-15--2026-08-18)):
+> **6 risolti il 2026-08-15** — pulsante "Installa" in Settings, azioni della card agenda non più legate
+> all'hover, nuova sezione Preferenze (tema/vibrazione/notifiche silenziose), filtro "Scaduti" anche
+> da Stato (oltre a Data), unità "giorni" in "Inizia notifiche", interazione con le singole voci in
+> Alerts. **BUG-01 (notifiche non arrivano su mobile)** — causa identificata il 2026-08-18 (limite
+> architetturale, non un bug di codice: nessun meccanismo client-only sopravvive alla chiusura
+> dell'app/schermo bloccato). 🟡 **Backend Web Push (VAPID) su Supabase costruito e verificato con un
+> round-trip reale** (subscribe → sync → tick, dedupe confermato), ma non ancora deployato né testato
+> su un telefono reale — resta l'unico bug aperto di questo gruppo.
 >
 > 🗺️ **Roadmap** (sezione [🗺️ Roadmap — Prossimi Sviluppi](#️-roadmap--prossimi-sviluppi-handoff-2026-08-14)):
 > **ROAD-01/02/03 chiusi** (deploy Static Site su Render, sezione "Prossimamente", form feedback →
@@ -96,6 +108,7 @@ browser reale lo stesso giorno. **Il piano è ora completo al 100% (92/92).**
 | **RIFACIMENTO LAYOUT (UX-NEW)** | **6** | **6** | **100%** | Tutti chiusi 2026-08-12 |
 | **TOTALE** | **92** | **92** | **100%** | Tutti i task chiusi 2026-08-13 |
 | **ROADMAP (ROAD)** | **8** | **3** | **38%** | Nuova fase aggiunta 2026-08-14 (handoff brainstorming), **non conteggiata nel TOTALE sopra** — il core plan resta chiuso al 100%. ROAD-01 (deploy), ROAD-02 (sezione Prossimamente) e ROAD-03 (form feedback) chiusi — Priorità 1 completa. Vedi sezione [🗺️ Roadmap](#️-roadmap--prossimi-sviluppi-handoff-2026-08-14) |
+| **BUG (uso reale, 2026-08-15 → 08-18)** | **7** | **6** | **86%** | Handoff da uso reale (segnalati 2026-08-14), **non conteggiato nel TOTALE sopra**. BUG-01 (notifiche mobile): causa identificata, backend Web Push costruito e verificato in locale, deploy + test su device ancora da fare. Vedi sezione [🐛 Bug reali trovati in uso reale](#-bug-reali-trovati-in-uso-reale--sessioni-2026-08-15--2026-08-18) |
 
 > La percentuale è scesa rispetto all'88% dichiarato prima, ma non è stato perso lavoro. Tre ragioni:
 > **(a)** 6 task QA marcati ✅ VERIFIED sono tornati a ⚠️ DA RIVERIFICARE perché attestavano
@@ -547,6 +560,112 @@ npm run icons:verify   # valida i file in dist/
 (ROAD-04 + ROAD-05) come blocco unico quando si è pronti a richiedere l'account AdSense, poi
 Priorità 3 (ROAD-06, ROAD-07) solo quando si deciderà di introdurre un database reale (es. Supabase,
 già in uso per ButlerAI).
+
+---
+
+## 🐛 Bug reali trovati in uso reale — sessioni 2026-08-15 → 2026-08-18
+
+> Handoff scritto dopo un uso reale dell'app il 2026-08-14 (sessione interrotta a metà indagine per
+> una caduta di connessione), tenuto inizialmente nel file separato `BUGS.md` e **integrato per
+> intero in questo documento il 2026-08-18** (file `BUGS.md` eliminato, contenuto non perso).
+> 6 bug risolti e verificati il 2026-08-15; BUG-01 (il più importante, lasciato volutamente per
+> ultimo) approfondito e in gran parte implementato il 2026-08-18.
+> **Non conteggiato nel TOTALE core plan** (92/92 resta invariato), stesso trattamento della Roadmap.
+
+| ID | Task | Owner | Stato | Prova |
+|----|------|-------|-------|-------|
+| BUG-01 | Le notifiche non arrivano da telefono nonostante il consenso dato | LOGIC | 🟡 **IN PROGRESS (2026-08-18)** — causa identificata, backend costruito e verificato in locale, deploy + test su device mancanti | Dettaglio completo nella sottosezione **BUG-01** subito sotto la tabella |
+| BUG-02 | Manca il pulsante/link per installare l'app in Settings | UI ENGINE | ✅ **DONE (2026-08-15)** | `useInstallPrompt.js`: `isInstallable` (disponibilità reale del prompt) separato da `canInstall` (usato solo da `InstallBanner`, legato al dismiss) e `isInstalled`. Nuova sezione `InstallSettings` in `SettingsPage.jsx`: bottone "Installa" quando disponibile, istruzioni manuali (testo diverso per iOS) quando no. Verificato in browser: sezione visibile, fallback testuale confermato; ramo `canInstall` già osservato funzionante via `InstallBanner` nella stessa sessione |
+| BUG-03 | Nessuna impostazione reale in Settings (tema/vibrazione/volume) | LOGIC + UI | ✅ **DONE (2026-08-15), con un limite noto** | Nuovo modulo `src/logic/preferences.js`. **Tema**: collegato un meccanismo dark mode **già presente ma mai attivato** (`@custom-variant dark` in `global.css`, usato solo da `TopAppBar`/`BottomNav`/`MobileSideNav` senza che nulla aggiungesse mai la classe `.dark`) — ora `applyTheme()`/`watchSystemTheme()` lo attivano davvero, chiamate da `main.jsx` prima del render. ⚠️ **Copre solo la navigazione**, non ancora card/contenuti: verificato in browser, serve un audit separato per un dark mode end-to-end. **Vibrazione**: opzione `vibrate` passata a `showNotification()` in `browser.js` (non `navigator.vibrate()`, inutilizzabile da un Service Worker). **Volume → "Notifiche silenziose"**: confermato con `grep` che non esiste alcun audio nel progetto: un controllo volume avrebbe governato il nulla, sostituito con l'opzione standard `silent` della Notification API. Persistenza dopo refresh verificata in browser per tutte e tre |
+| BUG-04 | Le 3 azioni al hover di un task coprono/sovrappongono il testo | UI ENGINE | ✅ **DONE (2026-08-15)** | `AgendaItemCard.jsx`: `onMouseEnter`/`onMouseLeave` rimossi, sostituiti da un pulsante kebab (`more_vert`) sempre visibile che apre un pannello azioni **sotto** la card (opzione B delle due proposte nel bug report) — click e tap identici, nessuna logica separata per mobile. Verificato in browser: titolo mai più troncato all'apertura del pannello |
+| BUG-05 | Manca "Scaduti" nella tendina filtro Stato | LOGIC + UI | ✅ **DONE (2026-08-15)** | Era già presente correttamente nella tendina **Data** (`dateOptions`, `OVERDUE` → `filterOverdue`/`getTimeStatus`). Su richiesta esplicita dell'utente, aggiunto **anche** a **Stato**: instradato non su `filterByStatus` ma sul campo `overdueOnly` di `FilterCriteria`, già gestito da `applyFilters` in `filters.js` ma mai collegato a nessun controllo UI finora. Verificato in browser (2 item di test, uno scaduto e uno futuro): filtro Stato→Scaduti isola solo l'item scaduto |
+| BUG-06 | "Inizia notifiche" senza l'unità "giorni" | UI ENGINE | ✅ **DONE (2026-08-15)** | Aggiunta `{ value: 'days', label: 'giorni' }` a `timeUnitOptions` in `useTaskForm.js`, `convertToMinutes` gestisce `×1440` (scheduler invariato, lavora già solo in minuti). **Bug collaterale corretto nello stesso punto**: in edit mode il valore mostrato per "ore" non veniva diviso per 60 (un salvataggio senza toccare il campo avrebbe silenziosamente moltiplicato il valore ×60) — sostituita l'euristica con `minutesToFormUnit()`, converte solo se la divisione è esatta. Verificato in browser: dropdown mostra "minuti/ore/giorni" in entrambi i selettori |
+| BUG-07 | In Alerts non si può interagire con i singoli allarmi | UI ENGINE | ✅ **DONE (2026-08-15)** | Nuova `removeHistoryEntry(id)` in `db.js`. In `AlertsPage.jsx`: bottone "×" per eliminazione singola su ogni voce; titolo cliccabile verso `/edit/:itemId` **solo se** il task collegato esiste ancora in `useAgenda().items` (evita di aprire un edit "fantasma" se l'item è stato eliminato nel frattempo). Verificato in browser (2 voci di test in IndexedDB, una con `itemId` valido e una orfana): navigazione ok sulla voce collegata, eliminazione singola non tocca l'altra voce, "Cancella tutto" invariato |
+
+Tutti i punti BUG-02..07 verificati con `npm run lint` (0 errori/39 warning), `npm run build` OK,
+`npm test` (49/49) e a mano in browser (Chrome via Claude in Chrome, dev server locale).
+
+> 📝 Rimane aperta anche la nota del 2026-08-14 sullo z-index di `MobileSideNav` (fix scritto ma non
+> ancora testato su device reale, vedi sezione sotto): non toccata nelle sessioni 2026-08-15/18, da
+> riprendere insieme al deploy/test di BUG-01.
+
+### BUG-01 — dettaglio completo (2026-08-18)
+
+Segnalazione originale: su mobile, pur avendo autorizzato le notifiche, i promemoria non arrivano.
+
+**Causa identificata:** non è un bug di codice, è un limite architetturale. Con l'app puramente
+client-side, nessuno dei meccanismi esistenti sopravvive alla chiusura dell'app/schermo bloccato:
+- `setTimeout` in pagina (`integration.js`) — solo se l'app è aperta in primo piano
+- `periodicSync` (`sw.js`) — richiede la PWA installata e comunque Chrome decide lui l'intervallo
+  reale (ore, non i 15 minuti richiesti), throttlato in base al site engagement
+- `push` nel Service Worker (`sw.js`) — canale corretto ma **era codice morto**: nessun codice
+  chiamava mai `pushManager.subscribe()`, e senza un backend che invii le push non può funzionare
+  comunque
+
+Dato che il valore centrale dell'app è "insistere" con promemoria ripetuti anche a telefono chiuso,
+si è deciso con l'utente di costruire un **backend minimo per Web Push reale (VAPID)** — l'unico
+meccanismo che consegna notifiche puntuali indipendentemente dallo stato dell'app. Piano completo in
+`C:\Users\mandr\.claude\plans\agile-honking-pelican.md`.
+
+**Fatto:**
+- Nuovo `server/` (Node/Express): endpoint `POST/DELETE /api/subscribe`, `POST /api/sync`,
+  `GET /api/tick`; riusa `calculateNextNotificationTime` da `src/logic/notifications/scheduler.js`
+  via import relativo (stessa logica di ricorrenza del client, nessuna duplicazione), con una
+  finestra di controllo dedicata (`isDueWithinWindow` in `server/src/tick.js`) invece dei helper
+  client-side tarati per un tick al secondo. Storage su **Supabase** (Postgres, connessione diretta
+  via il pacchetto `postgres` — l'utente aveva già un account, e il tick ogni 5 minuti tiene comunque
+  il progetto attivo evitando la sospensione per inattività del piano gratuito). Dedupe delle
+  notifiche già inviate per evitare doppi invii tra tick sovrapposti.
+- **Scoperta critica corretta:** `parseDateTime()` in `src/logic/time/timezone.js` usa
+  `Date.setHours()`, dipendente dal fuso orario del processo — sui container Render (default UTC)
+  ogni orario calcolato sarebbe stato sbagliato di qualche ora, senza errori visibili. Il server
+  rifiuta di avviarsi se `TZ` non è esplicitamente `Europe/Rome` (`server/src/index.js`).
+- Client: `src/logic/notifications/push.js` (sottoscrizione push), `src/logic/notifications/sync.js`
+  (sincronizzazione item/subscription col backend, debounced), nuova sezione "Notifiche push" in
+  `SettingsPage.jsx`, `src/sw.js` completato (handler `push` ora scrive anche nello storico Alerts).
+- `render.yaml` (root) per i due nuovi servizi (Web Service + Cron Job ogni 5 minuti su
+  `/api/tick`), senza toccare la configurazione del sito statico esistente.
+
+**Verificato in automatico:** `npm test` (client, 49/49) e `npm test` (server, 4/4 — incluso il caso
+che ha motivato la finestra dedicata) passati; `npm run build` OK (`sw.js` compila correttamente con
+`injectManifest`); `npm run lint` 0 errori. Storage passato da Turso/SQLite (scelta iniziale) a
+Supabase su richiesta dell'utente — `db.js` era scritto dietro un'interfaccia isolata apposta per
+rendere lo storage sostituibile senza toccare route/tick. Il flusso completo (subscribe → sync →
+tick, dedupe confermato su due tick consecutivi con una sola riga in `sent_notifications`) è stato
+**verificato con un round-trip reale contro il progetto Supabase dell'utente**
+(`vhyqsdabneswjymlytbe`, pooler "Transaction" porta 6543): server avviato in locale, `initDB()` crea
+le tre tabelle senza errori, `curl` su subscribe/sync/tick con item e subscription di test, dati
+ispezionati direttamente nel DB e poi ripuliti. Il server rifiuta l'avvio se `DATABASE_URL` manca,
+con messaggio esplicito (verificato anche questo).
+
+**NON verificato (richiede deploy reale + telefono, per lo standard di test di questo progetto — vedi
+`server/.env.example` per le variabili da configurare):**
+- Creazione dei servizi Render (Web Service + Cron Job), variabili d'ambiente in produzione
+- Flusso reale `pushManager.subscribe()` + prompt permesso su Chrome Android
+- Consegna end-to-end con app completamente chiusa e schermo bloccato — il punto centrale di questo bug
+- Notifica arrivata via push visibile in Alerts (scrittura IndexedDB dal SW senza pagina aperta)
+- Soak test di qualche ora per valutare se Cron Job + piano gratuito Render produce ritardi accettabili
+
+### Verifica finale dei bug 2026-08-15 (BUG-02..07)
+
+- ✅ Verificato che le nuove impostazioni (BUG-03) persistano dopo il refresh della pagina — tema,
+  vibrazione e notifiche silenziose tutti confermati persistenti; il tema scuro copre oggi solo la
+  navigazione (limite noto sopra)
+- ✅ Verificato il comportamento scelto per il hover (BUG-04) in browser desktop: nessun hover
+  coinvolto nel fix finale (bottone kebab sempre visibile, click/tap identici) — **da confermare
+  comunque su Android Studio** che il tap non lasci il pannello "appiccicato" aperto in modo strano
+  su schermi piccoli
+- ✅ Verificato che "Scaduti" nel filtro (BUG-05) mostri effettivamente solo gli item scaduti,
+  coerente con la logica già usata altrove in `getTimeStatus` — testato sia da Data che, ora, da Stato
+- ✅ Verificato che con "giorni" selezionato (BUG-06) l'orario di inizio notifica calcolato sia
+  corretto: `convertToMinutes`/`minutesToFormUnit` verificati per simmetria (create→edit→create),
+  scheduler invariato (lavora solo in minuti)
+- ✅ Verificato che eliminare/interagire con una singola voce in Alerts (BUG-07) non rompa il
+  pulsante "Cancella tutto" — testato in sequenza nella stessa sessione
+- ⚠️ Il pulsante "Installa" in Settings (BUG-02): verificato in browser desktop solo il ramo
+  fallback (testo istruzioni); il ramo `isInstallable` (bottone "Installa" reale) era già stato
+  osservato funzionante via `InstallBanner` nella stessa sessione ma non ri-testato identico nella
+  nuova sezione di Settings. **Da confermare su Android Studio** insieme al resto dei punti mobile
 
 ---
 

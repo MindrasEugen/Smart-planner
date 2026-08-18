@@ -1,0 +1,54 @@
+# Blueprint Render per i SOLI due nuovi servizi del backend Web Push (BUG-01).
+# Il sito statico esistente (smart-planner-vjgl) resta gestito da dashboard
+# come oggi, volutamente non incluso qui: non vogliamo far dipendere il
+# deploy gia' verificato e funzionante dall'adozione di questo Blueprint.
+#
+# Prima di applicarlo: recupera la connection string Postgres dal tuo
+# progetto Supabase (Project Settings > Database > Connection string >
+# pooler "Transaction", porta 6543 -- vedi server/.env.example) e genera una
+# coppia di chiavi VAPID con `npx web-push generate-vapid-keys` dentro
+# server/. I valori marcati `sync: false` vanno incollati a mano nel
+# dashboard Render dopo la creazione dei servizi (mai committarli qui).
+
+services:
+  - type: web
+    name: agenda-push-server
+    runtime: node
+    plan: free
+    rootDir: server
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /
+    envVars:
+      - key: TZ
+        value: Europe/Rome
+      - key: ALLOWED_ORIGIN
+        value: https://smart-planner-vjgl.onrender.com
+      - key: TICK_WINDOW_MINUTES
+        value: "5"
+      - key: SYNC_SECRET
+        sync: false
+      - key: VAPID_PUBLIC_KEY
+        sync: false
+      - key: VAPID_PRIVATE_KEY
+        sync: false
+      - key: VAPID_SUBJECT
+        sync: false
+      - key: DATABASE_URL
+        sync: false
+
+  - type: cron
+    name: agenda-push-tick
+    runtime: node
+    plan: free
+    # Deve restare <= TICK_WINDOW_MINUTES sul Web Service sopra, altrimenti
+    # si rischia di perdere occorrenze tra un tick e l'altro (vedi
+    # server/src/tick.js)
+    schedule: "*/5 * * * *"
+    buildCommand: "echo 'nessuna build necessaria: solo una chiamata HTTP'"
+    startCommand: 'curl -sf -H "Authorization: Bearer $SYNC_SECRET" "$TICK_URL"'
+    envVars:
+      - key: TICK_URL
+        value: https://agenda-push-server.onrender.com/api/tick
+      - key: SYNC_SECRET
+        sync: false

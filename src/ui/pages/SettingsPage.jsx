@@ -6,11 +6,45 @@
 import { useCallback, useEffect, useState } from 'react';
 import { FadeIn } from '../components/Animations';
 import FeedbackForm from '../components/Feedback/FeedbackForm.jsx';
+import { useInstallPrompt } from '../components/InstallBanner/useInstallPrompt.js';
 import {
   getNotificationPermission,
   requestNotificationPermission,
 } from '../../logic/notifications/browser.js';
 import { showToast } from '../../logic/notifications/toast.js';
+import {
+  getTheme,
+  setTheme,
+  getVibrationEnabled,
+  setVibrationEnabled,
+  getSilentNotifications,
+  setSilentNotifications,
+  setPushEnabled,
+  getPushSubscribed,
+} from '../../logic/preferences.js';
+import {
+  isPushSupported,
+  subscribeToPush,
+  unsubscribeFromPush,
+  getExistingPushSubscription,
+} from '../../logic/notifications/push.js';
+import {
+  isSyncConfigured,
+  syncSubscriptionToServer,
+  deleteSubscriptionFromServer,
+} from '../../logic/notifications/sync.js';
+
+const THEME_OPTIONS = [
+  { value: 'light', label: 'Chiaro', icon: 'light_mode' },
+  { value: 'dark', label: 'Scuro', icon: 'dark_mode' },
+  { value: 'system', label: 'Sistema', icon: 'contrast' },
+];
+
+const CHECKBOX_CLASS =
+  'w-5 h-5 rounded border border-outline text-primary focus:ring-2 focus:ring-primary/20';
+
+/** Safari iOS espone `navigator.standalone`; nessun altro browser lo definisce. */
+const isIOS = typeof navigator !== 'undefined' && navigator.standalone !== undefined;
 
 /**
  * Etichette leggibili per lo stato del permesso notifiche
@@ -79,6 +113,222 @@ function NotificationSettings() {
         <p className="text-sm text-on-surface-variant mt-4">
           Il browser ha bloccato le notifiche per questo sito: riattivale
           dall&apos;icona del lucchetto nella barra degli indirizzi.
+        </p>
+      )}
+    </section>
+  );
+}
+
+/**
+ * Sezione per attivare le notifiche push (VAPID), consegnate dal backend.
+ * A differenza di NotificationSettings sopra (permesso browser, richieste
+ * solo mentre l'app e' aperta), queste arrivano anche ad app completamente
+ * chiusa e telefono bloccato: e' il canale che risolve BUG-01.
+ * Nascosta del tutto se il build non ha un backend configurato
+ * (VITE_SYNC_API_URL/VITE_SYNC_SECRET) o se il browser non supporta la Push API.
+ * @returns {JSX.Element | null} Sezione notifiche push, o null se non disponibile
+ */
+function PushNotificationsSettings() {
+  const [permission, setPermission] = useState(() => getNotificationPermission());
+  const [subscribed, setSubscribedState] = useState(() => getPushSubscribed());
+  const [loading, setLoading] = useState(false);
+
+  const handleEnable = useCallback(async () => {
+    setLoading(true);
+    try {
+      let currentPermission = permission;
+      if (currentPermission !== 'granted') {
+        const result = await requestNotificationPermission();
+        currentPermission = result;
+        setPermission(result);
+        if (result !== 'granted') {
+          showToast('Serve il permesso notifiche per attivare i promemoria push', 'error');
+          return;
+        }
+      }
+      const subscription = await subscribeToPush();
+      await syncSubscriptionToServer(subscription);
+      setPushEnabled(true);
+      setSubscribedState(true);
+      showToast('Notifiche push attivate', 'success');
+    } catch (e) {
+      console.error('Errore attivazione notifiche push:', e);
+      showToast("Errore nell'attivazione delle notifiche push", 'error');
+    } finally {
+      setLoading(false);
+    }
+  }, [permission]);
+
+  const handleDisable = useCallback(async () => {
+    setLoading(true);
+    try {
+      const subscription = await getExistingPushSubscription();
+      await unsubscribeFromPush();
+      if (subscription) {
+        await deleteSubscriptionFromServer(subscription.endpoint);
+      }
+      setPushEnabled(false);
+      setSubscribedState(false);
+      showToast('Notifiche push disattivate', 'info');
+    } catch (e) {
+      console.error('Errore disattivazione notifiche push:', e);
+      showToast('Errore nella disattivazione delle notifiche push', 'error');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  if (!isSyncConfigured() || !isPushSupported()) return null;
+
+  return (
+    <section className="bg-surface-container-low rounded-xl border border-outline-variant p-6 mt-6">
+      <h2 className="text-xl font-semibold text-on-surface">
+        Notifiche push (anche ad app chiusa)
+      </h2>
+      <p className="text-sm text-on-surface-variant mt-2">
+        A differenza delle notifiche normali, queste arrivano anche col telefono
+        bloccato o l&apos;app completamente chiusa.
+      </p>
+
+      <button
+        type="button"
+        onClick={subscribed ? handleDisable : handleEnable}
+        disabled={loading}
+        className={`mt-4 px-4 py-2 rounded-xl text-sm font-medium transition-colors active:scale-95 disabled:opacity-60 ${
+          subscribed
+            ? 'bg-surface-container-lowest text-on-surface border border-outline-variant hover:bg-surface-variant'
+            : 'bg-primary hover:bg-primary-container text-on-primary'
+        }`}
+        aria-label={subscribed ? 'Disattiva le notifiche push' : 'Attiva le notifiche push'}
+      >
+        {subscribed ? 'Disattiva' : 'Attiva notifiche push'}
+      </button>
+    </section>
+  );
+}
+
+/**
+ * Sezione preferenze utente: tema, vibrazione e notifiche silenziose.
+ * Persistite in localStorage, coerente con l'architettura local-first del progetto.
+ * @returns {JSX.Element} Sezione preferenze
+ */
+function PreferencesSettings() {
+  const [theme, setThemeState] = useState(() => getTheme());
+  const [vibrationEnabled, setVibrationEnabledState] = useState(() => getVibrationEnabled());
+  const [silent, setSilentState] = useState(() => getSilentNotifications());
+
+  const handleThemeChange = useCallback((value) => {
+    setTheme(value);
+    setThemeState(value);
+  }, []);
+
+  const handleVibrationChange = useCallback((e) => {
+    const enabled = e.target.checked;
+    setVibrationEnabled(enabled);
+    setVibrationEnabledState(enabled);
+    // Anteprima immediata, solo se il dispositivo la supporta davvero
+    if (enabled && 'vibrate' in navigator) navigator.vibrate(100);
+  }, []);
+
+  const handleSilentChange = useCallback((e) => {
+    const value = e.target.checked;
+    setSilentNotifications(value);
+    setSilentState(value);
+  }, []);
+
+  return (
+    <section className="bg-surface-container-low rounded-xl border border-outline-variant p-6 mt-6">
+      <h2 className="text-xl font-semibold text-on-surface">Preferenze</h2>
+
+      <div className="mt-4">
+        <span className="block text-sm text-on-surface-variant mb-2">Tema</span>
+        <div className="flex gap-2">
+          {THEME_OPTIONS.map((opt) => (
+            <button
+              key={opt.value}
+              type="button"
+              onClick={() => handleThemeChange(opt.value)}
+              aria-pressed={theme === opt.value}
+              className={`flex-1 flex items-center justify-center gap-1 px-2 py-1.5 rounded-lg text-sm transition-colors active:scale-95 ${
+                theme === opt.value
+                  ? 'bg-primary text-on-primary'
+                  : 'bg-surface-container-lowest text-on-surface-variant hover:bg-surface-variant border border-outline-variant'
+              }`}
+            >
+              <span className="material-symbols-outlined text-[16px]">{opt.icon}</span>
+              {opt.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <label className="flex items-center gap-2 cursor-pointer mt-6">
+        <input
+          type="checkbox"
+          className={CHECKBOX_CLASS}
+          checked={vibrationEnabled}
+          onChange={handleVibrationChange}
+        />
+        <span className="text-sm text-on-surface">
+          Vibrazione per le notifiche
+          <span className="block text-xs text-on-surface-variant">
+            Solo su mobile, se supportata dal browser
+          </span>
+        </span>
+      </label>
+
+      <label className="flex items-center gap-2 cursor-pointer mt-4">
+        <input
+          type="checkbox"
+          className={CHECKBOX_CLASS}
+          checked={silent}
+          onChange={handleSilentChange}
+        />
+        <span className="text-sm text-on-surface">
+          Notifiche silenziose
+          <span className="block text-xs text-on-surface-variant">
+            Disattiva il suono di sistema delle notifiche
+          </span>
+        </span>
+      </label>
+    </section>
+  );
+}
+
+/**
+ * Sezione per installare l'app come PWA, sempre raggiungibile da qui
+ * anche se l'utente ha già chiuso l'InstallBanner in precedenza.
+ * @returns {JSX.Element | null} Sezione installazione, o null se già installata
+ */
+function InstallSettings() {
+  const { isInstallable, isInstalled, promptInstall } = useInstallPrompt();
+
+  if (isInstalled) return null;
+
+  return (
+    <section className="bg-surface-container-low rounded-xl border border-outline-variant p-6 mt-6">
+      <h2 className="text-xl font-semibold text-on-surface">Installa l&apos;app</h2>
+
+      {isInstallable ? (
+        <>
+          <p className="text-sm text-on-surface-variant mt-2">
+            Installa Agenda Intelligente per un accesso rapido e notifiche più
+            affidabili.
+          </p>
+          <button
+            type="button"
+            onClick={promptInstall}
+            className="mt-4 px-4 py-2 bg-primary hover:bg-primary-container rounded-xl text-on-primary text-sm font-medium transition-colors active:scale-95"
+            aria-label="Installa l'app"
+          >
+            Installa
+          </button>
+        </>
+      ) : (
+        <p className="text-sm text-on-surface-variant mt-2">
+          {isIOS
+            ? 'Su Safari: tocca l\'icona di condivisione, poi "Aggiungi a Home". Le notifiche sono affidabili solo dopo l\'installazione.'
+            : 'Il tuo browser non offre l\'installazione automatica: cerca "Aggiungi a schermata Home" o "Installa app" nel menu del browser.'}
         </p>
       )}
     </section>
@@ -161,6 +411,9 @@ export default function SettingsPage() {
         <FadeIn>
           <h1 className="font-headline-md text-on-surface">Impostazioni</h1>
           <NotificationSettings />
+          <PushNotificationsSettings />
+          <PreferencesSettings />
+          <InstallSettings />
           <FeedbackForm />
           <ComingSoonSettings />
         </FadeIn>
@@ -171,6 +424,9 @@ export default function SettingsPage() {
         <FadeIn>
           <h1 className="font-headline-lg text-on-surface mb-xl">Impostazioni</h1>
           <NotificationSettings />
+          <PushNotificationsSettings />
+          <PreferencesSettings />
+          <InstallSettings />
           <FeedbackForm />
           <ComingSoonSettings />
         </FadeIn>

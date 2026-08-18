@@ -7,8 +7,13 @@ import App from './ui/App.jsx';
 import { agendaStore } from './logic/store/index.js';
 import { setupStorePersistence } from './logic/store/persistence.js';
 import { setupAutoNotifications } from './logic/notifications/integration.js';
+import { applyTheme, watchSystemTheme } from './logic/preferences.js';
 // import './styles/theme.scss'; // Disabilitato temporaneamente - usando Tailwind CSS
 import './styles/global.css';
+
+// Applicato prima del render per evitare un flash del tema sbagliato
+applyTheme();
+watchSystemTheme();
 
 // Material Symbols e Inter font sono caricati tramite CDN in index.html
 // Tema custom basato su Google Stitch Cognitive Protocol Design System

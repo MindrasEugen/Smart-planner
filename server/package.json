@@ -1,0 +1,19 @@
+{
+  "name": "agenda-intelligente-push-server",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Backend minimo per Web Push (VAPID): invia le notifiche di Agenda Intelligente anche ad app chiusa.",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "node --watch src/index.js",
+    "test": "node --test src/tick.test.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "postgres": "^3.4.4",
+    "web-push": "^3.6.7"
+  }
+}

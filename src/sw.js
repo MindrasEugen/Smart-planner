@@ -11,8 +11,17 @@ import { ExpirationPlugin } from 'workbox-expiration';
 
 const NOTIFICATION_DB = 'agenda-notifications';
 const NOTIFICATION_STORE = 'scheduled';
+const HISTORY_STORE = 'history';
+// Deve restare allineata a DB_VERSION in src/logic/notifications/db.js:
+// e' la stessa IndexedDB, aperta da entrambi i contesti (pagina e SW)
+const NOTIFICATION_DB_VERSION = 2;
+// Stesso tetto di db.js: repeatEvery puo' arrivare a 1 minuto, senza un
+// limite lo storico crescerebbe senza controllo su un uso prolungato
+const MAX_HISTORY_ENTRIES = 200;
 const SYNC_TAG = 'check-notifications';
 const PERIODIC_SYNC_MIN_INTERVAL = 15 * 60 * 1000;
+// Pattern vibrazione standard, stesso valore di src/logic/notifications/browser.js
+const VIBRATION_PATTERN = [200, 100, 200];
 
 // ========== PRECACHING (gestito da Workbox) ==========
 // __WB_MANIFEST e' sostituito in fase di build con l'elenco degli asset;
@@ -46,23 +55,45 @@ registerRoute(
 );
 
 // ========== NOTIFICHE PUSH ==========
+// Consegnate dal backend (server/) anche ad app completamente chiusa: e'
+// il canale che risolve BUG-01, a differenza di periodicsync/sync sotto
+// (opportunistici, mai garantiti quando l'app non e' installata o comunque
+// throttlati pesantemente da Chrome).
 self.addEventListener('push', (event) => {
-  if (event.data) {
-    const data = event.data.json();
-    event.waitUntil(
-      self.registration.showNotification(data.title, {
+  if (!event.data) return;
+
+  const data = event.data.json();
+  event.waitUntil(
+    (async () => {
+      await self.registration.showNotification(data.title, {
         body: data.body,
         icon: data.icon || '/icons/icon-192x192.png',
+        tag: data.tag,
         data: data.data,
-      })
-    );
-  }
+        // Il SW non ha accesso al localStorage della pagina: le preferenze
+        // vibrazione/silenziose viaggiano nel payload della push, sincronizzate
+        // dal client via /api/subscribe (vedi src/logic/notifications/sync.js)
+        vibrate: data.vibrate ? VIBRATION_PATTERN : undefined,
+        silent: Boolean(data.silent),
+      });
+      // Stesso storico usato dalle notifiche locali (src/logic/notifications/db.js,
+      // consultato da AlertsPage): senza questa scrittura le notifiche arrivate
+      // via push mentre l'app e' chiusa non comparirebbero mai in Alerts
+      await addHistoryEntry({
+        id: `hist_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+        itemId: data.data?.itemId,
+        title: data.title,
+        body: data.body ?? '',
+        shownAt: Date.now(),
+      }).catch((e) => console.error('SW: Errore salvataggio storico notifica push:', e));
+    })()
+  );
 });
 
 // ========== INDEXEDDB HELPERS ==========
 function openNotificationDB() {
   return new Promise((resolve, reject) => {
-    const req = indexedDB.open(NOTIFICATION_DB);
+    const req = indexedDB.open(NOTIFICATION_DB, NOTIFICATION_DB_VERSION);
     req.onerror = () => reject(req.error);
     req.onsuccess = () => resolve(req.result);
     req.onupgradeneeded = (e) => {
@@ -70,7 +101,37 @@ function openNotificationDB() {
       if (!db.objectStoreNames.contains(NOTIFICATION_STORE)) {
         db.createObjectStore(NOTIFICATION_STORE, { keyPath: 'id' });
       }
+      if (!db.objectStoreNames.contains(HISTORY_STORE)) {
+        db.createObjectStore(HISTORY_STORE, { keyPath: 'id' });
+      }
     };
+  });
+}
+
+async function addHistoryEntry(entry) {
+  const db = await openNotificationDB();
+  await new Promise((resolve, reject) => {
+    const tx = db.transaction(HISTORY_STORE, 'readwrite');
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+    tx.objectStore(HISTORY_STORE).put(entry);
+  });
+  await trimHistory(db);
+}
+
+async function trimHistory(db) {
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(HISTORY_STORE, 'readwrite');
+    const store = tx.objectStore(HISTORY_STORE);
+    const request = store.getAll();
+    request.onsuccess = () => {
+      const entries = request.result.sort((a, b) => b.shownAt - a.shownAt);
+      for (const entry of entries.slice(MAX_HISTORY_ENTRIES)) {
+        store.delete(entry.id);
+      }
+    };
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
   });
 }
 

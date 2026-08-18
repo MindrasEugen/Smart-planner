@@ -19,9 +19,9 @@ import { DEFAULT_TASK_NOTIFICATIONS } from '../../../logic/items/actions.js';
  * @property {Importance} importance - Livello importanza
  * @property {boolean} notificationsEnabled - Notifiche attivate
  * @property {number} startBeforeValue - Valore inizio notifiche
- * @property {'minutes' | 'hours'} startBeforeUnit - Unità di misura inizio
+ * @property {'minutes' | 'hours' | 'days'} startBeforeUnit - Unità di misura inizio
  * @property {number} repeatEveryValue - Valore ripetizione
- * @property {'minutes' | 'hours'} repeatEveryUnit - Unità di misura ripetizione
+ * @property {'minutes' | 'hours' | 'days'} repeatEveryUnit - Unità di misura ripetizione
  * @property {boolean} notifyAfterDeadline - Notifica dopo scadenza
  * @property {boolean} stopOnComplete - Ferma a completamento
  */
@@ -41,7 +41,27 @@ const importanceOptions = [
 export const timeUnitOptions = [
   { value: 'minutes', label: 'minuti' },
   { value: 'hours', label: 'ore' },
+  { value: 'days', label: 'giorni' },
 ];
+
+const MINUTES_PER_HOUR = 60;
+const MINUTES_PER_DAY = 1440;
+
+/**
+ * Converte un numero di minuti nel valore/unità più leggibile per il form
+ * (solo se la conversione è esatta, altrimenti resta in minuti).
+ * @param {number} totalMinutes - Minuti totali
+ * @returns {{ value: number, unit: 'minutes' | 'hours' | 'days' }} Valore e unità
+ */
+function minutesToFormUnit(totalMinutes) {
+  if (totalMinutes >= MINUTES_PER_DAY && totalMinutes % MINUTES_PER_DAY === 0) {
+    return { value: totalMinutes / MINUTES_PER_DAY, unit: 'days' };
+  }
+  if (totalMinutes >= MINUTES_PER_HOUR && totalMinutes % MINUTES_PER_HOUR === 0) {
+    return { value: totalMinutes / MINUTES_PER_HOUR, unit: 'hours' };
+  }
+  return { value: totalMinutes, unit: 'minutes' };
+}
 
 /**
  * Hook per gestire il form dei Task
@@ -56,6 +76,8 @@ export function useTaskForm({ item, mode }) {
     if (mode === 'edit' && item && item.type === 'TASK') {
       const dueDate = item.dueDate instanceof Date ? item.dueDate.toISOString().split('T')[0] : '';
       const { notificationSettings } = item;
+      const startBefore = minutesToFormUnit(notificationSettings.startBefore);
+      const repeatEvery = minutesToFormUnit(notificationSettings.repeatEvery);
       return {
         title: item.title,
         description: item.description || '',
@@ -63,10 +85,10 @@ export function useTaskForm({ item, mode }) {
         dueTime: item.dueTime,
         importance: item.importance,
         notificationsEnabled: true,
-        startBeforeValue: notificationSettings.startBefore,
-        startBeforeUnit: notificationSettings.startBefore >= 60 ? 'hours' : 'minutes',
-        repeatEveryValue: notificationSettings.repeatEvery,
-        repeatEveryUnit: notificationSettings.repeatEvery >= 60 ? 'hours' : 'minutes',
+        startBeforeValue: startBefore.value,
+        startBeforeUnit: startBefore.unit,
+        repeatEveryValue: repeatEvery.value,
+        repeatEveryUnit: repeatEvery.unit,
         notifyAfterDeadline: notificationSettings.notifyAfterDeadline,
         stopOnComplete: notificationSettings.stopOnComplete,
       };
@@ -90,7 +112,9 @@ export function useTaskForm({ item, mode }) {
   const [errors, setErrors] = useState({});
 
   const convertToMinutes = (value, unit) => {
-    return unit === 'hours' ? value * 60 : value;
+    if (unit === 'days') return value * MINUTES_PER_DAY;
+    if (unit === 'hours') return value * MINUTES_PER_HOUR;
+    return value;
   };
 
   const validate = useCallback(() => {

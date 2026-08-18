@@ -25,6 +25,7 @@ export const statusOptions = [
   { value: '', label: 'Tutti' },
   { value: 'PENDING', label: 'In sospeso' },
   { value: 'COMPLETED', label: 'Completati' },
+  { value: 'OVERDUE', label: 'Scaduti' },
 ];
 
 export const importanceOptions = [
@@ -90,7 +91,9 @@ export function useFilters() {
       const opt = typeOptions.find(o => o.value === filterCriteria.type);
       filters.push({ key: 'type', label: 'Tipo', value: opt?.label || filterCriteria.type });
     }
-    if (filterCriteria.status) {
+    if (filterCriteria.overdueOnly) {
+      filters.push({ key: 'status', label: 'Stato', value: 'Scaduti' });
+    } else if (filterCriteria.status) {
       const opt = statusOptions.find(o => o.value === filterCriteria.status);
       filters.push({ key: 'status', label: 'Stato', value: opt?.label || filterCriteria.status });
     }
@@ -113,6 +116,8 @@ export function useFilters() {
   const clearFilter = useCallback((key) => {
     const newCriteria = { ...filterCriteria };
     delete newCriteria[key];
+    // 'status' copre anche 'Scaduti', rappresentato internamente da overdueOnly
+    if (key === 'status') delete newCriteria.overdueOnly;
     setFilterCriteria(newCriteria);
   }, [filterCriteria, setFilterCriteria]);
 
@@ -120,8 +125,16 @@ export function useFilters() {
     setFilterCriteria({ ...filterCriteria, type: value || undefined });
   }, [filterCriteria, setFilterCriteria]);
 
+  // "Scaduti" non è un valore reale di item.status (solo PENDING/COMPLETED
+  // esistono nel modello dati): è un concetto temporale calcolato, quindi va
+  // rappresentato con overdueOnly (già gestito da applyFilters) invece che
+  // finire dentro filterByStatus, dove non corrisponderebbe a nessun item.
   const setStatusFilter = useCallback((value) => {
-    setFilterCriteria({ ...filterCriteria, status: value || undefined });
+    if (value === 'OVERDUE') {
+      setFilterCriteria({ ...filterCriteria, status: undefined, overdueOnly: true });
+    } else {
+      setFilterCriteria({ ...filterCriteria, status: value || undefined, overdueOnly: undefined });
+    }
   }, [filterCriteria, setFilterCriteria]);
 
   const setImportanceFilter = useCallback((value) => {
@@ -136,10 +149,15 @@ export function useFilters() {
     setSortCriteria(parseSortValue(value));
   }, [setSortCriteria]);
 
+  // Valore da passare al FilterDropdown "Stato": riflette anche overdueOnly,
+  // che non vive dentro filterCriteria.status
+  const statusFilterValue = filterCriteria.overdueOnly ? 'OVERDUE' : (filterCriteria.status || '');
+
   return {
     filterCriteria,
     sortCriteria,
     activeFilters,
+    statusFilterValue,
     clearAllFilters,
     clearFilter,
     setTypeFilter,

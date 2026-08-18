@@ -20,6 +20,13 @@
 > 📱 Il 2026-08-14 sono stati trovati e corretti 6 bug di layout mobile mai emersi prima (verificati
 > su emulatore Android reale, non solo browser desktop) — dettaglio in [`PLAN.md`](PLAN.md#-debito-tecnico-aperto)
 > (DS-07..DS-12).
+>
+> 🐛 Il 2026-08-15 sono stati ripresi 7 bug segnalati da un uso reale dell'app (handoff in
+> [`BUGS.md`](BUGS.md)): **6 risolti** (installazione da Settings, azioni della card agenda non più
+> a hover, nuova sezione Preferenze con tema/vibrazione/notifiche silenziose, filtro "Scaduti" anche
+> da Stato, unità "giorni" nelle notifiche, interazione con le singole voci in Alerts). Resta aperto
+> il bug delle notifiche non recapitate su mobile, lasciato volutamente per ultimo perché richiede
+> un'indagine mirata — dettaglio in [`PLAN.md`](PLAN.md#-bug-reali-trovati-in-uso-reale--sessione-2026-08-15-bugsmd).
 
 ---
 
@@ -45,7 +52,8 @@ Il valore principale dell'app è:
 | **Filtri** | Per tipo, stato, importanza, data + 7 scorciatoie rapide (pagina Filtri) | ✅ Funzionante |
 | **Notifiche (app aperta)** | Promemoria ripetuti e configurabili, con cronologia (pagina Alerts) | ✅ Funzionante |
 | **Notifiche (app chiusa)** | Service Worker + IndexedDB | ⚠️ Parziale per limiti della piattaforma — vedi [Limitazioni note](#️-limitazioni-note) |
-| **PWA installabile** | Manifest + icone + banner "Installa App" su mobile | ✅ Funzionante |
+| **PWA installabile** | Manifest + icone + banner "Installa App" su mobile, e pulsante equivalente sempre raggiungibile in Settings | ✅ Funzionante |
+| **Preferenze** | Tema (chiaro/scuro/sistema), vibrazione e notifiche silenziose, in Settings | ⚠️ Funzionante, tema scuro parziale — vedi [Limitazioni note](#️-limitazioni-note) |
 | **Tailwind CSS** | Stili utility-first per UI responsive | ✅ Tema custom attivo (vedi sotto) |
 | **Design System** | Tema personalizzato da Google Stitch | ✅ `@theme` in `global.css` — unica sorgente di verità |
 | **SEO** | Meta tag Open Graph + structured data JSON-LD | ✅ Funzionante |
@@ -75,6 +83,15 @@ Eccezione: Tailwind v4 non ha un namespace `@theme` per `z-index`/`width` con ch
 ```bash
 grep "\.nome-classe" src/styles/global.css
 ```
+
+### Il tema scuro copre solo la navigazione (nota 2026-08-15)
+
+In Settings → Preferenze si può scegliere Chiaro/Scuro/Sistema: la scelta persiste e si applica
+davvero (`.dark` su `<html>`, gestito da `src/logic/preferences.js`). Ma le classi `dark:` esistono
+finora solo su `TopAppBar`/`BottomNav`/`MobileSideNav` — il resto dell'app (card, pagine, form)
+resta con i colori chiari indipendentemente dal tema scelto. Non è un bug del selettore: è
+un'estensione di copertura ancora da fare, componente per componente, se si vuole un dark mode
+end-to-end.
 
 ### Le "notifiche con app chiusa" non sono garantite
 
@@ -130,6 +147,7 @@ src/
 │
 ├── logic/                          # Logica applicativa (NO React)
 │   ├── hooks.js                    # useAgenda — hook principale (dati, filtri, CRUD)
+│   ├── preferences.js              # Tema, vibrazione, notifiche silenziose — localStorage
 │   ├── store/
 │   │   ├── index.js                # useAgendaStore + subscribeWithSelector; items, filterCriteria, sortCriteria
 │   │   └── persistence.js          # saveToStorage, loadFromStorage, setupStorePersistence (sottoscritta ai soli items)
@@ -159,7 +177,7 @@ src/
 │   │   ├── TasksPage.jsx
 │   │   ├── AlertsPage.jsx          # Cronologia notifiche mostrate (IndexedDB)
 │   │   ├── FiltersPage.jsx         # 7 scorciatoie di filtro rapide
-│   │   └── SettingsPage.jsx        # Include l'attivazione del permesso notifiche
+│   │   └── SettingsPage.jsx        # Permesso notifiche, preferenze, installazione PWA, feedback
 │   └── components/
 │       ├── Layout/                 # MainLayout, TopAppBar, DesktopTopAppBar, SideNavBar, MobileSideNav, BottomNav
 │       ├── Navigation/             # FAB
@@ -352,4 +370,5 @@ Attivazione del permesso notifiche e stato corrente dell'autorizzazione.
 ## 📄 Riferimenti
 - **Piano dettagliato, audit e stato dei task:** [`PLAN.md`](PLAN.md)
 - **Roadmap prossimi sviluppi (ROAD-01..08):** [`PLAN.md` § Roadmap](PLAN.md#️-roadmap--prossimi-sviluppi-handoff-2026-08-14)
+- **Bug da uso reale, in corso (BUGS.md):** [`BUGS.md`](BUGS.md), dettaglio fix in [`PLAN.md` § Bug reali](PLAN.md#-bug-reali-trovati-in-uso-reale--sessione-2026-08-15-bugsmd)
 - **Design Reference:** Google Stitch — Cognitive Protocol

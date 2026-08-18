@@ -204,6 +204,21 @@ export async function getHistory() {
 }
 
 /**
+ * Elimina una singola voce dallo storico
+ * @param {string} id - ID della voce di storico
+ * @returns {Promise<void>}
+ */
+export async function removeHistoryEntry(id) {
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(HISTORY_STORE_NAME, 'readwrite');
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+    tx.objectStore(HISTORY_STORE_NAME).delete(id);
+  });
+}
+
+/**
  * Svuota lo storico delle notifiche
  * @returns {Promise<void>}
  */

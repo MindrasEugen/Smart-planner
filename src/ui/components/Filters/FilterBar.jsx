@@ -13,6 +13,7 @@ export default function FilterBar() {
     filterCriteria,
     sortCriteria,
     activeFilters,
+    statusFilterValue,
     clearAllFilters,
     clearFilter,
     setTypeFilter,
@@ -45,7 +46,7 @@ export default function FilterBar() {
           <FilterDropdown
             label="Stato"
             options={statusOptions}
-            value={filterCriteria.status || ''}
+            value={statusFilterValue}
             onChange={setStatusFilter}
           />
         </div>

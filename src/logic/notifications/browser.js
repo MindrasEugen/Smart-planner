@@ -4,6 +4,10 @@
 
 import { showToast } from './toast.js';
 import { addHistoryEntry } from './db.js';
+import { getVibrationEnabled, getSilentNotifications } from '../preferences.js';
+
+// Pattern vibrazione standard per una notifica (ms: vibra, pausa, vibra)
+const VIBRATION_PATTERN = [200, 100, 200];
 
 // Icona di default per le notifiche di sistema
 const DEFAULT_NOTIFICATION_ICON = '/icons/icon-192x192.png';
@@ -88,6 +92,11 @@ export async function showBrowserNotification(title, options) {
     icon: options?.icon ?? DEFAULT_NOTIFICATION_ICON,
     tag: options?.tag,
     data: options?.data,
+    // Rispettato solo dai browser mobile con supporto Vibration API sulle
+    // notifiche di sistema (non è `navigator.vibrate()`, inutilizzabile da
+    // un contesto Service Worker)
+    vibrate: getVibrationEnabled() ? VIBRATION_PATTERN : undefined,
+    silent: getSilentNotifications(),
   };
 
   // Percorso preferito: Service Worker (il click e' gestito da 'notificationclick')

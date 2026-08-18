@@ -6,7 +6,9 @@
  */
 
 import { useCallback, useEffect, useState } from 'react';
-import { getHistory, clearHistory } from '../../logic/notifications/db.js';
+import { useNavigate } from 'react-router-dom';
+import { getHistory, clearHistory, removeHistoryEntry } from '../../logic/notifications/db.js';
+import { useAgenda } from '../../logic/hooks.js';
 import { FadeIn } from '../components/Animations';
 
 function formatShownAt(timestamp) {
@@ -19,6 +21,8 @@ function formatShownAt(timestamp) {
 }
 
 export default function AlertsPage() {
+  const navigate = useNavigate();
+  const { items } = useAgenda();
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -37,6 +41,11 @@ export default function AlertsPage() {
   const handleClear = async () => {
     await clearHistory();
     setHistory([]);
+  };
+
+  const handleRemoveEntry = async (id) => {
+    await removeHistoryEntry(id);
+    setHistory((prev) => prev.filter((entry) => entry.id !== id));
   };
 
   const content = (
@@ -83,24 +92,53 @@ export default function AlertsPage() {
         </div>
       ) : (
         <ul className="flex flex-col gap-2" aria-label="Cronologia notifiche">
-          {history.map((entry) => (
-            <li
-              key={entry.id}
-              className="p-md bg-surface-container-lowest border border-outline-variant rounded-lg"
-            >
-              <div className="flex items-center justify-between gap-2">
-                <span className="font-body-lg text-on-surface font-medium truncate">
-                  {entry.title}
-                </span>
-                <span className="font-label-sm text-on-surface-variant shrink-0">
-                  {formatShownAt(entry.shownAt)}
-                </span>
-              </div>
-              {entry.body && (
-                <p className="font-body-md text-on-surface-variant mt-1">{entry.body}</p>
-              )}
-            </li>
-          ))}
+          {history.map((entry) => {
+            // L'item collegato potrebbe essere stato eliminato dopo la notifica:
+            // in quel caso la voce resta consultabile ma non cliccabile
+            const linkedItem = entry.itemId && items.find((i) => i.id === entry.itemId);
+
+            return (
+              <li
+                key={entry.id}
+                className="p-md bg-surface-container-lowest border border-outline-variant rounded-lg"
+              >
+                <div className="flex items-start justify-between gap-2">
+                  {linkedItem ? (
+                    <button
+                      type="button"
+                      onClick={() => navigate(`/edit/${linkedItem.id}`)}
+                      className="flex-1 min-w-0 text-start hover:underline"
+                      aria-label={`Apri "${entry.title}" nell'agenda`}
+                    >
+                      <span className="font-body-lg text-on-surface font-medium truncate block">
+                        {entry.title}
+                      </span>
+                    </button>
+                  ) : (
+                    <span className="flex-1 min-w-0 font-body-lg text-on-surface font-medium truncate">
+                      {entry.title}
+                    </span>
+                  )}
+                  <div className="flex items-center gap-2 shrink-0">
+                    <span className="font-label-sm text-on-surface-variant">
+                      {formatShownAt(entry.shownAt)}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveEntry(entry.id)}
+                      className="p-1 rounded-full hover:bg-error/10 hover:text-error transition-colors active:scale-95"
+                      aria-label={`Elimina la voce "${entry.title}" dallo storico`}
+                    >
+                      <span className="material-symbols-outlined text-[16px]">close</span>
+                    </button>
+                  </div>
+                </div>
+                {entry.body && (
+                  <p className="font-body-md text-on-surface-variant mt-1">{entry.body}</p>
+                )}
+              </li>
+            );
+          })}
         </ul>
       )}
     </>
