@@ -788,8 +788,20 @@ aggiuntiva non avrebbe portato il beneficio atteso. Confermato con l'utente: sal
 istantaneamente sia l'anteprima in Settings sia l'icona nel TopAppBar (conferma che la propagazione
 pub/sub tra componenti montati insieme funziona), persistenza confermata dopo reload, tutti i 9
 preset leggibili in entrambi i temi. `npm run build` OK, `npm run lint` 0 errori (51 warning,
-invariati). **Non verificato su device Android reale** (solo browser desktop in questa sessione) —
-da fare al prossimo giro di test sul telefono.
+invariati).
+
+**Verifica di accessibilità aggiuntiva (stesso giorno):** trovato che `AvatarPicker` non intrappolava
+il Tab (a differenza di `ConfirmDialog`) — un utente da tastiera poteva uscire dal popup senza
+chiuderlo. Aggiunto lo stesso focus trap di `ConfirmDialog`/`MobileSideNav`. Verificato via DOM/
+tastiera: Shift+Tab dal primo pulsante (Chiudi) salta correttamente all'ultimo (`Avatar
+sports_esports`), Escape chiude il popup. Verificato anche via query DOM diretta (il viewport
+desktop reale non è raggiungibile con gli strumenti di automazione browser disponibili, fissi su
+504px indipendentemente dal resize della finestra) che `DesktopTopAppBar` — montato ma nascosto via
+CSS a questo viewport — riceve comunque l'aggiornamento avatar in tempo reale tramite
+`subscribeToAvatarChanges`, incluso l'anello di stato attivo su Settings.
+
+**Ancora da fare:** verifica su device Android reale (solo browser desktop + DOM in questa sessione)
+e conferma visiva vera del breakpoint desktop (qui solo verificata via DOM, non via screenshot).
 
 ### Verifica finale dei bug 2026-08-15 (BUG-02..07)
 
