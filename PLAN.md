@@ -800,8 +800,10 @@ desktop reale non è raggiungibile con gli strumenti di automazione browser disp
 CSS a questo viewport — riceve comunque l'aggiornamento avatar in tempo reale tramite
 `subscribeToAvatarChanges`, incluso l'anello di stato attivo su Settings.
 
-**Ancora da fare:** verifica su device Android reale (solo browser desktop + DOM in questa sessione)
-e conferma visiva vera del breakpoint desktop (qui solo verificata via DOM, non via screenshot).
+**Confermato dall'utente su device Android reale (stessa giornata):** tutto funziona correttamente.
+Resta solo la conferma visiva vera del breakpoint desktop (qui verificata solo via DOM, non via
+screenshot, per un limite dello strumento di automazione browser usato in questa sessione) — non
+bloccante, stesso componente `Avatar` già confermato funzionante su mobile e via ispezione DOM.
 
 ### Verifica finale dei bug 2026-08-15 (BUG-02..07)
 
