@@ -92,7 +92,7 @@ export default function AgendaItemCompact({ item }) {
           </span>
         )}
         {timeStatus === 'IMMINENT' && (
-          <span className="px-2 py-1 rounded-full bg-warning text-on-surface font-label-sm flex items-center gap-1">
+          <span className="px-2 py-1 rounded-full bg-warning text-on-warning font-label-sm flex items-center gap-1">
             <span className="material-symbols-outlined text-[14px]">schedule</span>
             <span>Imminente</span>
           </span>

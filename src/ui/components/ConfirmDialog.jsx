@@ -115,7 +115,7 @@ export default function ConfirmDialog({
         iconColor: 'text-warning',
         bgColor: 'bg-warning/10',
         borderColor: 'border-warning',
-        confirmBtnColor: 'bg-warning text-on-surface'
+        confirmBtnColor: 'bg-warning text-on-warning'
       },
       info: {
         icon: 'info',

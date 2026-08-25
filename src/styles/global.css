@@ -84,6 +84,7 @@
   /* Status colors - WCAG AA compliant */
   --color-success: #2d7d4b; /* 4.6:1 su #ffffff */
   --color-warning: #b45f06; /* 5.1:1 su #ffffff */
+  --color-on-warning: #181c1e; /* testo su bg-warning solido (badge/bottoni): invariato tra i temi, bg-warning stesso non cambia in dark */
   --color-info: #00522f;
   --color-danger: #ba1a1a;
 
@@ -170,6 +171,54 @@
  * sono supportati: vedi node_modules/tailwindcss/theme.css). z-fab/w-nav-desktop
  * restano quindi classi scritte a mano, non duplicate altrove.
  */
+/*
+ * Tema scuro: ridefinisce a runtime i token di superficie/sfondo/stato che
+ * @theme genera come custom property su :root. Attivato aggiungendo/
+ * rimuovendo la classe .dark su <html> (vedi applyTheme() in
+ * src/logic/preferences.js). Essendo le stesse custom property lette da
+ * ogni utility Tailwind che le referenzia (bg-surface, text-on-surface,
+ * bg-error/10, ecc.), la cascata aggiorna automaticamente tutta l'app senza
+ * dover toccare i componenti — prima di questo blocco solo 3 componenti di
+ * navigazione avevano varianti dark: scritte a mano, e comunque verso altri
+ * token della stessa palette chiara (mai davvero scuri).
+ * I colori "brand" (primary/secondary/tertiary e i rispettivi -container)
+ * restano invariati: sono già abbinati in coppie bg+on- autosufficienti,
+ * non derivano dai token di superficie.
+ */
+.dark {
+  --color-surface: #101418;
+  --color-surface-container-lowest: #0b0e11;
+  --color-surface-container-low: #181c1e;
+  --color-surface-container: #1c2024;
+  --color-surface-container-high: #262a2e;
+  --color-surface-container-highest: #313539;
+  --color-surface-dim: #101418;
+  --color-surface-bright: #363a3e;
+  --color-surface-variant: #43474e;
+  --color-surface-tint: #adc7f7;
+
+  --color-on-surface: #e2e2e6;
+  --color-on-surface-variant: #c4c6cf;
+
+  --color-background: #101418;
+  --color-on-background: #e2e2e6;
+
+  --color-inverse-surface: #e2e2e6;
+  --color-inverse-on-surface: #2d3133;
+  --color-inverse-primary: #002045;
+
+  --color-outline: #8d9199;
+  --color-outline-variant: #43474e;
+
+  /* Toni più chiari: i valori di base sono tarati per contrasto su sfondo
+     chiaro (A11Y-02), su sfondo quasi nero risulterebbero illeggibili */
+  --color-error: #ffb4ab;
+  --color-on-error: #690005;
+  --color-danger: #ffb4ab;
+  --color-warning: #ffb951;
+  --color-success: #7dd88c;
+}
+
 .z-fab { z-index: 1000; }
 .z-navbar { z-index: 50; }
 /* Sopra a z-fab: un drawer/modal deve coprire davvero tutto quando aperto,
