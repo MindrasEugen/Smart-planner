@@ -181,9 +181,14 @@
  * dover toccare i componenti — prima di questo blocco solo 3 componenti di
  * navigazione avevano varianti dark: scritte a mano, e comunque verso altri
  * token della stessa palette chiara (mai davvero scuri).
- * I colori "brand" (primary/secondary/tertiary e i rispettivi -container)
- * restano invariati: sono già abbinati in coppie bg+on- autosufficienti,
- * non derivano dai token di superficie.
+ * I colori "brand" secondary/tertiary e tutti i -container (primary
+ * incluso) restano invariati: sono già abbinati in coppie bg+on-
+ * autosufficienti, non derivano dai token di superficie. --color-primary
+ * invece è anche usato da solo come colore di testo/icona/bordo in tutta
+ * l'app (nav attiva, badge, link, "today" nel calendario) oltre che come
+ * sfondo pieno dei bottoni: per questo va scambiato con --color-on-primary,
+ * altrimenti il navy quasi nero (#002045, pensato per testo scuro su
+ * sfondo chiaro) sparirebbe su un fondo già scuro — vedi sotto.
  */
 .dark {
   --color-surface: #101418;
@@ -209,6 +214,17 @@
 
   --color-outline: #8d9199;
   --color-outline-variant: #43474e;
+
+  /* Scambio di tono: --color-primary da solo (non in coppia con
+     -container) è usato come testo/icona/bordo in tutta l'app (nav attiva,
+     badge, link, evidenziazione "oggi"), oltre che come sfondo dei
+     bottoni con --color-on-primary sopra. Riusa gli stessi due valori già
+     nella palette (--color-primary-fixed-dim / --color-primary originale),
+     stesso principio del "tone swap" M3: i bottoni restano leggibili
+     (bg chiaro + testo scuro) e il testo/le icone diventano visibili sul
+     nuovo sfondo scuro invece di sparire */
+  --color-primary: #adc7f7;
+  --color-on-primary: #002045;
 
   /* Toni più chiari: i valori di base sono tarati per contrasto su sfondo
      chiaro (A11Y-02), su sfondo quasi nero risulterebbero illeggibili */

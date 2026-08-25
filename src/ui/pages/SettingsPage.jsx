@@ -190,6 +190,17 @@ function PushNotificationsSettings() {
         bloccato o l&apos;app completamente chiusa.
       </p>
 
+      <p className="text-sm bg-warning/10 text-warning rounded-lg px-3 py-2 mt-3 flex items-start gap-2">
+        <span className="material-symbols-outlined text-[18px] shrink-0">info</span>
+        <span>
+          Su alcuni telefoni Android, se il risparmio energetico limita l&apos;app in
+          background, le notifiche possono arrivare in ritardo o non arrivare affatto.
+          Se non le ricevi a schermo spento, controlla le impostazioni batteria del
+          telefono (di solito Impostazioni → App → Chrome, o il nome di questa app se
+          installata → Batteria) e imposta &quot;Nessuna restrizione&quot;.
+        </span>
+      </p>
+
       <button
         type="button"
         onClick={subscribed ? handleDisable : handleEnable}

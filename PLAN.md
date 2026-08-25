@@ -2,19 +2,20 @@
 
 > **Stato:** ✅ **Core plan chiuso al 100% (92/92, 2026-08-13)** — invariato. In più, dal 2026-08-14 è
 > aperta una **fase di roadmap separata** (vedi sotto) con lavoro reale in corso.
-> **Ultimo aggiornamento:** 2026-08-18
+> **Ultimo aggiornamento:** 2026-08-25
 >
-> 🐛 **Bug da uso reale, sessioni 2026-08-15 → 2026-08-18** (handoff originario del 2026-08-14, poi
+> 🐛 **Bug da uso reale, sessioni 2026-08-15 → 2026-08-25** (handoff originario del 2026-08-14, poi
 > `BUGS.md`, ora integrato per intero in questo file — vedi sezione
 > [🐛 Bug reali trovati in uso reale](#-bug-reali-trovati-in-uso-reale--sessioni-2026-08-15--2026-08-18)):
-> **6 risolti il 2026-08-15** — pulsante "Installa" in Settings, azioni della card agenda non più legate
+> **tutti e 7 risolti** — pulsante "Installa" in Settings, azioni della card agenda non più legate
 > all'hover, nuova sezione Preferenze (tema/vibrazione/notifiche silenziose), filtro "Scaduti" anche
 > da Stato (oltre a Data), unità "giorni" in "Inizia notifiche", interazione con le singole voci in
-> Alerts. **BUG-01 (notifiche non arrivano su mobile)** — causa identificata il 2026-08-18 (limite
-> architetturale, non un bug di codice: nessun meccanismo client-only sopravvive alla chiusura
-> dell'app/schermo bloccato). 🟡 **Backend Web Push (VAPID) su Supabase costruito e verificato con un
-> round-trip reale** (subscribe → sync → tick, dedupe confermato), ma non ancora deployato né testato
-> su un telefono reale — resta l'unico bug aperto di questo gruppo.
+> Alerts. **BUG-01 (notifiche non arrivano su mobile) — ✅ risolto il 2026-08-25**: backend Web Push
+> (VAPID) su Supabase deployato su Render (Web Service + tick esterno via cron-job.org ogni 5 minuti,
+> il Cron Job nativo Render non è più gratuito), testato su un Samsung Galaxy S21 reale. La consegna a
+> schermo spento falliva ancora finché l'utente non ha impostato Chrome su "Nessuna restrizione"
+> batteria in Android — non un bug di codice, un prerequisito di sistema Android per Web Push in
+> background, da documentare come passo di setup nel README.
 >
 > 🗺️ **Roadmap** (sezione [🗺️ Roadmap — Prossimi Sviluppi](#️-roadmap--prossimi-sviluppi-handoff-2026-08-14)):
 > **ROAD-01/02/03 chiusi** (deploy Static Site su Render, sezione "Prossimamente", form feedback →
@@ -108,7 +109,7 @@ browser reale lo stesso giorno. **Il piano è ora completo al 100% (92/92).**
 | **RIFACIMENTO LAYOUT (UX-NEW)** | **6** | **6** | **100%** | Tutti chiusi 2026-08-12 |
 | **TOTALE** | **92** | **92** | **100%** | Tutti i task chiusi 2026-08-13 |
 | **ROADMAP (ROAD)** | **8** | **3** | **38%** | Nuova fase aggiunta 2026-08-14 (handoff brainstorming), **non conteggiata nel TOTALE sopra** — il core plan resta chiuso al 100%. ROAD-01 (deploy), ROAD-02 (sezione Prossimamente) e ROAD-03 (form feedback) chiusi — Priorità 1 completa. Vedi sezione [🗺️ Roadmap](#️-roadmap--prossimi-sviluppi-handoff-2026-08-14) |
-| **BUG (uso reale, 2026-08-15 → 08-18)** | **7** | **6** | **86%** | Handoff da uso reale (segnalati 2026-08-14), **non conteggiato nel TOTALE sopra**. BUG-01 (notifiche mobile): causa identificata, backend Web Push costruito e verificato in locale, deploy + test su device ancora da fare. Vedi sezione [🐛 Bug reali trovati in uso reale](#-bug-reali-trovati-in-uso-reale--sessioni-2026-08-15--2026-08-18) |
+| **BUG (uso reale, 2026-08-15 → 08-25)** | **7** | **7** | **100%** | Handoff da uso reale (segnalati 2026-08-14), **non conteggiato nel TOTALE sopra**. BUG-01 (notifiche mobile): backend Web Push deployato su Render, testato e confermato funzionante su device reale (Samsung Galaxy S21) il 2026-08-25, incluso a schermo spento. Vedi sezione [🐛 Bug reali trovati in uso reale](#-bug-reali-trovati-in-uso-reale--sessioni-2026-08-15--2026-08-18) |
 
 > La percentuale è scesa rispetto all'88% dichiarato prima, ma non è stato perso lavoro. Tre ragioni:
 > **(a)** 6 task QA marcati ✅ VERIFIED sono tornati a ⚠️ DA RIVERIFICARE perché attestavano
@@ -645,6 +646,80 @@ con messaggio esplicito (verificato anche questo).
 - Consegna end-to-end con app completamente chiusa e schermo bloccato — il punto centrale di questo bug
 - Notifica arrivata via push visibile in Alerts (scrittura IndexedDB dal SW senza pagina aperta)
 - Soak test di qualche ora per valutare se Cron Job + piano gratuito Render produce ritardi accettabili
+
+### Sessione 2026-08-25 — deploy backend BUG-01, test su device reale (Samsung Galaxy S21)
+
+**Deploy completato:** Web Service `agenda-push-server` (Render, Frankfurt) creato via API con le
+variabili di `server/.env` locale + un `SYNC_SECRET` nuovo generato per produzione (diverso da quello
+di sviluppo). Il Cron Job gratuito non è più disponibile su Render (piano minimo ora Starter, a
+pagamento): sostituito con un cron esterno gratuito (**cron-job.org**, unico tra i servizi free
+considerati a supportare header HTTP personalizzati, necessari per `Authorization: Bearer
+$SYNC_SECRET`) che chiama `/api/tick` ogni 5 minuti — stesso intervallo di `TICK_WINDOW_MINUTES` sul
+server, come richiesto dal commento in `tick.js` per non perdere occorrenze tra un tick e l'altro.
+Static site ridistribuito con `VITE_SYNC_API_URL`/`VITE_SYNC_SECRET`/`VITE_VAPID_PUBLIC_KEY` allineati
+al backend. Verificato: `/api/tick` risponde 200 con un invio reale forzato manualmente
+(`{"ok":true,"sent":1}`), riga in Supabase `subscriptions` con endpoint `fcm.googleapis.com` (push
+reale, non mock) dopo l'attivazione dal telefono.
+
+**Test su device reale (Samsung Galaxy S21):**
+- ✅ **Installazione PWA** confermata
+- ✅ **Tema scuro** confermato su device reale (dopo il fix sotto)
+- ✅ **Notifica push con schermo acceso** arrivata (sia tramite invio manuale sia tramite tick)
+- 🟡→✅ **Notifica push con schermo spento: prima NON arrivava, poi risolta cambiando le impostazioni
+  batteria del device.** Diagnosi in due passaggi: (1) inizialmente sospettato anche un tick esterno
+  non funzionante — nei log Render, nella finestra in cui l'item di test (sempre scaduto, ripetizione
+  ogni 5 minuti) è rimasto attivo, non risultava alcun invio automatico per ~40 minuti, solo un riavvio
+  a freddo del piano free coincidente con la riapertura dell'app. Ipotesi scartata dall'esito finale:
+  Render non espone log a livello di singola richiesta su questo piano, quindi l'assenza nei log non
+  era prova che il cron non giravo, solo assenza di visibilità — **da non fidarsi in futuro
+  dell'assenza di request-log su Render free come prova di "non è mai stato chiamato"**. (2) Causa
+  reale confermata dall'utente: **ottimizzazione batteria di Android (One UI)**, che sospendeva Chrome
+  in background prima che potesse processare l'evento `push` del Service Worker — esattamente
+  l'ipotesi iniziale. Risolta impostando **Impostazioni → App → Chrome → Batteria → "Nessuna
+  restrizione"** sul device. **Verificato dall'utente su Samsung Galaxy S21: notifica push arrivata a
+  schermo spento.** Resta da confermare separatamente il caso "app completamente disinstallata dai
+  recenti/forzatamente chiusa" (non ancora testato in modo isolato dal caso schermo spento), e va
+  documentato nel README come passo di setup obbligatorio per l'utente finale (non automatizzabile
+  da codice: è un'impostazione di sistema che l'utente deve attivare a mano dopo l'installazione)
+
+**Quattro bug reali trovati durante il test, corretti nella stessa sessione:**
+- **Molti testi poco leggibili in tema scuro** ("bisogna trovare il giusto equilibrio tra testo e
+  sfondo", segnalato dall'utente) — causa: `--color-primary` (`#002045`, navy quasi nero, pensato per
+  testo scuro su sfondo chiaro) è usato da solo come colore di testo/icona/bordo in tutta l'app (voce
+  di navigazione attiva, badge/chip filtro, link, evidenziazione "oggi" nel calendario) e non solo
+  come sfondo pieno dei bottoni (`bg-primary text-on-primary`) — a differenza di secondary/tertiary e
+  di tutti i token `-container`, sempre usati in coppie bg+on- autosufficienti. Il blocco `.dark`
+  aggiunto in questa sessione (vedi sopra) non lo copriva: risultato, testo blu notte praticamente
+  invisibile su sfondo quasi nero in decine di punti dell'app. Fix: **scambio di tono** in `.dark`,
+  `--color-primary` ↔ `--color-on-primary` (riusando gli stessi due valori già nella palette:
+  `#adc7f7`, cioè `--color-primary-fixed-dim`, e il navy originale) — stesso principio del "tone swap"
+  di Material Design 3 per i temi scuri. I bottoni restano leggibili (ora sfondo chiaro + testo scuro,
+  invertito ma comunque ad alto contrasto), testo/icone/bordi diventano visibili sul nuovo sfondo
+  scuro. **Limite noto non risolto**: `hover:bg-primary-container` (usato da quasi tutti i bottoni
+  `bg-primary`) resta invariato tra i temi — in scuro, durante l'hover il testo (`on-primary`, ora
+  scuro) su quello sfondo (`primary-container`, navy scuro invariato) ha contrasto basso per la durata
+  dell'hover. Non bloccante (hover non esiste su touch, solo desktop con mouse) ma da sistemare in una
+  sessione futura se emerge come problema reale. Verificato in browser (`npm run dev`, toggle
+  Chiaro/Scuro): CTA "+ Nuovo Task", FAB, "Abilita notifiche", toggle tema attivo, tutti passati da
+  illeggibili a testo scuro su sfondo azzurro chiaro ben distinguibile
+- **Popup di conferma eliminazione troppo trasparente in tema scuro** — `ConfirmDialog.jsx` era
+  l'unico componente in tutto il progetto a usare `bg-surface-container-lowest` **senza** il
+  `border border-outline-variant` che ogni altra card/pannello ha sempre. Invisibile in chiaro
+  (card bianca su backdrop scurito, contrasto enorme comunque), ma in scuro la card quasi nera si
+  confondeva col backdrop `bg-black/50` altrettanto scuro dietro. Fix: aggiunto il bordo mancante,
+  ora coerente col resto dell'app. Verificato in browser (chiaro e scuro): bordo visibile, testo
+  leggibile
+- **Scadenze imminenti e Alta priorità in Dashboard non gestibili direttamente** — `UpcomingCards.jsx`
+  e `PriorityList.jsx` erano puramente di sola lettura (nessun `onClick`, nessuna checkbox
+  funzionante, nessun pulsante), a differenza di `AgendaItemCard`/`AgendaItemCompact` che riusano già
+  `AgendaItemActions` (completa/modifica/elimina). Fix: estratta la riga di ciascuna lista in un
+  sotto-componente (`UpcomingCard`/`PriorityItem`, necessario per usare `useState` per item dentro una
+  `.map()`), aggiunto lo stesso pattern kebab-button-apre-pannello di `AgendaItemCard` (già verificato
+  su touch per **BUG-04**) con `AgendaItemActions`; in `PriorityList` anche la checkbox statica è
+  diventata interattiva (`toggleComplete`, stesso pattern accessibile di `AgendaItemCard`). Verificato
+  in browser: kebab apre il pannello su entrambe le sezioni, checkbox aggiorna le statistiche e lo
+  stato in tempo reale, `ConfirmDialog` di eliminazione integrato e funzionante. `npm run build` OK,
+  `npm run lint` 0 errori (51 warning, invariati)
 
 ### Verifica finale dei bug 2026-08-15 (BUG-02..07)
 

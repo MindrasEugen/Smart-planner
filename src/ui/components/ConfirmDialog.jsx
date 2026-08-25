@@ -145,7 +145,7 @@ export default function ConfirmDialog({
       }`}
     >
       <div
-        className={`bg-surface-container-lowest rounded-xl p-4 m-3 shadow-lg ${
+        className={`bg-surface-container-lowest border border-outline-variant rounded-xl p-4 m-3 shadow-lg ${
           isClosing ? 'opacity-0' : 'opacity-100'
         }`}
         style={{ maxWidth: '500px' }}
