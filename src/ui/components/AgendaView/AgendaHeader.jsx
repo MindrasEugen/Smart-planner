@@ -109,7 +109,7 @@ export default function AgendaHeader({
           </div>
           <Link
             to="/create/task"
-            className="no-underline flex items-center justify-center lg:justify-start gap-1 px-4 py-1.5 bg-primary hover:bg-primary-container rounded-xl text-on-primary font-label-sm transition-colors"
+            className="no-underline flex items-center justify-center lg:justify-start gap-1 px-4 py-1.5 bg-primary hover:brightness-90 rounded-xl text-on-primary font-label-sm transition-colors"
           >
             <span className="material-symbols-outlined text-[16px]">add</span>
             Nuovo Elemento

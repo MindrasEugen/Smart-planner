@@ -9,6 +9,7 @@ const VIBRATION_KEY = 'agenda_vibration_enabled';
 const SILENT_KEY = 'agenda_notifications_silent';
 const PUSH_ENABLED_KEY = 'agenda_push_enabled';
 const PUSH_SUBSCRIBED_KEY = 'agenda_push_subscribed';
+const AVATAR_KEY = 'agenda_avatar';
 
 /**
  * Legge il tema salvato
@@ -114,4 +115,40 @@ export function getPushSubscribed() {
  */
 export function setPushSubscribed(subscribed) {
   localStorage.setItem(PUSH_SUBSCRIBED_KEY, String(subscribed));
+}
+
+/** @type {Set<(avatarId: string | null) => void>} */
+const avatarListeners = new Set();
+
+/**
+ * @returns {string | null} Id dell'avatar scelto (vedi avatarOptions.js), null se non impostato
+ */
+export function getAvatar() {
+  return localStorage.getItem(AVATAR_KEY) || null;
+}
+
+/**
+ * Salva l'avatar scelto e notifica i componenti montati (TopAppBar,
+ * DesktopTopAppBar, Settings possono essere montati insieme, solo
+ * nascosti via CSS in base al breakpoint: senza questa notifica
+ * resterebbero disallineati finché non si ricarica la pagina).
+ * @param {string | null} avatarId - Id dell'avatar, o null per tornare al placeholder di default
+ */
+export function setAvatar(avatarId) {
+  if (avatarId) {
+    localStorage.setItem(AVATAR_KEY, avatarId);
+  } else {
+    localStorage.removeItem(AVATAR_KEY);
+  }
+  avatarListeners.forEach((listener) => listener(avatarId));
+}
+
+/**
+ * Sottoscrive un componente ai cambi di avatar.
+ * @param {(avatarId: string | null) => void} listener
+ * @returns {Function} Funzione di annullamento della sottoscrizione
+ */
+export function subscribeToAvatarChanges(listener) {
+  avatarListeners.add(listener);
+  return () => avatarListeners.delete(listener);
 }

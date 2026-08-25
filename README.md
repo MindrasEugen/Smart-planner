@@ -1,6 +1,6 @@
 # Agenda Intelligente con Notifiche Persistenti
 
-> **Stato:** ✅ **Piano core completo al 100% (2026-08-13)** — tutte le funzionalità core, i task QA e il debito tecnico chiusi e verificati manualmente in browser. **Live su Render**: https://smart-planner-vjgl.onrender.com. Dettaglio completo in [`PLAN.md`](PLAN.md).
+> **Stato:** ✅ **Piano core completo al 100% (2026-08-13)** — tutte le funzionalità core, i task QA e il debito tecnico chiusi e verificati manualmente in browser. **Live su Render**: frontend https://smart-planner-vjgl.onrender.com, backend Web Push https://agenda-push-server.onrender.com. Dettaglio completo in [`PLAN.md`](PLAN.md).
 >
 > Progetto **React 18 + JavaScript + JSDoc + Tailwind CSS v4 + PWA** per la gestione di scadenze con sistema di promemoria persistenti.
 >
@@ -21,12 +21,10 @@
 > su emulatore Android reale, non solo browser desktop) — dettaglio in [`PLAN.md`](PLAN.md#-debito-tecnico-aperto)
 > (DS-07..DS-12).
 >
-> 🐛 Il 2026-08-15 sono stati ripresi 7 bug segnalati da un uso reale dell'app (handoff in
-> [`BUGS.md`](BUGS.md)): **6 risolti** (installazione da Settings, azioni della card agenda non più
-> a hover, nuova sezione Preferenze con tema/vibrazione/notifiche silenziose, filtro "Scaduti" anche
-> da Stato, unità "giorni" nelle notifiche, interazione con le singole voci in Alerts). Resta aperto
-> il bug delle notifiche non recapitate su mobile, lasciato volutamente per ultimo perché richiede
-> un'indagine mirata — dettaglio in [`PLAN.md`](PLAN.md#-bug-reali-trovati-in-uso-reale--sessione-2026-08-15-bugsmd).
+> 🐛 Dal 2026-08-15 sono stati ripresi 7 bug segnalati da un uso reale dell'app: **tutti e 7 risolti**,
+> l'ultimo (notifiche non recapitate su mobile) il 2026-08-25 con un backend Web Push dedicato
+> (`server/`, deploy su Render + Supabase) — dettaglio in
+> [`PLAN.md`](PLAN.md#-bug-reali-trovati-in-uso-reale--sessioni-2026-08-15--2026-08-18).
 
 ---
 
@@ -51,9 +49,10 @@ Il valore principale dell'app è:
 | **Dashboard** | Panoramica immediata: imminenti, scaduti, alta priorità, compleanni, calendario | ✅ Funzionante |
 | **Filtri** | Per tipo, stato, importanza, data + 7 scorciatoie rapide (pagina Filtri) | ✅ Funzionante |
 | **Notifiche (app aperta)** | Promemoria ripetuti e configurabili, con cronologia (pagina Alerts) | ✅ Funzionante |
-| **Notifiche (app chiusa)** | Service Worker + IndexedDB | ⚠️ Parziale per limiti della piattaforma — vedi [Limitazioni note](#️-limitazioni-note) |
+| **Notifiche (app chiusa)** | Web Push (VAPID) con backend su Render + Supabase | ✅ Funzionante, verificato su device reale — richiede un passo di setup lato utente, vedi [Limitazioni note](#️-limitazioni-note) |
 | **PWA installabile** | Manifest + icone + banner "Installa App" su mobile, e pulsante equivalente sempre raggiungibile in Settings | ✅ Funzionante |
-| **Preferenze** | Tema (chiaro/scuro/sistema), vibrazione e notifiche silenziose, in Settings | ⚠️ Funzionante, tema scuro parziale — vedi [Limitazioni note](#️-limitazioni-note) |
+| **Preferenze** | Tema (chiaro/scuro/sistema), vibrazione e notifiche silenziose, in Settings | ✅ Funzionante, tema scuro esteso a tutta l'app (verificato su device reale) |
+| **Immagine profilo** | Scelta avatar (9 preset icona+colore) al posto del placeholder generico, in Settings | ✅ Funzionante — salvata in localStorage, non sincronizzata tra dispositivi (nessun account/login nel progetto) |
 | **Tailwind CSS** | Stili utility-first per UI responsive | ✅ Tema custom attivo (vedi sotto) |
 | **Design System** | Tema personalizzato da Google Stitch | ✅ `@theme` in `global.css` — unica sorgente di verità |
 | **SEO** | Meta tag Open Graph + structured data JSON-LD | ✅ Funzionante |
@@ -84,24 +83,34 @@ Eccezione: Tailwind v4 non ha un namespace `@theme` per `z-index`/`width` con ch
 grep "\.nome-classe" src/styles/global.css
 ```
 
-### Il tema scuro copre solo la navigazione (nota 2026-08-15)
+### Tema scuro (risolto il 2026-08-25)
 
 In Settings → Preferenze si può scegliere Chiaro/Scuro/Sistema: la scelta persiste e si applica
-davvero (`.dark` su `<html>`, gestito da `src/logic/preferences.js`). Ma le classi `dark:` esistono
-finora solo su `TopAppBar`/`BottomNav`/`MobileSideNav` — il resto dell'app (card, pagine, form)
-resta con i colori chiari indipendentemente dal tema scelto. Non è un bug del selettore: è
-un'estensione di copertura ancora da fare, componente per componente, se si vuole un dark mode
-end-to-end.
+davvero (`.dark` su `<html>`, gestito da `src/logic/preferences.js`) a **tutta l'app**, non solo alla
+navigazione. I token colore (`--color-surface`, `--color-on-surface`, `--color-error`, ecc.) generati
+da `@theme` in `global.css` vengono ridefiniti dentro un blocco `.dark { ... }`: ogni utility Tailwind
+che li referenzia si aggiorna automaticamente in cascata. `--color-primary` (usato anche da solo come
+colore di testo/icona/bordo, non solo come sfondo bottoni) è scambiato di tono con `--color-on-primary`
+in scuro, altrimenti il navy quasi nero risulterebbe invisibile su sfondo scuro. Verificato su device
+reale (Samsung Galaxy S21).
 
-### Le "notifiche con app chiusa" non sono garantite
+### Notifiche con app chiusa (Web Push, risolto il 2026-08-25) — richiede un passo di setup manuale
 
-Il web **non offre notifiche programmate garantite senza un backend push**:
+Il web non offre notifiche programmate garantite senza un backend push: `sync`/`periodicSync` sono
+opportunistici e non danno garanzie, `setTimeout` in pagina funziona solo ad app aperta. Per questo
+esiste un **backend dedicato** (`server/`, Node/Express su Render + Postgres su Supabase) che manda
+Web Push reali (VAPID) indipendentemente dallo stato dell'app — l'unico meccanismo web che consegna
+puntualmente anche a telefono bloccato. Un cron esterno (il Cron Job nativo di Render non è più
+gratuito) chiama `/api/tick` ogni 5 minuti.
 
-- `sync` (Background Sync) è **one-shot** e scatta al ritorno della connettività: non è un timer;
-- `periodicSync` esiste solo su Chromium, richiede la **PWA installata** e l'intervallo lo decide il browser;
-- `setTimeout` in pagina funziona solo mentre l'app è aperta.
-
-Ciò che l'app fa realmente: pianifica in-page mentre è aperta, salva le notifiche in IndexedDB perché il Service Worker possa mostrarle se il browser lo risveglia, e — soprattutto — **recupera le scadenze passate alla riapertura** (`flushExpiredNotifications`). Per una garanzia vera servirebbe Web Push con un server.
+⚠️ **Su Android, se il sistema limita l'app/il browser in background, le notifiche push arrivano in
+ritardo o non arrivano affatto** — non è un bug del progetto, è la gestione batteria del telefono che
+sospende il processo prima che possa ricevere il push. **Passo di setup consigliato dopo
+l'installazione**: Impostazioni Android → App → Chrome (o il nome dell'app se installata come PWA) →
+Batteria → **"Nessuna restrizione"**. Verificato che risolve il problema su un Samsung Galaxy S21
+reale (One UI); la stessa impostazione — o l'equivalente su altri produttori (Xiaomi/MIUI,
+Huawei, Oppo, Vivo) — va cercata caso per caso. La stessa nota è mostrata direttamente in Settings →
+Notifiche push, nell'app.
 
 ---
 
@@ -162,6 +171,8 @@ src/
 │   │   │                           # requestNotificationPermission, showBrowserNotification, getServiceWorkerRegistration
 │   │   ├── db.js                   # IndexedDB: save/remove/getExpired/removeByItemId delle notifiche pianificate
 │   │   ├── integration.js          # setupAutoNotifications, cancelItemNotification, flushExpiredNotifications
+│   │   ├── push.js                 # subscribeToPush, unsubscribeFromPush, getExistingPushSubscription (Push API)
+│   │   ├── sync.js                 # syncSubscriptionToServer, deleteSubscriptionFromServer, isSyncConfigured
 │   │   ├── toast.js                # pub/sub verso il ToastProvider React (showToast, subscribeToToasts)
 │   │   └── index.js                # barrel
 │   └── time/
@@ -201,6 +212,18 @@ src/
 │
 ├── sw.js                           # Service Worker (sorgente per injectManifest) — NON metterlo in public/
 └── main.jsx                        # Entry point: registra il SW, avvia persistenza e notifiche
+
+server/                             # Backend Web Push (VAPID), deploy separato su Render
+├── src/
+│   ├── index.js                    # Entry point Express, valida le env var richieste all'avvio
+│   ├── auth.js                     # Verifica Authorization: Bearer $SYNC_SECRET
+│   ├── db.js                       # Interfaccia storage (Postgres/Supabase), tabelle isolate dal client
+│   ├── tick.js                     # runTick/isDueWithinWindow — riusa calculateNextNotificationTime dal client
+│   └── routes/
+│       ├── subscribe.js            # POST/DELETE /api/subscribe
+│       ├── sync.js                 # POST /api/sync — mirror minimo degli item
+│       └── tick.js                 # GET /api/tick — chiamato dal cron esterno
+└── .env.example                    # Variabili richieste, vedi Setup Progetto sotto
 ```
 
 ---
@@ -261,6 +284,25 @@ npm test          # esegue tutta la suite una volta (Vitest)
 npm run test:watch  # modalità watch
 ```
 
+### Backend Web Push (opzionale, solo per sviluppare/testare le notifiche ad app chiusa)
+
+Il frontend funziona anche senza: `isSyncConfigured()` nasconde la sezione "Notifiche push" in
+Settings se `VITE_SYNC_API_URL`/`VITE_SYNC_SECRET` non sono impostate. Per lavorare sul backend
+(cartella `server/`, Node/Express + Postgres):
+
+```bash
+cd server
+cp .env.example .env   # compila TZ, SYNC_SECRET, VAPID_*, DATABASE_URL — vedi i commenti nel file
+npm install
+npm start               # ascolta su PORT (default 3000)
+npm test                 # suite del server (tick, finestra di controllo)
+```
+
+In produzione gira come Web Service su Render (`server/`, root dir `server`) più un cron esterno che
+chiama `GET /api/tick` ogni `TICK_WINDOW_MINUTES` (default 5) — il Cron Job nativo di Render non è
+più gratuito. Il frontend deployato ha bisogno delle stesse `VAPID_PUBLIC_KEY`/`SYNC_SECRET` del
+server, esposte come `VITE_VAPID_PUBLIC_KEY`/`VITE_SYNC_SECRET` a build-time.
+
 ---
 
 ## 🔔 Come funzionano le notifiche
@@ -272,6 +314,13 @@ Utile da leggere prima di modificare `src/logic/notifications/`.
 3. **Doppio canale.** Ogni notifica viene salvata in **IndexedDB** (per il Service Worker) e pianificata con un `setTimeout` in pagina (fallback mentre l'app è aperta).
 4. **Recupero.** All'avvio, `flushExpiredNotifications()` mostra e consuma le notifiche scadute rimaste in IndexedDB.
 5. **Service Worker.** `src/sw.js` gestisce `sync`, `periodicsync`, `notificationclick` e i messaggi dal client. È compilato da `vite-plugin-pwa`: **non** va duplicato in `public/`.
+6. **Web Push (canale che garantisce la consegna ad app chiusa).** Se il backend è configurato,
+   "Attiva notifiche push" in Settings chiama `pushManager.subscribe()` e registra la subscription sul
+   server (`src/logic/notifications/push.js` + `sync.js`). Il server (`server/`) confronta
+   periodicamente gli item sincronizzati con l'orario corrente e invia una push reale (VAPID) tramite
+   `web-push`; `src/sw.js` la riceve nell'evento `push` e la mostra anche a browser chiuso. Su Android
+   richiede che l'app/il browser non siano soggetti a restrizioni batteria — vedi
+   [Limitazioni note](#️-limitazioni-note).
 
 **Regole da rispettare:**
 - Un solo punto di registrazione del SW: `registerSW()` da `virtual:pwa-register` in `main.jsx`. Non aggiungere `navigator.serviceWorker.register()` altrove.
@@ -370,5 +419,5 @@ Attivazione del permesso notifiche e stato corrente dell'autorizzazione.
 ## 📄 Riferimenti
 - **Piano dettagliato, audit e stato dei task:** [`PLAN.md`](PLAN.md)
 - **Roadmap prossimi sviluppi (ROAD-01..08):** [`PLAN.md` § Roadmap](PLAN.md#️-roadmap--prossimi-sviluppi-handoff-2026-08-14)
-- **Bug da uso reale, in corso (BUGS.md):** [`BUGS.md`](BUGS.md), dettaglio fix in [`PLAN.md` § Bug reali](PLAN.md#-bug-reali-trovati-in-uso-reale--sessione-2026-08-15-bugsmd)
+- **Bug da uso reale, tutti risolti:** [`PLAN.md` § Bug reali](PLAN.md#-bug-reali-trovati-in-uso-reale--sessioni-2026-08-15--2026-08-18)
 - **Design Reference:** Google Stitch — Cognitive Protocol

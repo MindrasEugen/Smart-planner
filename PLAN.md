@@ -15,7 +15,13 @@
 > il Cron Job nativo Render non è più gratuito), testato su un Samsung Galaxy S21 reale. La consegna a
 > schermo spento falliva ancora finché l'utente non ha impostato Chrome su "Nessuna restrizione"
 > batteria in Android — non un bug di codice, un prerequisito di sistema Android per Web Push in
-> background, da documentare come passo di setup nel README.
+> background, **documentato come passo di setup sia nel README sia direttamente in Settings → Notifiche
+> push (nota nell'app)**. Stessa sessione, rifiniture: contrasto testi in tema scuro corretto
+> (`--color-primary` usato da solo come testo, scambio di tono in `.dark`), popup di conferma
+> eliminazione non più trasparente, card Dashboard ("Scadenze Imminenti"/"Alta Priorità") ora
+> gestibili direttamente, hover dei bottoni "primary" corretto in scuro, voce "Annunci discreti"
+> rimossa dalla sezione Prossimamente su richiesta dell'utente (ROAD-04/05 restano nel piano,
+> semplicemente non più anticipati in UI).
 >
 > 🗺️ **Roadmap** (sezione [🗺️ Roadmap — Prossimi Sviluppi](#️-roadmap--prossimi-sviluppi-handoff-2026-08-14)):
 > **ROAD-01/02/03 chiusi** (deploy Static Site su Render, sezione "Prossimamente", form feedback →
@@ -43,7 +49,7 @@
 > **Design System:** ✅ **DS-01 + DS-02 + DS-03 risolti** — `tailwind.config.js` migrato in `@theme` (DS-01/02, 2026-08-12); **DS-03 (2026-08-13)**: due regole scritte fuori da `@layer` in `global.css` (`*,*::before,*::after{margin:0;padding:0}` e il blocco `a,h1..h6,body,...`) battevano sempre le utility Tailwind (`@layer utilities`) per via delle cascade layer, azzerando ogni `pt-*/p-*/m-*` e forzando `color:var(--color-primary)` su ogni link. Invisibile a build+grep (le regole CSS esistono, sono solo sovrascritte a runtime) — visibile solo aprendo il browser. Fix: reset ridondante rimosso, blocco elementi HTML spostato in `@layer base`.
 > **PWA:** ✅ **Icone e manifest completi (PWA-01 chiuso il 2026-08-12)** — requisiti di installabilità soddisfatti; prompt di installazione da confermare in browser
 > **Linguaggio:** JavaScript (con JSDoc) | **Framework:** React 18 + Tailwind CSS v4 + Vite + PWA
-> **Build:** ✅ `npm run build` OK | **Lint:** ✅ 0 errori, 39 warning | **Test automatici:** ✅ Vitest, **49/49** (`npm test`) — QA-12
+> **Build:** ✅ `npm run build` OK | **Lint:** ✅ 0 errori, 51 warning (client) | **Test automatici:** ✅ Vitest, **49/49** (`npm test`) — QA-12
 > **Design Reference:** Google Stitch - Cognitive Protocol
 
 ---
@@ -539,6 +545,12 @@ npm run icons:verify   # valida i file in dist/
 
 ### Priorità 2 — creati ma **NON attivi** (bloccati da approvazione account esterno, non da DB)
 
+> **Nota 2026-08-25:** su richiesta dell'utente, rimossa la voce teaser "Annunci discreti" dalla
+> sezione "Prossimamente" di Settings (`UPCOMING_FEATURES` in `SettingsPage.jsx`) — non si vuole più
+> anticipare la cosa agli utenti per ora. **ROAD-04/05 restano nel piano** come possibilità futura,
+> stato invariato (⬜ TODO, mai implementati): la rimozione ha toccato solo il testo annuncio in UI,
+> non il codice/piano sottostante.
+
 | ID | Task | Owner | DependsOn | Stato | Priority | Acceptance |
 |----|------|-------|-----------|-------|----------|------------|
 | **ROAD-04** | **ConsentBanner (consenso privacy/cookie)** | UI ENGINE | attivare in coppia con ROAD-05 | ⬜ TODO | MEDIUM | `ConsentBanner.jsx`: barra/modal Accetta/Rifiuta, salvata in `localStorage` (chiave `cookie-consent`). Google Consent Mode v2: `gtag('consent','default',{ad_storage:'denied',analytics_storage:'denied'})` di default, `update` a `granted` su accettazione. Aggiunta pagina/sezione Privacy Policy raggiungibile dalle Settings (uso previsto di cookie e Google AdSense). **Il banner NON va montato nell'app** finché gli annunci (ROAD-05) non sono attivi — non c'è ancora nulla per cui chiedere consenso |
@@ -695,13 +707,22 @@ reale, non mock) dopo l'attivazione dal telefono.
   `#adc7f7`, cioè `--color-primary-fixed-dim`, e il navy originale) — stesso principio del "tone swap"
   di Material Design 3 per i temi scuri. I bottoni restano leggibili (ora sfondo chiaro + testo scuro,
   invertito ma comunque ad alto contrasto), testo/icone/bordi diventano visibili sul nuovo sfondo
-  scuro. **Limite noto non risolto**: `hover:bg-primary-container` (usato da quasi tutti i bottoni
-  `bg-primary`) resta invariato tra i temi — in scuro, durante l'hover il testo (`on-primary`, ora
-  scuro) su quello sfondo (`primary-container`, navy scuro invariato) ha contrasto basso per la durata
-  dell'hover. Non bloccante (hover non esiste su touch, solo desktop con mouse) ma da sistemare in una
-  sessione futura se emerge come problema reale. Verificato in browser (`npm run dev`, toggle
-  Chiaro/Scuro): CTA "+ Nuovo Task", FAB, "Abilita notifiche", toggle tema attivo, tutti passati da
-  illeggibili a testo scuro su sfondo azzurro chiaro ben distinguibile
+  scuro. Verificato in browser (`npm run dev`, toggle Chiaro/Scuro): CTA "+ Nuovo Task", FAB, "Abilita
+  notifiche", toggle tema attivo, tutti passati da illeggibili a testo scuro su sfondo azzurro chiaro
+  ben distinguibile.
+  **Rifinitura 2026-08-25 (stessa giornata): risolto anche il limite noto sull'hover** —
+  `hover:bg-primary-container` (11 occorrenze in 8 file: `AgendaHeader`, `QuickStats`, `FeedbackForm`,
+  `BirthdayForm`, `TaskForm`, `FAB`, `DashboardPage`, `SettingsPage`×3) restava invariato tra i temi:
+  in scuro, durante l'hover il testo `on-primary` (ora scuro) finiva su uno sfondo `primary-container`
+  (navy scuro, invariato) — contrasto basso per la durata dell'hover. Stesso difetto anche per un
+  bottone testuale isolato (`StatsCard.jsx`: `text-primary hover:text-primary-container`, testo chiaro
+  su testo scuro in hover). Fix: sostituito `hover:bg-primary-container`/`hover:text-primary-container`
+  con `hover:brightness-90`/`hover:opacity-70` — l'hover scurisce/attenua il colore invece di
+  scambiarlo con un token indipendente dal tema, quindi resta sempre abbinato correttamente al testo
+  in entrambi i temi, senza dover toccare `--color-primary-container` (che altrove è ancora usato in
+  coppie self-contained `bg-primary-container text-on-primary-container`, es. voce di nav attiva, e
+  sarebbe stato rotto da una modifica diretta del token). Verificato in browser: hover sul FAB in
+  scuro, "+" resta scuro e leggibile (prima sarebbe sparito su sfondo navy)
 - **Popup di conferma eliminazione troppo trasparente in tema scuro** — `ConfirmDialog.jsx` era
   l'unico componente in tutto il progetto a usare `bg-surface-container-lowest` **senza** il
   `border border-outline-variant` che ogni altra card/pannello ha sempre. Invisibile in chiaro
@@ -720,6 +741,55 @@ reale, non mock) dopo l'attivazione dal telefono.
   in browser: kebab apre il pannello su entrambe le sezioni, checkbox aggiorna le statistiche e lo
   stato in tempo reale, `ConfirmDialog` di eliminazione integrato e funzionante. `npm run build` OK,
   `npm run lint` 0 errori (51 warning, invariati)
+
+**Rifinitura aggiuntiva, stessa giornata:**
+- **`MobileSideNav` (drawer hamburger mobile): unico modo per chiudere era toccare fuori dal menu**
+  — Escape esisteva ma solo da tastiera (inutile su touch), nessun controllo visibile. Segnalato
+  dall'utente come poco chiaro. Fix: aggiunto un pulsante "×" sempre visibile in alto a destra
+  nell'header del drawer (`aria-label="Chiudi menu"`), stesso pattern icon-button hover/active già
+  usato altrove nell'app — il click sul backdrop e Escape restano entrambi validi, si aggiungono, non
+  si sostituiscono. Verificato in browser (viewport mobile): X visibile e cliccabile, chiude il drawer
+  correttamente. `npm run build` OK, `npm run lint` 0 errori
+
+### ✨ Nuova funzionalità: Immagine profilo (2026-08-25)
+
+Richiesta dall'utente su ispirazione del database ormai esistente (Supabase, per il backend Web
+Push). Valutato e **scartato** il salvataggio server-side: senza un vero sistema di login (ROAD-07,
+volutamente rimandato) un avatar sul DB non sarebbe comunque sincronizzato tra dispositivi — un
+telefono nuovo non avrebbe modo di sapere quale avatar è stato scelto altrove, quindi l'infrastruttura
+aggiuntiva non avrebbe portato il beneficio atteso. Confermato con l'utente: salvataggio in
+**localStorage**, stesso meccanismo di tema/vibrazione/notifiche silenziose già in Preferenze.
+
+**Implementato:**
+- `src/logic/preferences.js`: `getAvatar()`/`setAvatar()`/`subscribeToAvatarChanges()` — quest'ultima
+  necessaria perché `TopAppBar` (mobile) e `DesktopTopAppBar` possono essere **entrambi montati
+  insieme** (nascosti solo via CSS in base al breakpoint `lg:`), quindi un cambio avatar deve
+  propagarsi a componenti già montati, non solo essere letto al mount — pattern pub/sub identico a
+  quello già usato per i toast (`notifications/toast.js`)
+- `src/ui/components/Avatar/avatarOptions.js`: 9 preset (3 icone Material Symbols × 3 colori),
+  deliberatamente solo coppie `bg-*-container`/`text-on-*-container` del design system — le uniche
+  self-contained e già verificate stabili in entrambi i temi nella sessione di oggi (vedi fix
+  contrasto tema scuro sopra), per non introdurre un nuovo rischio di contrasto
+- `src/ui/components/Avatar/Avatar.jsx`: componente riutilizzabile (props `size: 'sm'|'md'|'lg'`),
+  mostra l'avatar scelto o il placeholder generico originale (cerchio grigio + icona "person") se non
+  ancora impostato
+- `src/ui/components/Avatar/AvatarPicker.jsx`: popup di scelta, stesso pattern di `ConfirmDialog`
+  (backdrop + pannello con bordo — importante dopo il fix di oggi sulla trasparenza in scuro — Escape,
+  focus sul primo elemento). Griglia 3×3, anello di evidenziazione sull'opzione selezionata
+- Sezione "Immagine profilo" in `SettingsPage.jsx` (`ProfileSettings`), prima voce della pagina:
+  anteprima grande (`size="lg"`) + bottone "Cambia avatar" che apre il popup
+- `TopAppBar.jsx` (mobile): il placeholder statico sostituito con `<Avatar size="md" />`.
+  `DesktopTopAppBar.jsx`: l'icona `account_circle` sostituita con `<Avatar size="sm" />` nello stesso
+  `Link` verso Settings, con un anello (`ring-2 ring-primary`) quando la pagina è attiva al posto del
+  cambio colore precedente (l'avatar ha già un proprio sfondo colorato, cambiarne il colore in base
+  allo stato attivo non avrebbe funzionato come per una semplice icona)
+
+**Verificato in browser** (`npm run dev`, tema chiaro e scuro): selezione nel popup aggiorna
+istantaneamente sia l'anteprima in Settings sia l'icona nel TopAppBar (conferma che la propagazione
+pub/sub tra componenti montati insieme funziona), persistenza confermata dopo reload, tutti i 9
+preset leggibili in entrambi i temi. `npm run build` OK, `npm run lint` 0 errori (51 warning,
+invariati). **Non verificato su device Android reale** (solo browser desktop in questa sessione) —
+da fare al prossimo giro di test sul telefono.
 
 ### Verifica finale dei bug 2026-08-15 (BUG-02..07)
 

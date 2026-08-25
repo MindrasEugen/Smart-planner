@@ -96,13 +96,26 @@ export default function MobileSideNav({ isOpen, onClose }) {
         tabIndex={-1}
       >
         <div className="flex flex-col h-full py-xl px-md">
-          <div className="mb-xl px-sm">
-            <h1 className="font-headline-lg text-headline-lg text-primary tracking-tight">
-              Agenda Intelligente
-            </h1>
-            <p className="font-label-sm text-label-sm text-on-surface-variant mt-xs">
-              Precision Scheduling
-            </p>
+          <div className="mb-xl px-sm flex items-start justify-between gap-md">
+            <div>
+              <h1 className="font-headline-lg text-headline-lg text-primary tracking-tight">
+                Agenda Intelligente
+              </h1>
+              <p className="font-label-sm text-label-sm text-on-surface-variant mt-xs">
+                Precision Scheduling
+              </p>
+            </div>
+            {/* Chiusura esplicita: prima l'unico modo per chiudere il menu era
+                toccare fuori dal drawer, poco chiaro su mobile — bottone
+                sempre visibile, stesso pattern degli altri pulsanti icona */}
+            <button
+              type="button"
+              onClick={onClose}
+              className="w-10 h-10 -mt-1 -mr-1 shrink-0 rounded-full flex items-center justify-center hover:bg-surface-variant dark:hover:bg-surface-container-highest active:bg-surface-container-high transition-colors"
+              aria-label="Chiudi menu"
+            >
+              <span className="material-symbols-outlined text-on-surface-variant text-xl">close</span>
+            </button>
           </div>
           <div className="flex-1 space-y-sm">
             {navItems.map((item) => (

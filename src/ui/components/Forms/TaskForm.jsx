@@ -201,7 +201,7 @@ export default function TaskForm({ item, mode }) {
           </button>
           <button
             type="submit"
-            className="px-4 py-2 bg-primary hover:bg-primary-container rounded-xl text-on-primary font-label-sm transition-colors active:scale-95"
+            className="px-4 py-2 bg-primary hover:brightness-90 rounded-xl text-on-primary font-label-sm transition-colors active:scale-95"
             aria-label="Salva task"
           >
             Salva

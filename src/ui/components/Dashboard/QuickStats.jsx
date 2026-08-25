@@ -45,7 +45,7 @@ export default function QuickStats() {
         </span>
         <Link
           to="/create/task"
-          className="no-underline ml-2 lg:ml-0 lg:mt-sm bg-primary text-on-primary px-3 py-1 rounded-full font-label-sm text-label-sm hover:bg-primary-container transition-colors"
+          className="no-underline ml-2 lg:ml-0 lg:mt-sm bg-primary text-on-primary px-3 py-1 rounded-full font-label-sm text-label-sm hover:brightness-90 transition-colors"
         >
           + Nuovo Task
         </Link>

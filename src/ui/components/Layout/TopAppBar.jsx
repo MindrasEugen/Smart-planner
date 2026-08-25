@@ -6,6 +6,7 @@
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import MobileSideNav from './MobileSideNav';
+import Avatar from '../Avatar/Avatar.jsx';
 
 export default function TopAppBar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -43,11 +44,7 @@ export default function TopAppBar() {
           </button>
 
           <div className="flex items-center gap-2">
-            <div className="w-10 h-10 rounded-full bg-surface-variant dark:bg-surface-container-highest border border-outline-variant flex items-center justify-center">
-              <span className="material-symbols-outlined text-on-surface-variant dark:text-on-surface text-lg">
-                person
-              </span>
-            </div>
+            <Avatar size="md" />
             <h1 className="font-headline-md text-headline-md text-primary dark:text-primary-fixed-dim m-0">
               Oggi
             </h1>

@@ -5,6 +5,7 @@
  */
 
 import { useLocation, Link } from 'react-router-dom';
+import Avatar from '../Avatar/Avatar.jsx';
 
 /**
  * DesktopTopAppBar - Top bar per desktop (solo parte destra)
@@ -73,15 +74,13 @@ export default function DesktopTopAppBar() {
         {/* Profilo */}
         <Link
           to="/settings"
-          className={`no-underline transition-colors scale-98 active:opacity-80 ${
-            isSettingsActive ? 'text-primary' : 'text-on-surface-variant hover:text-primary'
+          className={`no-underline block rounded-full transition-transform scale-98 active:opacity-80 ${
+            isSettingsActive ? 'ring-2 ring-primary ring-offset-2 ring-offset-surface' : ''
           }`}
           aria-label="Account"
           aria-current={isSettingsActive ? 'page' : undefined}
         >
-          <span className="material-symbols-outlined text-xl" data-icon="account_circle">
-            account_circle
-          </span>
+          <Avatar size="sm" />
         </Link>
       </div>
     </header>

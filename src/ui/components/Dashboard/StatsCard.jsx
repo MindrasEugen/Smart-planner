@@ -29,7 +29,7 @@ export default function StatsCard({
         {hasMore && viewAllUrl && (
           <Link
             to={viewAllUrl}
-            className="no-underline font-label-sm text-primary hover:text-primary-container transition-colors"
+            className="no-underline font-label-sm text-primary hover:opacity-70 transition-opacity"
           >
             Vedi tutti
           </Link>

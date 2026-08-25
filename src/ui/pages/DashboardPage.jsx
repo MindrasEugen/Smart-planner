@@ -99,7 +99,7 @@ export default function DashboardPage() {
                       <Link 
                         to="/create/task" 
                         state={{ suggestedDate: selectedDate.toISOString() }}
-                        className="no-underline bg-primary text-on-primary px-3 py-1 rounded-full font-label-sm text-label-sm hover:bg-primary-container transition-colors"
+                        className="no-underline bg-primary text-on-primary px-3 py-1 rounded-full font-label-sm text-label-sm hover:brightness-90 transition-colors"
                       >
                         + Aggiungi
                       </Link>

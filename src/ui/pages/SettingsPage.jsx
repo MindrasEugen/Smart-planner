@@ -7,6 +7,8 @@ import { useCallback, useEffect, useState } from 'react';
 import { FadeIn } from '../components/Animations';
 import FeedbackForm from '../components/Feedback/FeedbackForm.jsx';
 import { useInstallPrompt } from '../components/InstallBanner/useInstallPrompt.js';
+import Avatar from '../components/Avatar/Avatar.jsx';
+import AvatarPicker from '../components/Avatar/AvatarPicker.jsx';
 import {
   getNotificationPermission,
   requestNotificationPermission,
@@ -21,6 +23,8 @@ import {
   setSilentNotifications,
   setPushEnabled,
   getPushSubscribed,
+  getAvatar,
+  setAvatar,
 } from '../../logic/preferences.js';
 import {
   isPushSupported,
@@ -56,6 +60,52 @@ const PERMISSION_LABELS = {
   default: { label: 'Non ancora autorizzate', className: 'text-on-surface-variant' },
   unsupported: { label: 'Non supportate su questo browser', className: 'text-error' },
 };
+
+/**
+ * Sezione per scegliere l'avatar del profilo: sostituisce il placeholder
+ * generico ("person" grigio) mostrato in TopAppBar/DesktopTopAppBar.
+ * Salvato in localStorage (nessun account/login nel progetto, vedi
+ * PLAN.md — ROAD-07): stesso meccanismo di tema/vibrazione sopra.
+ * @returns {JSX.Element} Sezione impostazioni avatar
+ */
+function ProfileSettings() {
+  const [avatarId, setAvatarId] = useState(() => getAvatar());
+  const [pickerOpen, setPickerOpen] = useState(false);
+
+  const handleSelect = useCallback((id) => {
+    setAvatar(id);
+    setAvatarId(id);
+    setPickerOpen(false);
+  }, []);
+
+  return (
+    <section className="bg-surface-container-low rounded-xl border border-outline-variant p-6 mt-6">
+      <h2 className="text-xl font-semibold text-on-surface">Immagine profilo</h2>
+      <p className="text-sm text-on-surface-variant mt-2">
+        Scegli un avatar per il tuo profilo, al posto dell&apos;icona generica.
+      </p>
+
+      <div className="flex items-center gap-4 mt-4">
+        <Avatar size="lg" />
+        <button
+          type="button"
+          onClick={() => setPickerOpen(true)}
+          className="px-4 py-2 bg-primary hover:brightness-90 rounded-xl text-on-primary text-sm font-medium transition-colors active:scale-95"
+          aria-label="Cambia avatar"
+        >
+          Cambia avatar
+        </button>
+      </div>
+
+      <AvatarPicker
+        isOpen={pickerOpen}
+        onClose={() => setPickerOpen(false)}
+        currentAvatarId={avatarId}
+        onSelect={handleSelect}
+      />
+    </section>
+  );
+}
 
 /**
  * Sezione per abilitare le notifiche di sistema.
@@ -102,7 +152,7 @@ function NotificationSettings() {
         <button
           type="button"
           onClick={handleRequest}
-          className="mt-4 px-4 py-2 bg-primary hover:bg-primary-container rounded-xl text-on-primary text-sm font-medium transition-colors active:scale-95"
+          className="mt-4 px-4 py-2 bg-primary hover:brightness-90 rounded-xl text-on-primary text-sm font-medium transition-colors active:scale-95"
           aria-label="Abilita le notifiche di sistema"
         >
           Abilita notifiche
@@ -208,7 +258,7 @@ function PushNotificationsSettings() {
         className={`mt-4 px-4 py-2 rounded-xl text-sm font-medium transition-colors active:scale-95 disabled:opacity-60 ${
           subscribed
             ? 'bg-surface-container-lowest text-on-surface border border-outline-variant hover:bg-surface-variant'
-            : 'bg-primary hover:bg-primary-container text-on-primary'
+            : 'bg-primary hover:brightness-90 text-on-primary'
         }`}
         aria-label={subscribed ? 'Disattiva le notifiche push' : 'Attiva le notifiche push'}
       >
@@ -329,7 +379,7 @@ function InstallSettings() {
           <button
             type="button"
             onClick={promptInstall}
-            className="mt-4 px-4 py-2 bg-primary hover:bg-primary-container rounded-xl text-on-primary text-sm font-medium transition-colors active:scale-95"
+            className="mt-4 px-4 py-2 bg-primary hover:brightness-90 rounded-xl text-on-primary text-sm font-medium transition-colors active:scale-95"
             aria-label="Installa l'app"
           >
             Installa
@@ -356,12 +406,6 @@ const UPCOMING_FEATURES = [
     titolo: 'Quick add intelligente',
     descrizione:
       "Crea un task scrivendo una frase libera: l'AI pre-compila titolo, data, ora e importanza.",
-    stato: 'In valutazione',
-  },
-  {
-    titolo: 'Annunci discreti',
-    descrizione:
-      "Spazi pubblicitari limitati, pensati per sostenere lo sviluppo senza appesantire l'esperienza.",
     stato: 'In valutazione',
   },
   {
@@ -421,6 +465,7 @@ export default function SettingsPage() {
       <div className="lg:hidden">
         <FadeIn>
           <h1 className="font-headline-md text-on-surface">Impostazioni</h1>
+          <ProfileSettings />
           <NotificationSettings />
           <PushNotificationsSettings />
           <PreferencesSettings />
@@ -434,6 +479,7 @@ export default function SettingsPage() {
       <div className="hidden lg:block lg:flex-1 lg:min-h-0 lg:overflow-y-auto lg:custom-scrollbar">
         <FadeIn>
           <h1 className="font-headline-lg text-on-surface mb-xl">Impostazioni</h1>
+          <ProfileSettings />
           <NotificationSettings />
           <PushNotificationsSettings />
           <PreferencesSettings />
