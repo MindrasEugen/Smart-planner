@@ -3,11 +3,18 @@
  */
 
 /**
+ * @typedef {Object} ToastAction
+ * @property {string} label - Testo del pulsante (es. "Annulla")
+ * @property {Function} onClick - Callback al click, nessun argomento
+ */
+
+/**
  * @typedef {Object} ToastMessage
  * @property {string} id - Identificatore univoco
  * @property {ToastType} type - Tipo di toast
  * @property {string} message - Messaggio
  * @property {number} [duration] - Durata in ms (default: 5000)
+ * @property {ToastAction} [action] - Pulsante azione opzionale (es. "Annulla")
  */
 
 /**
@@ -28,9 +35,9 @@ import { v4 as uuidv4 } from 'uuid';
 export function useToast() {
   const [messages, setMessages] = useState([]);
 
-  const addToast = useCallback((message, type = 'info', duration = 5000) => {
+  const addToast = useCallback((message, type = 'info', duration = 5000, action) => {
     const id = uuidv4();
-    setMessages(prev => [...prev, { id, type, message, duration }]);
+    setMessages(prev => [...prev, { id, type, message, duration, action }]);
 
     if (duration > 0) {
       setTimeout(() => {

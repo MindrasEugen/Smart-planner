@@ -79,6 +79,22 @@ export function getHighPriorityItems() {
 }
 
 /**
+ * Ottieni item a media priorita'
+ * @returns {AgendaItem[]} Array di item a media priorita
+ */
+export function getMediumPriorityItems() {
+  return getItemsByImportance('MEDIUM');
+}
+
+/**
+ * Ottieni item a bassa priorita'
+ * @returns {AgendaItem[]} Array di item a bassa priorita
+ */
+export function getLowPriorityItems() {
+  return getItemsByImportance('LOW');
+}
+
+/**
  * Helper per combinare dueDate e dueTime in un Date
  * @param {AgendaItem} item - Item agenda
  * @returns {Date} Data e ora combinate

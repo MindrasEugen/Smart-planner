@@ -20,8 +20,11 @@ import InstallBanner from '../InstallBanner/InstallBanner.jsx';
 export default function MainLayout({ children }) {
   const location = useLocation();
   
-  // Nascondi BottomNav e FAB nelle pagine di creazione/modifica
-  const hideNav = location.pathname.startsWith('/create/') || 
+  // Nascondi FAB (non serve un pulsante "+" mentre si sta già creando un
+  // task) nelle pagine di creazione/modifica. La BottomNav invece resta
+  // sempre visibile: nasconderla anche lì confondeva l'utente, che la
+  // vedeva sparire proprio mentre era sulla schermata "Crea Nuovo Task".
+  const hideNav = location.pathname.startsWith('/create/') ||
                   location.pathname.startsWith('/edit/');
 
   return (
@@ -107,8 +110,9 @@ export default function MainLayout({ children }) {
       {/* Banner "Installa App" - solo mobile, sopra la Bottom Navigation */}
       {!hideNav && <InstallBanner />}
 
-      {/* Bottom Navigation - solo mobile, fixed bottom */}
-      {!hideNav && <BottomNav />}
+      {/* Bottom Navigation - solo mobile, fixed bottom, sempre visibile
+          (anche in creazione/modifica: vedi nota su hideNav sopra) */}
+      <BottomNav />
     </div>
   );
 }

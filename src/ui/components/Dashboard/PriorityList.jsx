@@ -4,7 +4,9 @@
  */
 
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAgendaStore } from '../../../logic/store/index.js';
+import { useAgenda } from '../../../logic/hooks.js';
 import { getTimeStatus } from '../../../logic/time/status.js';
 import { formatTime } from '../../../logic/time/timezone.js';
 import AgendaItemActions from '../AgendaItem/AgendaItemActions.jsx';
@@ -97,18 +99,43 @@ function PriorityItem({ item }) {
 }
 
 /**
- * Lista elementi ad alta priorità
+ * Lista elementi per fascia di priorità
  * @param {Object} props
- * @param {Array} props.items - Array di item ad alta priorità
+ * @param {Array} props.items - Array di item della fascia di priorità
+ * @param {string} [props.title] - Titolo della sezione
+ * @param {'HIGH' | 'MEDIUM' | 'LOW'} [props.importance] - Fascia di priorità: se presente,
+ *   il titolo diventa cliccabile e porta in Agenda filtrata su questa importanza
  * @returns {JSX.Element} Sezione con lista priorità
  */
-export default function PriorityList({ items }) {
+export default function PriorityList({ items, title = 'Alta Priorità', importance }) {
+  const navigate = useNavigate();
+  const { setFilterCriteria } = useAgenda();
+
   if (items.length === 0) return null;
+
+  const goToFilteredAgenda = () => {
+    setFilterCriteria({ importance });
+    navigate('/agenda');
+  };
 
   return (
     <section className="animate-fade-in-delay-2">
-      <h2 className="font-label-caps text-label-caps text-on-surface-variant mb-md uppercase tracking-wider">
-        Alta Priorità
+      <h2 className="mb-md">
+        {importance ? (
+          <button
+            type="button"
+            onClick={goToFilteredAgenda}
+            className="font-label-caps text-label-caps text-on-surface-variant uppercase tracking-wider hover:text-on-surface transition-colors flex items-center gap-1"
+            aria-label={`Vai in Agenda filtrata su ${title}`}
+          >
+            {title}
+            <span className="material-symbols-outlined text-[16px]">chevron_right</span>
+          </button>
+        ) : (
+          <span className="font-label-caps text-label-caps text-on-surface-variant uppercase tracking-wider">
+            {title}
+          </span>
+        )}
       </h2>
       <div className="space-y-sm">
         {items.map((item) => (

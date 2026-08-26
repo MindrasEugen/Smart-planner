@@ -1,11 +1,15 @@
 /**
- * Upcoming Cards - Card scadenze imminenti con horizontal scroll
+ * Upcoming Cards - Card scadenze imminenti, lista verticale a larghezza piena
+ * (mobile e desktop). Fino al 2026-08-26 era un carosello orizzontale su
+ * mobile: cambiato su richiesta esplicita dell'utente (non era un bug).
  * Secondo Google Stitch design
  */
 
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { getTimeStatus } from '../../../logic/time/status.js';
 import { formatTime } from '../../../logic/time/timezone.js';
+import { useAgenda } from '../../../logic/hooks.js';
 import AgendaItemActions from '../AgendaItem/AgendaItemActions.jsx';
 
 // Mappatura stato temporale a badge
@@ -56,7 +60,7 @@ function UpcomingCard({ item }) {
   const formattedTime = formatTime(item.dueTime);
 
   return (
-    <div className="snap-start min-w-[280px] lg:min-w-0 lg:w-full bg-surface-container-lowest rounded-xl border border-outline-variant p-lg shadow-[0_4px_12px_rgba(0,0,0,0.05)] relative overflow-hidden flex-shrink-0 transition-transform duration-200">
+    <div className="w-full bg-surface-container-lowest rounded-xl border border-outline-variant p-lg shadow-[0_4px_12px_rgba(0,0,0,0.05)] relative overflow-hidden transition-transform duration-200">
       {/* Strip colorato a sinistra */}
       <div className={`absolute top-0 left-0 w-1 h-full ${stripColor}`} />
 
@@ -85,14 +89,14 @@ function UpcomingCard({ item }) {
         </div>
       </div>
 
-      <h3 className="font-headline-md text-headline-md text-on-surface mb-sm">
+      <h3 className="font-headline-md text-headline-md text-on-surface mb-sm break-words">
         {item.title}
       </h3>
 
       {item.description && (
-        <p className="font-body-md text-body-md text-on-surface-variant flex items-center gap-2">
-          <span className="material-symbols-outlined text-[16px]">info</span>
-          <span>{item.description}</span>
+        <p className="font-body-md text-body-md text-on-surface-variant flex items-start gap-2">
+          <span className="material-symbols-outlined text-[16px] shrink-0 mt-[2px]">info</span>
+          <span className="break-words min-w-0">{item.description}</span>
         </p>
       )}
 
@@ -112,18 +116,30 @@ function UpcomingCard({ item }) {
  * @returns {JSX.Element} Sezione con card orizzontali
  */
 export default function UpcomingCards({ items }) {
+  const navigate = useNavigate();
+  const { setFilterCriteria } = useAgenda();
+
   if (items.length === 0) return null;
+
+  const goToFilteredAgenda = () => {
+    setFilterCriteria({ dateFilter: 'IMMINENT' });
+    navigate('/agenda');
+  };
 
   return (
     <section className="animate-fade-in-delay-1">
-      <h2 className="font-label-caps text-label-caps text-on-surface-variant mb-md uppercase tracking-wider">
-        Scadenze Imminenti
+      <h2 className="mb-md">
+        <button
+          type="button"
+          onClick={goToFilteredAgenda}
+          className="font-label-caps text-label-caps text-on-surface-variant uppercase tracking-wider hover:text-on-surface transition-colors flex items-center gap-1"
+          aria-label="Vai in Agenda filtrata su Scadenze Imminenti"
+        >
+          Scadenze Imminenti
+          <span className="material-symbols-outlined text-[16px]">chevron_right</span>
+        </button>
       </h2>
-      {/* Carosello orizzontale con snap solo sotto lg: (mobile/tablet) —
-          la colonna destra desktop è ~280-320px, troppo stretta anche per
-          una singola card da 280px: da lg: in su diventa una lista verticale
-          a larghezza piena, senza overflow-x. */}
-      <div className="flex overflow-x-auto pb-4 -mx-margin-mobile px-margin-mobile gap-gutter snap-x lg:flex-col lg:overflow-x-visible lg:snap-none lg:mx-0 lg:px-0 lg:pb-0 lg:gap-sm">
+      <div className="flex flex-col gap-sm">
         {items.map((item) => (
           <UpcomingCard key={item.id} item={item} />
         ))}

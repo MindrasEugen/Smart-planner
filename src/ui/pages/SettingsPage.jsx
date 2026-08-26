@@ -397,17 +397,67 @@ function InstallSettings() {
 }
 
 /**
+ * Novità recenti mostrate nella sezione "Novità". Voce più recente in cima.
+ * Aggiungere/rimuovere una voce qui aggiorna la sezione: nessun JSX da toccare altrove.
+ * @type {Array<{ titolo: string, descrizione: string, data: string }>}
+ */
+const RECENT_UPDATES = [
+  {
+    titolo: 'Quick Add con AI',
+    descrizione:
+      "Scrivi una frase libera e l'AI crea il task per te. Se specifichi data e ora, viene salvato subito (con un tasto Annulla se ti sei sbagliato); altrimenti puoi rivederlo prima di salvare.",
+    data: '27 Ago 2026',
+  },
+  {
+    titolo: 'Dashboard più utile',
+    descrizione:
+      'Le categorie in Dashboard (Alta/Media/Bassa priorità, Scadenze imminenti) sono ora cliccabili e ti portano dritto in Agenda con il filtro giusto già impostato.',
+    data: '27 Ago 2026',
+  },
+  {
+    titolo: 'Corretti alcuni problemi su mobile',
+    descrizione:
+      'La barra di navigazione in basso ora resta sempre visibile, anche mentre crei un nuovo task. La lista "Scadenze Imminenti" è più leggibile su schermi piccoli.',
+    data: '27 Ago 2026',
+  },
+];
+
+/**
+ * Sezione statica con le ultime novità del progetto.
+ * Contenuto pilotato da {@link RECENT_UPDATES}.
+ * @returns {JSX.Element} Sezione "Novità"
+ */
+function RecentUpdatesSettings() {
+  return (
+    <section className="bg-surface-container-low rounded-xl border border-outline-variant p-6 mt-6">
+      <h2 className="text-xl font-semibold text-on-surface">Novità</h2>
+      <p className="text-sm text-on-surface-variant mt-2">
+        Le ultime cose aggiunte o corrette nell&apos;app.
+      </p>
+
+      <ul className="mt-4 space-y-4">
+        {RECENT_UPDATES.map((update) => (
+          <li key={update.titolo}>
+            <div className="flex items-center flex-wrap gap-2">
+              <p className="text-sm font-medium text-on-surface">{update.titolo}</p>
+              <span className="shrink-0 inline-flex items-center px-3 py-1 rounded-full font-label-sm text-label-sm bg-surface-container-highest text-on-surface-variant">
+                {update.data}
+              </span>
+            </div>
+            <p className="text-sm text-on-surface-variant mt-1">{update.descrizione}</p>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
+/**
  * Funzionalità in arrivo mostrate nella sezione "Prossimamente".
  * Aggiungere/rimuovere una voce qui aggiorna la sezione: nessun JSX da toccare altrove.
  * @type {Array<{ titolo: string, descrizione: string, stato: string }>}
  */
 const UPCOMING_FEATURES = [
-  {
-    titolo: 'Quick add intelligente',
-    descrizione:
-      "Crea un task scrivendo una frase libera: l'AI pre-compila titolo, data, ora e importanza. In arrivo a breve.",
-    stato: 'In arrivo',
-  },
   {
     titolo: 'Profili utente personali',
     descrizione:
@@ -472,6 +522,7 @@ export default function SettingsPage() {
           <PreferencesSettings />
           <InstallSettings />
           <FeedbackForm />
+          <RecentUpdatesSettings />
           <ComingSoonSettings />
         </FadeIn>
       </div>
@@ -486,6 +537,7 @@ export default function SettingsPage() {
           <PreferencesSettings />
           <InstallSettings />
           <FeedbackForm />
+          <RecentUpdatesSettings />
           <ComingSoonSettings />
         </FadeIn>
       </div>

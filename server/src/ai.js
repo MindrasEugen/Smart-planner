@@ -16,8 +16,18 @@ const RESPONSE_SCHEMA = {
     dueDate: { type: 'STRING', description: 'Data nel formato YYYY-MM-DD' },
     dueTime: { type: 'STRING', description: 'Ora nel formato HH:mm (24 ore)' },
     importance: { type: 'STRING', enum: ['LOW', 'MEDIUM', 'HIGH'] },
+    dateSpecified: {
+      type: 'BOOLEAN',
+      description:
+        'True solo se il testo conteneva un riferimento esplicito alla data (anche vago/relativo, es. "domani", "venerdì"). False se dueDate è stata dedotta/inventata perché il testo non diceva nulla in merito.',
+    },
+    timeSpecified: {
+      type: 'BOOLEAN',
+      description:
+        'True solo se il testo conteneva un riferimento esplicito all\'orario (anche vago, es. "nel pomeriggio", "verso sera"). False se dueTime è stata dedotta/inventata perché il testo non diceva nulla in merito.',
+    },
   },
-  required: ['title', 'dueDate', 'dueTime', 'importance'],
+  required: ['title', 'dueDate', 'dueTime', 'importance', 'dateSpecified', 'timeSpecified'],
 };
 
 const DUE_DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
@@ -45,6 +55,7 @@ Regole:
 - Se manca un'informazione, deducila in modo ragionevole: nessun orario indicato → "09:00"; nessuna data indicata → oggi (${todayISO}); nessuna importanza indicata → "MEDIUM".
 - Espressioni relative come "domani", "dopodomani", "lunedì prossimo" vanno risolte rispetto alla data di oggi indicata sopra, non rispetto a nessun'altra data.
 - Il titolo deve essere breve e chiaro (max 60 caratteri). La descrizione può restare una stringa vuota se il testo non aggiunge dettagli utili oltre al titolo.
+- dateSpecified e timeSpecified vanno valutati con attenzione: sono true SOLO se il testo conteneva davvero un riferimento, anche vago o parziale ("venerdì", "nel pomeriggio", "tra un'ora"). Se hai dovuto inventare dueDate/dueTime perché il testo non ne parlava affatto, il rispettivo flag va false.
 - Rispondi solo con i campi richiesti, nessun testo aggiuntivo.`;
 }
 
@@ -60,7 +71,9 @@ function isValidDraft(draft) {
     typeof draft.description === 'string' &&
     DUE_DATE_RE.test(draft.dueDate) &&
     DUE_TIME_RE.test(draft.dueTime) &&
-    ['LOW', 'MEDIUM', 'HIGH'].includes(draft.importance)
+    ['LOW', 'MEDIUM', 'HIGH'].includes(draft.importance) &&
+    typeof draft.dateSpecified === 'boolean' &&
+    typeof draft.timeSpecified === 'boolean'
   );
 }
 
@@ -68,7 +81,7 @@ function isValidDraft(draft) {
  * Chiede a Gemini di estrarre i campi di un Task da un testo libero.
  * @param {string} text - Testo libero (già validato/troncato dal chiamante)
  * @param {string} todayISO - Data odierna (YYYY-MM-DD, fuso Europe/Rome)
- * @returns {Promise<{title: string, description: string, dueDate: string, dueTime: string, importance: 'LOW'|'MEDIUM'|'HIGH'}>}
+ * @returns {Promise<{title: string, description: string, dueDate: string, dueTime: string, importance: 'LOW'|'MEDIUM'|'HIGH', dateSpecified: boolean, timeSpecified: boolean}>}
  * @throws {Error} Se la chiave non è configurata, la chiamata fallisce, o la risposta non ha la forma attesa
  */
 export async function extractTaskFromText(text, todayISO) {
@@ -119,5 +132,7 @@ export async function extractTaskFromText(text, todayISO) {
     dueDate: draft.dueDate,
     dueTime: draft.dueTime,
     importance: draft.importance,
+    dateSpecified: draft.dateSpecified,
+    timeSpecified: draft.timeSpecified,
   };
 }

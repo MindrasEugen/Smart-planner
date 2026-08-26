@@ -16,7 +16,7 @@ import { parseDateTime, isSameDay } from '../time/timezone.js';
  * @property {Status} [status] - Stato
  * @property {Importance} [importance] - Importanza
  * @property {Date} [date] - Data specifica
- * @property {'TODAY' | 'TOMORROW' | 'NEXT_WEEK' | 'OVERDUE'} [dateFilter] - Filtro per range di date
+ * @property {'TODAY' | 'TOMORROW' | 'NEXT_WEEK' | 'OVERDUE' | 'IMMINENT'} [dateFilter] - Filtro per range di date
  * @property {boolean} [upcomingOnly] - Solo imminenti
  * @property {boolean} [overdueOnly] - Solo scaduti
  */
@@ -98,6 +98,19 @@ export function filterUpcoming(items) {
  */
 export function filterOverdue(items) {
   return items.filter(item => getTimeStatus(item) === 'OVERDUE');
+}
+
+/**
+ * Filtro per item imminenti o scaduti (stesso criterio della card
+ * "Scadenze Imminenti" in Dashboard: filterUpcoming + filterOverdue)
+ * @param {AgendaItem[]} items - Array di item
+ * @returns {AgendaItem[]} Item imminenti o scaduti
+ */
+export function filterImminentOrOverdue(items) {
+  return items.filter(item => {
+    const timeStatus = getTimeStatus(item);
+    return timeStatus === 'IMMINENT' || timeStatus === 'DUE' || timeStatus === 'OVERDUE';
+  });
 }
 
 /**
@@ -242,6 +255,9 @@ export function applyFilters(items, filters) {
         break;
       case 'OVERDUE':
         result = filterOverdue(result);
+        break;
+      case 'IMMINENT':
+        result = filterImminentOrOverdue(result);
         break;
     }
   }

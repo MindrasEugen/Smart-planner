@@ -8,15 +8,18 @@ import { isQuickAddConfigured, requestQuickAdd } from '../../../logic/ai/quickAd
 
 /**
  * @typedef {Object} QuickAddInputProps
- * @property {Function} onDraftReady - Callback chiamata con l'oggetto draft quando estrazione ha successo
+ * @property {Function} onDraftReady - Callback chiamata con l'oggetto draft quando l'AI non ha trovato
+ *   data/ora esplicite nel testo: il form va pre-compilato e rivisto a mano prima di salvare
+ * @property {Function} onAutoSave - Callback chiamata con l'oggetto draft quando l'AI ha trovato sia
+ *   data sia ora esplicite nel testo: può essere salvato subito, senza passare dal form
  */
 
 /**
- * Componente per generare draft di task da testo libero tramite AI
+ * Componente per generare (ed eventualmente salvare subito) un task da testo libero tramite AI
  * @param {QuickAddInputProps} props
  * @returns {JSX.Element | null}
  */
-export default function QuickAddInput({ onDraftReady }) {
+export default function QuickAddInput({ onDraftReady, onAutoSave }) {
   const [text, setText] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
@@ -40,7 +43,11 @@ export default function QuickAddInput({ onDraftReady }) {
     }
 
     if (result.draft) {
-      onDraftReady(result.draft);
+      if (result.readyToAutoSave) {
+        onAutoSave(result.draft);
+      } else {
+        onDraftReady(result.draft);
+      }
       setText('');
     } else if (result.error) {
       setError(result.error);
@@ -51,7 +58,10 @@ export default function QuickAddInput({ onDraftReady }) {
 
   return (
     <form onSubmit={handleSubmit} className="bg-surface-container-lowest rounded-xl p-md mb-lg">
-      <h3 className="font-headline-md text-on-surface mb-md">Quick add con AI</h3>
+      <h3 className="font-headline-md text-on-surface mb-sm">Quick add con AI</h3>
+      <p className="text-xs text-on-surface-variant mb-md">
+        Se specifichi data e ora (anche indicative) il task viene creato subito, senza passare dal form.
+      </p>
 
       <div className="flex flex-col gap-md">
         <textarea

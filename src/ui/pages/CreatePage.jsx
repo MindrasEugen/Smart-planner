@@ -4,8 +4,9 @@
  */
 
 import { useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { useAgenda } from '../../logic/hooks.js';
+import { useToastContext } from '../components/Toast/index.js';
 import { FadeIn } from '../components/Animations';
 import TaskForm from '../components/Forms/TaskForm.jsx';
 import QuickAddInput from '../components/Forms/QuickAddInput.jsx';
@@ -20,10 +21,27 @@ export default function CreatePage({ mode }) {
   const [aiDraft, setAiDraft] = useState(null);
   const [draftKey, setDraftKey] = useState(0);
   const { id } = useParams();
-  const { items } = useAgenda();
+  const navigate = useNavigate();
+  const { addToast } = useToastContext();
+  const { items, addTask, deleteItem } = useAgenda();
 
   const item = id ? items.find((i) => i.id === id) : null;
   const formMode = mode === 'edit' ? 'edit' : 'create';
+
+  const handleAutoSave = (draft) => {
+    const task = addTask({
+      title: draft.title,
+      description: draft.description || undefined,
+      dueDate: new Date(draft.dueDate),
+      dueTime: draft.dueTime,
+      importance: draft.importance,
+    });
+    addToast(`Task creato: "${task.title}"`, 'success', 8000, {
+      label: 'Annulla',
+      onClick: () => deleteItem(task.id),
+    });
+    navigate('/');
+  };
 
   let content;
   if (mode === 'birthday' || (mode === 'edit' && item?.type === 'BIRTHDAY')) {
@@ -32,7 +50,10 @@ export default function CreatePage({ mode }) {
     if (mode === 'task' && formMode === 'create') {
       content = (
         <>
-          <QuickAddInput onDraftReady={(draft) => { setAiDraft(draft); setDraftKey((k) => k + 1); }} />
+          <QuickAddInput
+            onDraftReady={(draft) => { setAiDraft(draft); setDraftKey((k) => k + 1); }}
+            onAutoSave={handleAutoSave}
+          />
           <TaskForm item={item || null} mode={formMode} initialData={aiDraft} key={draftKey} />
         </>
       );

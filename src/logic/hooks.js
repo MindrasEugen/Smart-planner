@@ -22,6 +22,8 @@ import {
   getUpcomingItems,
   getOverdueItems,
   getHighPriorityItems,
+  getMediumPriorityItems,
+  getLowPriorityItems,
   getItemTimeStatus,
   getNextNotificationTime,
 } from './items/selectors.js';
@@ -52,6 +54,8 @@ export function useAgenda() {
   const upcomingItems = useMemo(() => getUpcomingItems(items), [items]);
   const overdueItems = useMemo(() => getOverdueItems(items), [items]);
   const highPriorityItems = useMemo(() => getHighPriorityItems(items), [items]);
+  const mediumPriorityItems = useMemo(() => getMediumPriorityItems(items), [items]);
+  const lowPriorityItems = useMemo(() => getLowPriorityItems(items), [items]);
 
   // Item filtrati e ordinati
   const filteredItems = useMemo(() => {
@@ -62,6 +66,7 @@ export function useAgenda() {
   const addTask = useCallback((data) => {
     const task = createTask(data);
     addItem(task);
+    return task;
   }, []);
 
   const addBirthday = useCallback((data) => {
@@ -100,6 +105,8 @@ export function useAgenda() {
     upcomingItems,
     overdueItems,
     highPriorityItems,
+    mediumPriorityItems,
+    lowPriorityItems,
 
     // Filtri e ordinamento
     filterCriteria,

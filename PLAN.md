@@ -2,7 +2,13 @@
 
 > **Stato:** ✅ **Core plan chiuso al 100% (92/92, 2026-08-13)** — invariato. In più, dal 2026-08-14 è
 > aperta una **fase di roadmap separata** (vedi sotto) con lavoro reale in corso.
-> **Ultimo aggiornamento:** 2026-08-25
+> **Ultimo aggiornamento:** 2026-08-27
+>
+> 🎨 **Fix UX da uso reale — sessione 2026-08-27** (handoff `prompt-fix-ux-agenda-intelligente.md`,
+> 5 punti "alta priorità" segnalati dall'utente dopo l'uso reale dell'app online — vedi sezione
+> [🎨 Fix UX da uso reale — sessione 2026-08-27](#-fix-ux-da-uso-reale--sessione-2026-08-27)):
+> **4 su 5 implementati e verificati**, il 5° (avviso sonoro) rimandato su richiesta dell'utente.
+> Nessuna modifica ancora committata a fine sessione.
 >
 > 🐛 **Bug da uso reale, sessioni 2026-08-15 → 2026-08-25** (handoff originario del 2026-08-14, poi
 > `BUGS.md`, ora integrato per intero in questo file — vedi sezione
@@ -563,6 +569,12 @@ npm run icons:verify   # valida i file in dist/
 | **ROAD-06** | **Quick add AI — Gemini + rate limit** | UI ENGINE + LOGIC ENGINE | - | ✅ **DONE (2026-08-26)** | LOW | Pipeline completa (non solo scaffolding), riusa il backend Express già deployato su Render per il Web Push (zero costo di hosting aggiuntivo). **Backend**: `server/src/ai.js` (Gemini via REST, `responseSchema` per output strutturato), `server/src/routes/quickAdd.js` (`POST /api/quick-add`, dietro lo stesso `requireSyncSecret` degli altri endpoint), rate limit **5/giorno per dispositivo** (non per utente: non esiste ancora login, vedi ROAD-07) via tabella `quick_add_usage` (RLS abilitata a secco, stessa postura delle altre tabelle), `GEMINI_API_KEY`/`GEMINI_MODEL`/`QUICK_ADD_DAILY_LIMIT` in `server/.env.example` + `render.yaml`. **Frontend** (delegato a Mistral, poi revisionato): `src/logic/ai/deviceId.js`, `src/logic/ai/quickAdd.js` (stesso pattern `authedFetch`/`isXConfigured` di `sync.js`), `QuickAddInput.jsx` montato in `CreatePage.jsx` solo per task nuovi, `initialData` propagato a `TaskForm.jsx`/`useTaskForm.js`. **Bug trovato e corretto in revisione**: `QuickAddInput.jsx` aveva un `return null` scritto PRIMA delle `useState` (violazione Rules of Hooks), spostato dopo. **Scoperta in verifica**: `gemini-2.5-flash` non è più disponibile per nuovi utenti (l'API risponde 404 e suggerisce il successore) — default cambiato a **`gemini-3.6-flash`** in `ai.js`/`.env.example`/`render.yaml`. **Verificato end-to-end con una `GEMINI_API_KEY` reale** (server locale su porta 3099, DB reale `vhyqsdabneswjymlytbe`): estrazione corretta di titolo/data (relativa, "venerdì" → data giusta)/ora/importanza (dedotta da "importante" → HIGH) su testo libero reale; 5 chiamate consecutive stesso `deviceId` → `remaining` scende 4→3→2→1→0, la 6ª risponde **429** col messaggio corretto; un `deviceId` diverso non è affetto dal limite dell'altro; testo >500 caratteri → 400; `deviceId`/`text` mancanti → 400; richiesta senza `Authorization` → 401. Dati di test ripuliti da `quick_add_usage` dopo la verifica. `npm run lint` 0 errori/53 warning, `npm run build` OK, `npm test` server 4/4 |
 | **ROAD-07** | **Sistema di profili utente reale (auth Supabase + RLS)** | LOGIC ENGINE + UI ENGINE | - | 🟡 IN_PROGRESS | LOW | **2026-08-26**: fix di sicurezza critico applicato — RLS abilitata "a secco" su `items`/`subscriptions`/`sent_notifications` (migrazione `enable_rls_lockdown_public_tables`, verificato via Security Advisor: solo notice INFO residue, nessun errore). Scaffolding auth completo, non ancora attivo end-to-end: `src/logic/auth/` (client Supabase, `signUp`/`signIn`/`signOut`, `useAuthSession`), `src/ui/components/Auth/` (`LoginForm`, `RegisterForm`, `ProtectedRoute`), `src/ui/pages/LoginPage.jsx` + `RegisterPage.jsx` montati su `/login`+`/register` in `App.jsx` (raggiungibili, ma inerti: senza `.env` locale `signIn`/`signUp` restituiscono sempre "Supabase Auth non configurato"). Migrazione SQL vera pronta in `supabase/drafts/add_user_ownership_and_rls.sql` (colonna `user_id`, policy `auth.uid()`, dati di test esistenti da cancellare — decisione presa, non ancora eseguita). Manca ancora: `.env` locale con credenziali Supabase, `ProtectedRoute` applicata alle route esistenti, esecuzione della migrazione vera, verifica con due utenti reali. **Target: entro fine settembre 2026** (annunciato in Settings → Prossimamente, date volutamente vaghe per scelta dell'utente) |
 
+**ROAD-07 — passi ancora da fare, non coperti sopra** (da `piano-fix-rls-e-autenticazione.md`, integrato qui e poi rimosso):
+- Attivare il provider **Email** in Supabase Auth (dashboard progetto `vhyqsdabneswjymlytbe`) — decidere se richiedere conferma email o no. Non ancora fatto.
+- **Decisione prodotto aperta**: cosa succede a un utente non loggato quando l'auth sarà attiva — redirect obbligato a `/login`, o l'app resta usabile in modalità limitata/anonima? Da decidere con l'utente prima di collegare `ProtectedRoute` alle route esistenti.
+- Ogni `item`/`subscription` creato dal client dovrà includere `user_id: session.user.id`; le letture non dovranno più filtrare a mano lato client (RLS restituisce già solo le righe dell'utente loggato) — basta garantire che le richieste passino da un client Supabase autenticato, non con l'anon key nuda.
+- **Checklist di verifica finale** prima di considerare ROAD-07 davvero DONE: login con due utenti diversi → ognuno vede solo i propri item/subscription; una chiamata con la sola anon key (nessuna sessione) → RLS blocca, nessuna riga restituita; Security Advisor ri-eseguito e pulito; invio notifiche push ancora funzionante dopo l'attivazione (tocca `subscriptions`/`sent_notifications`, ora protette da RLS).
+
 ### Meta
 
 | ID | Task | Owner | DependsOn | Stato | Priority | Acceptance |
@@ -573,6 +585,26 @@ npm run icons:verify   # valida i file in dist/
 (ROAD-04 + ROAD-05) come blocco unico quando si è pronti a richiedere l'account AdSense, poi
 Priorità 3 (ROAD-06, ROAD-07) solo quando si deciderà di introdurre un database reale (es. Supabase,
 già in uso per ButlerAI).
+
+---
+
+## 🎨 Fix UX da uso reale — sessione 2026-08-27
+
+> Handoff ricevuto come `prompt-fix-ux-agenda-intelligente.md` (root del repo, non committato — file
+> di lavoro dell'utente): 5 punti "alta priorità" emersi dall'uso reale dell'app online, discussi uno
+> per uno con l'utente prima di implementare (non presi alla lettera: 2 punti sono stati corretti in
+> corso d'opera rispetto a come erano scritti nel prompt, vedi sotto). **Verificato ad ogni passo**:
+> `npm run lint` (0 errori), `npm run build`, `npm test` (49/49 client, 4/4 server), più verifica
+> visiva reale (Playwright headless mobile-viewport, e per il punto 1 anche emulatore Android reale
+> via CDP). Nulla committato a fine sessione.
+
+| # | Cosa | Stato | Dettaglio |
+|---|------|-------|-----------|
+| 1 | Nav bar bassa sparita in creazione task | ✅ DONE | Non era un bug nascosto: `hideNav` in `MainLayout.jsx` nascondeva deliberatamente `BottomNav` su `/create/*`+`/edit/*`. Tolta la `BottomNav` da quella condizione (il `FAB` resta nascosto lì, correttamente). Riprodotto il malinteso iniziale (avevo capito "sparisce dopo il salvataggio", non riproducibile) prima di capire che il problema era "sparisce mentre sei sulla schermata stessa" |
+| 2 | "Scadenze Imminenti" carosello orizzontale su mobile | ✅ DONE | Era design intenzionale (commentato nel codice), non un bug — confermato col l'utente che il cambio è voluto. `UpcomingCards.jsx`: lista verticale a larghezza piena anche su mobile, tolto `overflow-x-auto`/`snap-x`, aggiunto `break-words` su titolo/descrizione per evitare overflow orizzontale |
+| 3 | Quick Add — salvataggio automatico | ✅ DONE | Guardrail deciso insieme all'utente (non "auto-save sempre"): Gemini ora restituisce anche `dateSpecified`/`timeSpecified` (booleani, true solo se il testo conteneva un riferimento esplicito, anche vago). Task salvato subito **solo se entrambi true**; altrimenti resta il flusso attuale (form pre-compilato, revisione manuale). Aggiunto toast di conferma con pulsante **Annulla** (estesa `useToast`/`Toast.jsx` con un `action` opzionale) che cancella il task appena creato. Verificato con chiamate reali a Gemini: "venerdì alle 15" → auto-save; "comprare il latte" (niente data/ora) → form; "domani" senza ora → form (il gate richiede *entrambi*) |
+| 4 | Dashboard — categorie cliccabili con filtro | ✅ DONE | La Dashboard reale (`DashboardPage.jsx`) è diversa da un componente `Dashboard.jsx` che avevo letto per primo — quello è **codice morto**, mai importato: analisi iniziale corretta a metà lavoro. Aggiunte sezioni Media/Bassa priorità (prima solo Alta) via `getMediumPriorityItems`/`getLowPriorityItems` (nuovi selector, riusano `getItemsByImportance` già esistente); `PriorityList.jsx` generalizzato con `title`+`importance`, intestazione cliccabile → naviga in Agenda con quel filtro. Aggiunto nuovo valore filtro **"Imminenti"** in `useFilters.js`/`filters.js` (`dateFilter: 'IMMINENT'`, stesso criterio della card Dashboard) — si inserisce nel dropdown "Data" già esistente in `FilterBar.jsx`, nessuna nuova UI. "Scadenze Imminenti" ora cliccabile anch'essa |
+| 5 | Avviso sonoro per le scadenze | ⬜ RIMANDATO | Su richiesta dell'utente, non implementato ora — da riprendere in futuro. Nota tecnica lasciata in sospeso: un audio personalizzato può suonare solo ad app aperta (foreground), non da un push in background (limite del Service Worker, non di questo progetto) |
 
 ---
 

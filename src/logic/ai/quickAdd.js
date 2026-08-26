@@ -36,14 +36,15 @@ function authedFetch(path, options) {
  * Chiama l'endpoint backend per estrarre dati strutturati da testo libero
  * @param {string} text - Testo libero (max 500 caratteri)
  * @returns {Promise<Object>} Oggetto con forma:
- *   - successo: { draft: { title, description, dueDate, dueTime, importance }, error: null, remaining: number }
- *   - errore: { draft: null, error: '<messaggio leggibile>', remaining: number|null }
- *   - non configurato: { draft: null, error: 'Quick add AI non configurata', remaining: null }
+ *   - successo: { draft: { title, description, dueDate, dueTime, importance }, readyToAutoSave: boolean, error: null, remaining: number }
+ *   - errore: { draft: null, readyToAutoSave: false, error: '<messaggio leggibile>', remaining: number|null }
+ *   - non configurato: { draft: null, readyToAutoSave: false, error: 'Quick add AI non configurata', remaining: null }
  */
 export async function requestQuickAdd(text) {
   if (!isQuickAddConfigured()) {
     return {
       draft: null,
+      readyToAutoSave: false,
       error: 'Quick add AI non configurata',
       remaining: null,
     };
@@ -63,6 +64,7 @@ export async function requestQuickAdd(text) {
     if (response.ok) {
       return {
         draft: json.draft || null,
+        readyToAutoSave: Boolean(json.readyToAutoSave),
         error: null,
         remaining: json.remaining ?? null,
       };
@@ -71,6 +73,7 @@ export async function requestQuickAdd(text) {
     // Errore HTTP (4xx/5xx)
     return {
       draft: null,
+      readyToAutoSave: false,
       error: json.error || 'Errore sconosciuto dal server',
       remaining: json.remaining ?? null,
     };
@@ -78,6 +81,7 @@ export async function requestQuickAdd(text) {
     // Errore di rete vero
     return {
       draft: null,
+      readyToAutoSave: false,
       error: `Errore di rete: ${err.message}`,
       remaining: null,
     };

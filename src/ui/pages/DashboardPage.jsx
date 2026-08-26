@@ -14,12 +14,14 @@ import AgendaItemCard from '../components/AgendaItem/AgendaItemCard.jsx';
 import FadeIn from '../components/Animations/FadeIn.jsx';
 
 export default function DashboardPage() {
-  const { 
-    items, 
-    upcomingItems, 
-    overdueItems, 
-    highPriorityItems, 
-    birthdays 
+  const {
+    items,
+    upcomingItems,
+    overdueItems,
+    highPriorityItems,
+    mediumPriorityItems,
+    lowPriorityItems,
+    birthdays
   } = useAgenda();
   
   // Stato per il giorno selezionato nel calendario
@@ -61,7 +63,9 @@ export default function DashboardPage() {
         <div className="lg:hidden space-y-xl">
           <QuickStats />
           <UpcomingCards items={[...upcomingItems, ...overdueItems].slice(0, 2)} />
-          <PriorityList items={highPriorityItems} />
+          <PriorityList items={highPriorityItems} title="Alta Priorità" importance="HIGH" />
+          <PriorityList items={mediumPriorityItems} title="Media Priorità" importance="MEDIUM" />
+          <PriorityList items={lowPriorityItems} title="Bassa Priorità" importance="LOW" />
           {nextBirthday && <GlassmorphismCard birthday={nextBirthday} />}
         </div>
       </FadeIn>
@@ -86,7 +90,9 @@ export default function DashboardPage() {
               </div>
               
               {/* PriorityList */}
-              <PriorityList items={highPriorityItems} />
+              <PriorityList items={highPriorityItems} title="Alta Priorità" importance="HIGH" />
+          <PriorityList items={mediumPriorityItems} title="Media Priorità" importance="MEDIUM" />
+          <PriorityList items={lowPriorityItems} title="Bassa Priorità" importance="LOW" />
               
               {/* Task del giorno selezionato */}
               {selectedDate && (

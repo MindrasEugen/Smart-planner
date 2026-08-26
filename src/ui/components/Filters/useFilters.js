@@ -37,6 +37,7 @@ export const importanceOptions = [
 
 export const dateOptions = [
   { value: '', label: 'Tutti' },
+  { value: 'IMMINENT', label: 'Imminenti' },
   { value: 'TODAY', label: 'Oggi' },
   { value: 'TOMORROW', label: 'Domani' },
   { value: 'NEXT_WEEK', label: 'Prossima settimana' },

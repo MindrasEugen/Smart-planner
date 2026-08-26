@@ -42,10 +42,18 @@ quickAddRouter.post('/api/quick-add', async (req, res) => {
       });
     }
 
-    const draft = await extractTaskFromText(text.trim(), todayInRome());
+    const { dateSpecified, timeSpecified, ...draft } = await extractTaskFromText(
+      text.trim(),
+      todayInRome()
+    );
     const newTotal = await incrementQuickAddUsage(deviceId);
 
-    res.json({ ok: true, draft, remaining: Math.max(0, DAILY_LIMIT - newTotal) });
+    res.json({
+      ok: true,
+      draft,
+      readyToAutoSave: dateSpecified && timeSpecified,
+      remaining: Math.max(0, DAILY_LIMIT - newTotal),
+    });
   } catch (e) {
     console.error('Errore quick add AI:', e.message);
     res.status(502).json({ error: "Errore nell'elaborazione AI, riprova" });

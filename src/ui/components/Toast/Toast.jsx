@@ -54,6 +54,11 @@ export default function Toast({ message, onRemove }) {
     onRemove(message.id);
   }, [message.id, onRemove]);
 
+  const handleAction = useCallback(() => {
+    message.action?.onClick();
+    onRemove(message.id);
+  }, [message.action, message.id, onRemove]);
+
   useEffect(() => {
     if (message.duration && message.duration > 0) {
       const timer = setTimeout(() => {
@@ -73,6 +78,14 @@ export default function Toast({ message, onRemove }) {
       <div className="flex items-center gap-3">
         <span className={`material-symbols-outlined text-[20px] ${colors.text}`}>{colors.icon}</span>
         <p className={`mb-0 font-body-md text-body-md font-medium ${colors.text}`}>{message.message}</p>
+        {message.action && (
+          <button
+            onClick={handleAction}
+            className={`shrink-0 font-label-sm text-label-sm font-medium underline hover:no-underline ${colors.text}`}
+          >
+            {message.action.label}
+          </button>
+        )}
         <button
           onClick={handleRemove}
           className="ml-auto p-1 hover:bg-surface-container-high rounded-full transition-colors active:scale-95"
