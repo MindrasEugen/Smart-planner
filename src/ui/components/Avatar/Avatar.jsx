@@ -40,8 +40,11 @@ export default function Avatar({ size = 'md', className = '' }) {
   }
 
   return (
-    <div className={`${circle} rounded-full ${option.bg} flex items-center justify-center shrink-0 ${className}`}>
-      <span className={`material-symbols-outlined ${option.text} ${icon}`}>{option.icon}</span>
+    <div
+      className={`${circle} rounded-full ${option.bg} flex items-center justify-center shrink-0 ${className}`}
+      aria-label={`Avatar: ${option.label}`}
+    >
+      <span className={`${option.text} ${icon}`} aria-hidden="true">{option.symbol}</span>
     </div>
   );
 }

@@ -117,12 +117,13 @@ function UpcomingCard({ item }) {
  */
 export default function UpcomingCards({ items }) {
   const navigate = useNavigate();
-  const { setFilterCriteria } = useAgenda();
+  const { setFilterCriteria, setViewMode } = useAgenda();
 
   if (items.length === 0) return null;
 
   const goToFilteredAgenda = () => {
     setFilterCriteria({ dateFilter: 'IMMINENT' });
+    setViewMode('upcoming');
     navigate('/agenda');
   };
 

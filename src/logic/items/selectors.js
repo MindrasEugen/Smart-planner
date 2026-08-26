@@ -71,6 +71,29 @@ export function getBirthdays() {
 }
 
 /**
+ * Compleanno da mostrare in Dashboard, se ce n'e' uno: solo nella finestra
+ * tra la prima notifica (scadenza meno "Inizia notifiche") e la fine della
+ * giornata del compleanno stesso — non per tutto l'anno. Se più compleanni
+ * rientrano nella finestra (raro), viene scelto il più vicino.
+ * @returns {Birthday | null} Compleanno da mostrare, o null se nessuno e' nella finestra
+ */
+export function getUpcomingBirthdayForDashboard() {
+  const now = new Date();
+
+  const visible = getBirthdays().filter((birthday) => {
+    const dueDateTime = combineDateTime(birthday);
+    const startBefore = birthday.notificationSettings?.startBefore ?? 0;
+    const windowStart = new Date(dueDateTime.getTime() - startBefore * 60000);
+    const endOfDay = new Date(birthday.dueDate);
+    endOfDay.setHours(23, 59, 59, 999);
+    return now >= windowStart && now <= endOfDay;
+  });
+
+  visible.sort((a, b) => combineDateTime(a).getTime() - combineDateTime(b).getTime());
+  return visible[0] ?? null;
+}
+
+/**
  * Ottieni item con alta priorita'
  * @returns {AgendaItem[]} Array di item ad alta priorita
  */
@@ -101,6 +124,23 @@ export function getLowPriorityItems() {
  */
 function combineDateTime(item) {
   return parseDateTime(item.dueDate, item.dueTime);
+}
+
+/**
+ * True se l'item e' completato e la giornata della sua scadenza e' gia'
+ * passata. Usato per nascondere i task completati dalla Dashboard "a fine
+ * giornata": in Agenda/storico restano sempre visibili, questo filtro non
+ * cancella nulla, si applica solo alle liste mostrate in Dashboard.
+ * @param {AgendaItem} item - Item agenda
+ * @returns {boolean} True se va nascosto dalla Dashboard
+ */
+export function isStaleCompleted(item) {
+  if (item.status !== 'COMPLETED') return false;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const due = new Date(item.dueDate);
+  due.setHours(0, 0, 0, 0);
+  return due.getTime() < today.getTime();
 }
 
 /**

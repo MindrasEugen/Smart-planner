@@ -26,22 +26,22 @@ import React, { useEffect, useCallback } from 'react';
 /** @type {ToastColors} */
 const toastColors = {
   info: {
-    bg: 'bg-primary/10 border-l-4 border-primary/20',
+    bg: 'bg-surface-container-lowest border-l-4 border-primary',
     icon: 'info',
     text: 'text-primary',
   },
   success: {
-    bg: 'bg-success/10 border-l-4 border-success/20',
+    bg: 'bg-surface-container-lowest border-l-4 border-success',
     icon: 'check_circle',
     text: 'text-success',
   },
   warning: {
-    bg: 'bg-warning/10 border-l-4 border-warning/20',
+    bg: 'bg-surface-container-lowest border-l-4 border-warning',
     icon: 'warning',
     text: 'text-warning',
   },
   error: {
-    bg: 'bg-danger/10 border-l-4 border-danger/20',
+    bg: 'bg-surface-container-lowest border-l-4 border-danger',
     icon: 'error',
     text: 'text-danger',
   },
@@ -70,7 +70,7 @@ export default function Toast({ message, onRemove }) {
 
   return (
     <div
-      className={`rounded-xl p-3 mb-2 shadow-sm ${colors.bg}`}
+      className={`rounded-xl p-3 mb-2 shadow-lg border border-outline-variant ${colors.bg}`}
       role="alert"
       aria-live="assertive"
       aria-atomic="true"

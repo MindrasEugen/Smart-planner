@@ -403,6 +403,12 @@ function InstallSettings() {
  */
 const RECENT_UPDATES = [
   {
+    titolo: 'Dashboard più pulita',
+    descrizione:
+      'I task completati spariscono da soli dalla Dashboard a fine giornata (restano sempre in Agenda). I compleanni compaiono solo quando si avvicinano, non tutto l\'anno.',
+    data: '27 Ago 2026',
+  },
+  {
     titolo: 'Quick Add con AI',
     descrizione:
       "Scrivi una frase libera e l'AI crea il task per te. Se specifichi data e ora, viene salvato subito (con un tasto Annulla se ti sei sbagliato); altrimenti puoi rivederlo prima di salvare.",
@@ -463,6 +469,12 @@ const UPCOMING_FEATURES = [
     descrizione:
       'Registrazione, login e sincronizzazione dei tuoi dati su più dispositivi. In arrivo per fine settembre.',
     stato: 'In arrivo',
+  },
+  {
+    titolo: 'Task ricorrenti',
+    descrizione:
+      'Un task che si ripresenta da solo (ogni settimana, ogni mese...), invece di doverlo ricreare ogni volta a mano.',
+    stato: 'In valutazione',
   },
 ];
 

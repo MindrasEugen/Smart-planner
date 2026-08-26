@@ -14,9 +14,8 @@ import UpcomingList from './UpcomingList.jsx';
 /** @typedef {'daily' | 'weekly' | 'upcoming'} ViewType */
 
 export default function AgendaView() {
-  const { filteredItems } = useAgenda();
+  const { filteredItems, viewMode, setViewMode } = useAgenda();
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [currentView, setCurrentView] = useState('daily');
 
   const handleToday = () => {
     setCurrentDate(new Date());
@@ -31,19 +30,19 @@ export default function AgendaView() {
       />
 
       <ViewToggle
-        currentView={currentView}
-        onViewChange={setCurrentView}
+        currentView={viewMode}
+        onViewChange={setViewMode}
       />
 
       <FilterBar />
 
-      {currentView === 'daily' && (
+      {viewMode === 'daily' && (
         <DailyView items={filteredItems} date={currentDate} />
       )}
-      {currentView === 'weekly' && (
+      {viewMode === 'weekly' && (
         <WeeklyView items={filteredItems} date={currentDate} />
       )}
-      {currentView === 'upcoming' && (
+      {viewMode === 'upcoming' && (
         <UpcomingList items={filteredItems} />
       )}
     </div>

@@ -26,7 +26,10 @@ function PriorityItem({ item }) {
   let stripColor = 'bg-primary';
   if (item.importance === 'HIGH') stripColor = 'bg-secondary-container';
   if (item.importance === 'MEDIUM') stripColor = 'bg-surface-tint';
-  if (item.importance === 'LOW') stripColor = 'bg-tertiary-container';
+  // tertiary-container (#003f23) e' un verde quasi nero, poco leggibile
+  // come strip sottile: tertiary-fixed (#91f8b8) e' lo stesso verde ma
+  // molto piu' chiaro/visibile, e per design non cambia tra i temi
+  if (item.importance === 'LOW') stripColor = 'bg-tertiary-fixed';
 
   // Formatta data
   const formattedDate = new Date(item.dueDate).toLocaleDateString('it-IT', {
@@ -109,12 +112,13 @@ function PriorityItem({ item }) {
  */
 export default function PriorityList({ items, title = 'Alta Priorità', importance }) {
   const navigate = useNavigate();
-  const { setFilterCriteria } = useAgenda();
+  const { setFilterCriteria, setViewMode } = useAgenda();
 
   if (items.length === 0) return null;
 
   const goToFilteredAgenda = () => {
     setFilterCriteria({ importance });
+    setViewMode('upcoming');
     navigate('/agenda');
   };
 

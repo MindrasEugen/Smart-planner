@@ -1,27 +1,38 @@
 /**
- * Preset di avatar selezionabili: icona Material Symbols su un colore
- * "container" del design system. Usate deliberatamente solo coppie
- * bg-*-container/text-on-*-container (mai token di superficie): sono
- * self-contained, invariate tra tema chiaro e scuro (vedi PLAN.md,
+ * Preset di avatar selezionabili: simbolo zodiacale (carattere Unicode,
+ * nessun font/icona da caricare) su un colore "container" del design
+ * system, uguale per tutti e 12 — solo il simbolo cambia. Coppia
+ * bg-primary-container/text-on-primary-container deliberatamente
+ * self-contained: invariata tra tema chiaro e scuro (vedi PLAN.md,
  * sessione 2026-08-25 sul fix del contrasto in dark mode).
+ * Material Symbols non ha icone zodiacali (verificato nel catalogo
+ * ufficiale prima di scegliere questa strada): i simboli Unicode standard
+ * (U+2648–U+2653) sono supportati ovunque senza dipendenze aggiuntive.
  * @typedef {Object} AvatarOption
  * @property {string} id
- * @property {string} icon - Nome icona Material Symbols
+ * @property {string} symbol - Carattere Unicode del segno zodiacale
+ * @property {string} label - Nome del segno, in italiano (usato per l'aria-label)
  * @property {string} bg - Classe Tailwind di sfondo
- * @property {string} text - Classe Tailwind del colore icona
+ * @property {string} text - Classe Tailwind del colore del simbolo
  */
+
+const AVATAR_BG = 'bg-primary-container';
+const AVATAR_TEXT = 'text-on-primary-container';
 
 /** @type {AvatarOption[]} */
 export const AVATAR_OPTIONS = [
-  { id: 'person-primary', icon: 'person', bg: 'bg-primary-container', text: 'text-on-primary-container' },
-  { id: 'pets-secondary', icon: 'pets', bg: 'bg-secondary-container', text: 'text-on-secondary-container' },
-  { id: 'star-tertiary', icon: 'star', bg: 'bg-tertiary-container', text: 'text-on-tertiary-container' },
-  { id: 'rocket-primary', icon: 'rocket_launch', bg: 'bg-primary-container', text: 'text-on-primary-container' },
-  { id: 'favorite-secondary', icon: 'favorite', bg: 'bg-secondary-container', text: 'text-on-secondary-container' },
-  { id: 'eco-tertiary', icon: 'eco', bg: 'bg-tertiary-container', text: 'text-on-tertiary-container' },
-  { id: 'bolt-primary', icon: 'bolt', bg: 'bg-primary-container', text: 'text-on-primary-container' },
-  { id: 'emoji-secondary', icon: 'emoji_emotions', bg: 'bg-secondary-container', text: 'text-on-secondary-container' },
-  { id: 'sports-tertiary', icon: 'sports_esports', bg: 'bg-tertiary-container', text: 'text-on-tertiary-container' },
+  { id: 'ariete', symbol: '♈', label: 'Ariete', bg: AVATAR_BG, text: AVATAR_TEXT },
+  { id: 'toro', symbol: '♉', label: 'Toro', bg: AVATAR_BG, text: AVATAR_TEXT },
+  { id: 'gemelli', symbol: '♊', label: 'Gemelli', bg: AVATAR_BG, text: AVATAR_TEXT },
+  { id: 'cancro', symbol: '♋', label: 'Cancro', bg: AVATAR_BG, text: AVATAR_TEXT },
+  { id: 'leone', symbol: '♌', label: 'Leone', bg: AVATAR_BG, text: AVATAR_TEXT },
+  { id: 'vergine', symbol: '♍', label: 'Vergine', bg: AVATAR_BG, text: AVATAR_TEXT },
+  { id: 'bilancia', symbol: '♎', label: 'Bilancia', bg: AVATAR_BG, text: AVATAR_TEXT },
+  { id: 'scorpione', symbol: '♏', label: 'Scorpione', bg: AVATAR_BG, text: AVATAR_TEXT },
+  { id: 'sagittario', symbol: '♐', label: 'Sagittario', bg: AVATAR_BG, text: AVATAR_TEXT },
+  { id: 'capricorno', symbol: '♑', label: 'Capricorno', bg: AVATAR_BG, text: AVATAR_TEXT },
+  { id: 'acquario', symbol: '♒', label: 'Acquario', bg: AVATAR_BG, text: AVATAR_TEXT },
+  { id: 'pesci', symbol: '♓', label: 'Pesci', bg: AVATAR_BG, text: AVATAR_TEXT },
 ];
 
 /**

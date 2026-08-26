@@ -5,6 +5,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAgenda } from '../../logic/hooks.js';
+import AutoCleanupNotice from '../components/Dashboard/AutoCleanupNotice.jsx';
 import QuickStats from '../components/Dashboard/QuickStats.jsx';
 import UpcomingCards from '../components/Dashboard/UpcomingCards.jsx';
 import PriorityList from '../components/Dashboard/PriorityList.jsx';
@@ -21,14 +22,13 @@ export default function DashboardPage() {
     highPriorityItems,
     mediumPriorityItems,
     lowPriorityItems,
-    birthdays
+    nextBirthday
   } = useAgenda();
-  
+
   // Stato per il giorno selezionato nel calendario
   const [selectedDate, setSelectedDate] = useState(null);
 
   const completedItems = items.filter(i => i.status === 'COMPLETED');
-  const nextBirthday = birthdays.length > 0 ? birthdays[0] : null;
   
   // Task per il giorno selezionato
   const selectedDateItems = selectedDate 
@@ -61,6 +61,7 @@ export default function DashboardPage() {
       {/* Mobile: layout a colonna singola */}
       <FadeIn>
         <div className="lg:hidden space-y-xl">
+          <AutoCleanupNotice />
           <QuickStats />
           <UpcomingCards items={[...upcomingItems, ...overdueItems].slice(0, 2)} />
           <PriorityList items={highPriorityItems} title="Alta Priorità" importance="HIGH" />
@@ -73,6 +74,9 @@ export default function DashboardPage() {
       {/* Desktop: layout a 3 colonne */}
       <FadeIn>
         <div className="hidden lg:flex lg:flex-col lg:flex-1 lg:min-h-0 lg:overflow-y-auto lg:custom-scrollbar">
+          <div className="max-w-7xl mx-auto w-full mb-lg">
+            <AutoCleanupNotice />
+          </div>
           <div className="lg:grid lg:grid-cols-12 gap-lg h-full max-w-7xl mx-auto w-full">
             {/* Colonna sinistra: Stats */}
             <div className="lg:col-span-3 flex flex-col gap-xl">
@@ -91,9 +95,9 @@ export default function DashboardPage() {
               
               {/* PriorityList */}
               <PriorityList items={highPriorityItems} title="Alta Priorità" importance="HIGH" />
-          <PriorityList items={mediumPriorityItems} title="Media Priorità" importance="MEDIUM" />
-          <PriorityList items={lowPriorityItems} title="Bassa Priorità" importance="LOW" />
-              
+              <PriorityList items={mediumPriorityItems} title="Media Priorità" importance="MEDIUM" />
+              <PriorityList items={lowPriorityItems} title="Bassa Priorità" importance="LOW" />
+
               {/* Task del giorno selezionato */}
               {selectedDate && (
                 <FadeIn>

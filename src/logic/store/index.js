@@ -20,6 +20,7 @@ const DEFAULT_SORT_CRITERIA = { field: 'dueDate', ascending: true };
  * @property {AgendaItem[]} items - Array di elementi agenda
  * @property {FilterCriteria} filterCriteria - Criteri di filtro attivi
  * @property {SortCriteria} sortCriteria - Criteri di ordinamento attivi
+ * @property {'daily' | 'weekly' | 'upcoming'} viewMode - Vista attiva in Agenda
  * @property {Function} addItem - Aggiunge un elemento
  * @property {Function} updateItem - Aggiorna un elemento
  * @property {Function} deleteItem - Elimina un elemento
@@ -38,6 +39,11 @@ export const agendaStore = create(subscribeWithSelector((set, get) => ({
   // Filtri e ordinamento: stato reattivo, non variabili di modulo
   filterCriteria: {},
   sortCriteria: DEFAULT_SORT_CRITERIA,
+  // Vista Agenda: nello store (non locale al componente) cosi' la Dashboard
+  // puo' impostarla prima di navigare (es. click su una categoria priorita'
+  // porta dritto sulla vista "Prossime", invece di ripartire sempre da
+  // "Giornaliera" indipendentemente da dove si arriva)
+  viewMode: 'daily',
 
     /**
      * Aggiunge un elemento all'agenda
@@ -117,6 +123,14 @@ export const agendaStore = create(subscribeWithSelector((set, get) => ({
     },
 
     /**
+     * Imposta la vista attiva in Agenda
+     * @param {'daily' | 'weekly' | 'upcoming'} mode - Vista da attivare
+     */
+    setViewMode: (mode) => {
+      set({ viewMode: mode ?? 'daily' });
+    },
+
+    /**
      * Reimposta lo store
      */
     resetStore: () => {
@@ -124,6 +138,7 @@ export const agendaStore = create(subscribeWithSelector((set, get) => ({
         items: [],
         filterCriteria: {},
         sortCriteria: DEFAULT_SORT_CRITERIA,
+        viewMode: 'daily',
       });
     },
   }))

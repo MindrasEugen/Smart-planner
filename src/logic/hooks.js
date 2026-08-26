@@ -19,6 +19,7 @@ import {
   getItems,
   getTasks,
   getBirthdays,
+  getUpcomingBirthdayForDashboard,
   getUpcomingItems,
   getOverdueItems,
   getHighPriorityItems,
@@ -26,6 +27,7 @@ import {
   getLowPriorityItems,
   getItemTimeStatus,
   getNextNotificationTime,
+  isStaleCompleted,
 } from './items/selectors.js';
 import {
   applyFilters,
@@ -47,15 +49,43 @@ export function useAgenda() {
   const sortCriteria = useAgendaStore((state) => state.sortCriteria);
   const setFilterCriteria = useAgendaStore((state) => state.setFilterCriteria);
   const setSortCriteria = useAgendaStore((state) => state.setSortCriteria);
+  const viewMode = useAgendaStore((state) => state.viewMode);
+  const setViewMode = useAgendaStore((state) => state.setViewMode);
 
   // Dati derivati (usando useMemo per ottimizzare)
   const tasks = useMemo(() => getTasks(items), [items]);
   const birthdays = useMemo(() => getBirthdays(items), [items]);
-  const upcomingItems = useMemo(() => getUpcomingItems(items), [items]);
-  const overdueItems = useMemo(() => getOverdueItems(items), [items]);
-  const highPriorityItems = useMemo(() => getHighPriorityItems(items), [items]);
-  const mediumPriorityItems = useMemo(() => getMediumPriorityItems(items), [items]);
-  const lowPriorityItems = useMemo(() => getLowPriorityItems(items), [items]);
+  // Le liste sotto pilotano solo la Dashboard (unici consumer): mostrano
+  // solo Task (i Compleanni hanno una card dedicata, con la propria finestra
+  // di visibilita' — vedi nextBirthday sotto, altrimenti "sfuggirebbero" qui
+  // in base a importanza/data indipendentemente da quella finestra) e
+  // nascondono i task completati la cui giornata di scadenza e' gia'
+  // passata, "a fine giornata" — restano sempre visibili in Agenda/storico,
+  // nessun dato viene toccato, e' solo cosa mostra la Dashboard.
+  const isDashboardTask = (item) => item.type === 'TASK' && !isStaleCompleted(item);
+  const upcomingItems = useMemo(
+    () => getUpcomingItems(items).filter(isDashboardTask),
+    [items]
+  );
+  const overdueItems = useMemo(
+    () => getOverdueItems(items).filter(isDashboardTask),
+    [items]
+  );
+  const highPriorityItems = useMemo(
+    () => getHighPriorityItems(items).filter(isDashboardTask),
+    [items]
+  );
+  const mediumPriorityItems = useMemo(
+    () => getMediumPriorityItems(items).filter(isDashboardTask),
+    [items]
+  );
+  const lowPriorityItems = useMemo(
+    () => getLowPriorityItems(items).filter(isDashboardTask),
+    [items]
+  );
+  // Compleanno da mostrare in Dashboard, solo nella sua finestra attiva
+  // (prima notifica → fine giornata del compleanno), non tutto l'anno
+  const nextBirthday = useMemo(() => getUpcomingBirthdayForDashboard(items), [items]);
 
   // Item filtrati e ordinati
   const filteredItems = useMemo(() => {
@@ -102,6 +132,7 @@ export function useAgenda() {
     // Dati derivati
     tasks,
     birthdays,
+    nextBirthday,
     upcomingItems,
     overdueItems,
     highPriorityItems,
@@ -116,6 +147,8 @@ export function useAgenda() {
     // Funzioni di aggiornamento
     setFilterCriteria,
     setSortCriteria,
+    viewMode,
+    setViewMode,
 
     // Funzioni CRUD
     addTask,

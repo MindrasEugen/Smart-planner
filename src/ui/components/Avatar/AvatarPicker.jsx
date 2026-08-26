@@ -85,10 +85,10 @@ export default function AvatarPicker({ isOpen, onClose, currentAvatarId, onSelec
                 className={`w-16 h-16 rounded-full ${option.bg} flex items-center justify-center mx-auto transition-transform active:scale-95 ${
                   isSelected ? 'ring-2 ring-offset-2 ring-primary ring-offset-surface-container-lowest' : ''
                 }`}
-                aria-label={`Avatar ${option.icon}${isSelected ? ' (selezionato)' : ''}`}
+                aria-label={`Avatar ${option.label}${isSelected ? ' (selezionato)' : ''}`}
                 aria-pressed={isSelected}
               >
-                <span className={`material-symbols-outlined ${option.text} text-2xl`}>{option.icon}</span>
+                <span className={`${option.text} text-2xl`} aria-hidden="true">{option.symbol}</span>
               </button>
             );
           })}
