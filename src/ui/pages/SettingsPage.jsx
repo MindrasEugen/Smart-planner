@@ -405,13 +405,14 @@ const UPCOMING_FEATURES = [
   {
     titolo: 'Quick add intelligente',
     descrizione:
-      "Crea un task scrivendo una frase libera: l'AI pre-compila titolo, data, ora e importanza.",
-    stato: 'In valutazione',
+      "Crea un task scrivendo una frase libera: l'AI pre-compila titolo, data, ora e importanza. In arrivo a breve.",
+    stato: 'In arrivo',
   },
   {
     titolo: 'Profili utente personali',
-    descrizione: 'Sincronizzazione dei tuoi dati su più dispositivi.',
-    stato: 'In valutazione',
+    descrizione:
+      'Registrazione, login e sincronizzazione dei tuoi dati su più dispositivi. In arrivo per fine settembre.',
+    stato: 'In arrivo',
   },
 ];
 
@@ -426,7 +427,7 @@ const UPCOMING_STATO_STYLES = {
 
 /**
  * Sezione statica che informa sulle prossime evoluzioni del progetto.
- * Contenuto pilotato da {@link UPCOMING_FEATURES}: nessuna data precisa, linguaggio volutamente vago.
+ * Contenuto pilotato da {@link UPCOMING_FEATURES}.
  * @returns {JSX.Element} Sezione "Prossimamente"
  */
 function ComingSoonSettings() {

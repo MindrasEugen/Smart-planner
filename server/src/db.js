@@ -49,6 +49,55 @@ export async function initDB() {
       PRIMARY KEY (item_id, next_time)
     )
   `;
+  // Contatore per il rate limit giornaliero della Quick Add AI (per dispositivo,
+  // non per utente: non esiste ancora un concetto di account, vedi PLAN.md ROAD-07).
+  await sql`
+    CREATE TABLE IF NOT EXISTS quick_add_usage (
+      device_id TEXT NOT NULL,
+      usage_date DATE NOT NULL,
+      count INT NOT NULL DEFAULT 0,
+      PRIMARY KEY (device_id, usage_date)
+    )
+  `;
+  // Tabella scritta solo da questo server (ruolo postgres, bypassa RLS per
+  // design, vedi commento in testa al file): lockdown a secco comunque
+  // applicato, stessa postura di sicurezza delle altre tabelle pubbliche.
+  await sql`ALTER TABLE quick_add_usage ENABLE ROW LEVEL SECURITY`;
+}
+
+/**
+ * Data odierna nel fuso Europe/Rome (non l'UTC di toISOString), coerente con
+ * il controllo TZ fatto in index.js all'avvio.
+ * @returns {string} Data in formato YYYY-MM-DD
+ */
+function todayInRome() {
+  return new Date().toLocaleDateString('en-CA', { timeZone: 'Europe/Rome' });
+}
+
+/**
+ * @param {string} deviceId
+ * @returns {Promise<number>} Numero di quick add già usate oggi da questo dispositivo
+ */
+export async function getQuickAddUsageToday(deviceId) {
+  const rows = await sql`
+    SELECT count FROM quick_add_usage WHERE device_id = ${deviceId} AND usage_date = ${todayInRome()}
+  `;
+  return rows[0]?.count ?? 0;
+}
+
+/**
+ * Incrementa di uno il contatore odierno per questo dispositivo (upsert).
+ * @param {string} deviceId
+ * @returns {Promise<number>} Nuovo totale odierno dopo l'incremento
+ */
+export async function incrementQuickAddUsage(deviceId) {
+  const rows = await sql`
+    INSERT INTO quick_add_usage (device_id, usage_date, count)
+    VALUES (${deviceId}, ${todayInRome()}, 1)
+    ON CONFLICT (device_id, usage_date) DO UPDATE SET count = quick_add_usage.count + 1
+    RETURNING count
+  `;
+  return rows[0].count;
 }
 
 /**

@@ -7,6 +7,8 @@ import { requireSyncSecret } from './auth.js';
 import { subscribeRouter } from './routes/subscribe.js';
 import { syncRouter } from './routes/sync.js';
 import { tickRouter } from './routes/tick.js';
+import { quickAddRouter } from './routes/quickAdd.js';
+import { isAiConfigured } from './ai.js';
 
 // Vedi PLAN.md/BUG-01: parseDateTime() in src/logic/time/timezone.js usa
 // Date.setHours(), che dipende dal fuso orario LOCALE del processo. Sui
@@ -53,6 +55,14 @@ app.get('/', (req, res) => res.status(200).send('ok'));
 app.use(requireSyncSecret, subscribeRouter);
 app.use(requireSyncSecret, syncRouter);
 app.use(requireSyncSecret, tickRouter);
+app.use(requireSyncSecret, quickAddRouter);
+
+// A differenza delle variabili sopra, GEMINI_API_KEY e' opzionale: senza,
+// il resto del server (notifiche push) continua a funzionare normalmente,
+// solo /api/quick-add rispondera' con un errore "non configurata" (500).
+if (!isAiConfigured()) {
+  console.warn('GEMINI_API_KEY non impostata: /api/quick-add resterà disattivato.');
+}
 
 const port = process.env.PORT ?? 3000;
 app.listen(port, () => console.log(`Push server in ascolto sulla porta ${port} (TZ=${actualTZ})`));

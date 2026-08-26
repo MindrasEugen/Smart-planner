@@ -30,6 +30,12 @@ import { DEFAULT_TASK_NOTIFICATIONS } from '../../../logic/items/actions.js';
  * @typedef {Object} UseTaskFormProps
  * @property {AgendaItem | null} [item] - Item esistente (per edit)
  * @property {'create' | 'edit'} mode - Modalità (creazione o modifica)
+ * @property {Object} [initialData] - Dati iniziali per pre-compilare il form (per Quick Add AI)
+ * @property {string} [initialData.title] - Titolo iniziale
+ * @property {string} [initialData.description] - Descrizione iniziale
+ * @property {string} [initialData.dueDate] - Data iniziale (YYYY-MM-DD)
+ * @property {string} [initialData.dueTime] - Ora iniziale (HH:mm)
+ * @property {Importance} [initialData.importance] - Importanza iniziale
  */
 
 const importanceOptions = [
@@ -68,7 +74,7 @@ function minutesToFormUnit(totalMinutes) {
  * @param {UseTaskFormProps} props - Props del hook
  * @returns {Object} Dati e funzioni del form
  */
-export function useTaskForm({ item, mode }) {
+export function useTaskForm({ item, mode, initialData }) {
   const navigate = useNavigate();
   const { addTask, updateItem } = useAgenda();
 
@@ -94,11 +100,11 @@ export function useTaskForm({ item, mode }) {
       };
     }
     return {
-      title: '',
-      description: '',
-      dueDate: new Date().toISOString().split('T')[0],
-      dueTime: '12:00',
-      importance: 'MEDIUM',
+      title: initialData?.title ?? '',
+      description: initialData?.description ?? '',
+      dueDate: initialData?.dueDate ?? new Date().toISOString().split('T')[0],
+      dueTime: initialData?.dueTime ?? '12:00',
+      importance: initialData?.importance ?? 'MEDIUM',
       notificationsEnabled: true,
       startBeforeValue: 2,
       startBeforeUnit: 'hours',

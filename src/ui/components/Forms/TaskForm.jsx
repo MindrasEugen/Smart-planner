@@ -12,7 +12,7 @@ const importanceOptions = [
   { value: 'LOW', label: 'Bassa' },
 ];
 
-export default function TaskForm({ item, mode }) {
+export default function TaskForm({ item, mode, initialData }) {
   const {
     formData,
     errors,
@@ -20,7 +20,7 @@ export default function TaskForm({ item, mode }) {
     handleNumberChange,
     handleSubmit,
     handleCancel,
-  } = useTaskForm({ item, mode });
+  } = useTaskForm({ item, mode, initialData });
 
   return (
     <form onSubmit={handleSubmit} className="bg-surface-container-lowest rounded-xl p-md mb-lg">

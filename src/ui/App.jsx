@@ -11,6 +11,8 @@ const AlertsPage = lazy(() => import('./pages/AlertsPage.jsx'));
 const SettingsPage = lazy(() => import('./pages/SettingsPage.jsx'));
 const TasksPage = lazy(() => import('./pages/TasksPage.jsx'));
 const FiltersPage = lazy(() => import('./pages/FiltersPage.jsx'));
+const LoginPage = lazy(() => import('./pages/LoginPage.jsx'));
+const RegisterPage = lazy(() => import('./pages/RegisterPage.jsx'));
 
 function App() {
   return (
@@ -26,6 +28,8 @@ function App() {
           <Route path="/create/task" element={<CreatePage mode="task" />} />
           <Route path="/create/birthday" element={<CreatePage mode="birthday" />} />
           <Route path="/edit/:id" element={<CreatePage mode="edit" />} />
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/register" element={<RegisterPage />} />
         </Routes>
       </Suspense>
     </MainLayout>

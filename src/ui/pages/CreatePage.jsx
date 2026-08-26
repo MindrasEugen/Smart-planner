@@ -3,10 +3,12 @@
  * @typedef {import('../../types/agendaItem.js').AgendaItem} AgendaItem
  */
 
+import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useAgenda } from '../../logic/hooks.js';
 import { FadeIn } from '../components/Animations';
 import TaskForm from '../components/Forms/TaskForm.jsx';
+import QuickAddInput from '../components/Forms/QuickAddInput.jsx';
 import BirthdayForm from '../components/Forms/BirthdayForm.jsx';
 
 /**
@@ -15,6 +17,8 @@ import BirthdayForm from '../components/Forms/BirthdayForm.jsx';
  */
 
 export default function CreatePage({ mode }) {
+  const [aiDraft, setAiDraft] = useState(null);
+  const [draftKey, setDraftKey] = useState(0);
   const { id } = useParams();
   const { items } = useAgenda();
 
@@ -25,7 +29,16 @@ export default function CreatePage({ mode }) {
   if (mode === 'birthday' || (mode === 'edit' && item?.type === 'BIRTHDAY')) {
     content = <BirthdayForm item={item || null} mode={formMode} />;
   } else if (mode === 'task' || (mode === 'edit' && item?.type === 'TASK')) {
-    content = <TaskForm item={item || null} mode={formMode} />;
+    if (mode === 'task' && formMode === 'create') {
+      content = (
+        <>
+          <QuickAddInput onDraftReady={(draft) => { setAiDraft(draft); setDraftKey((k) => k + 1); }} />
+          <TaskForm item={item || null} mode={formMode} initialData={aiDraft} key={draftKey} />
+        </>
+      );
+    } else {
+      content = <TaskForm item={item || null} mode={formMode} />;
+    }
   } else {
     content = (
       <h1 className="font-headline-md text-on-surface">

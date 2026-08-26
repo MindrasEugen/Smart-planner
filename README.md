@@ -303,6 +303,19 @@ chiama `GET /api/tick` ogni `TICK_WINDOW_MINUTES` (default 5) — il Cron Job na
 più gratuito. Il frontend deployato ha bisogno delle stesse `VAPID_PUBLIC_KEY`/`SYNC_SECRET` del
 server, esposte come `VITE_VAPID_PUBLIC_KEY`/`VITE_SYNC_SECRET` a build-time.
 
+### Cloud-sync / Autenticazione (in arrivo, bozza non ancora attiva)
+
+L'app supporterà a breve **login/registrazione e sincronizzazione dati su più dispositivi** tramite
+Supabase Auth (progetto Smart-Planner), atteso per **fine settembre 2026**. Il codice esiste già come
+bozza nelle cartelle `src/logic/auth/` e `src/ui/components/Auth/`, ma **non è ancora collegato
+all'app**: oggi l'app funziona esattamente come prima, senza alcun login richiesto. `items` e
+`subscriptions` sono già sincronizzati su Supabase (per il backend Web Push, vedi sopra), ma senza
+alcun concetto di proprietario: sono dati anonimi/condivisi finché questa feature non collega ogni
+riga a uno `user_id` reale (vedi `supabase/drafts/add_user_ownership_and_rls.sql`).
+
+Per chi in futuro vorrà provare la feature una volta attivata: copiare `.env.example` in `.env` e
+valorizzare `VITE_SUPABASE_URL` e `VITE_SUPABASE_ANON_KEY` con le credenziali del progetto Supabase.
+
 ---
 
 ## 🔔 Come funzionano le notifiche
