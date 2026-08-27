@@ -1,5 +1,6 @@
 import { useEffect, useRef, useCallback } from 'react';
 import { AVATAR_OPTIONS } from './avatarOptions.js';
+import { maskStyle } from './Avatar.jsx';
 
 /**
  * Popup di scelta avatar: griglia di icone selezionabili. Stesso pattern di
@@ -88,7 +89,11 @@ export default function AvatarPicker({ isOpen, onClose, currentAvatarId, onSelec
                 aria-label={`Avatar ${option.label}${isSelected ? ' (selezionato)' : ''}`}
                 aria-pressed={isSelected}
               >
-                <span className={`${option.text} text-2xl`} aria-hidden="true">{option.symbol}</span>
+                <div
+                  className={`w-9 h-9 ${option.text} bg-current`}
+                  style={maskStyle(option.image)}
+                  aria-hidden="true"
+                />
               </button>
             );
           })}

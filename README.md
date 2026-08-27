@@ -1,30 +1,16 @@
 # Agenda Intelligente con Notifiche Persistenti
 
-> **Stato:** ✅ **Piano core completo al 100% (2026-08-13)** — tutte le funzionalità core, i task QA e il debito tecnico chiusi e verificati manualmente in browser. **Live su Render**: frontend https://smart-planner-vjgl.onrender.com, backend Web Push https://agenda-push-server.onrender.com. Dettaglio completo in [`PLAN.md`](PLAN.md).
+> Agenda personale con **notifiche ripetute** finché non confermi di aver completato ciò che scade,
+> **Quick Add via AI** (scrivi una frase libera, l'AI crea il task), e notifiche push reali anche ad
+> app chiusa.
 >
-> Progetto **React 18 + JavaScript + JSDoc + Tailwind CSS v4 + PWA** per la gestione di scadenze con sistema di promemoria persistenti.
+> **Live**: frontend https://smart-planner-vjgl.onrender.com · backend Web Push
+> https://agenda-push-server.onrender.com
 >
-> **Design Reference:** Google Stitch Cognitive Protocol
-> **Piano di lavoro e stato dei task:** [`PLAN.md`](PLAN.md)
+> Progetto **React 18 + JavaScript + JSDoc + Tailwind CSS v4 + PWA**. Design Reference: Google Stitch
+> Cognitive Protocol.
 >
-> 🔭 **Non è considerato un progetto definitivamente chiuso**: dal 2026-08-14 è tracciata una
-> **roadmap di 8 nuovi task** (`ROAD-01..08` in [`PLAN.md`](PLAN.md#️-roadmap--prossimi-sviluppi-handoff-2026-08-14)).
-> **ROAD-01/02/03 già live**: deploy su Render come Static Site, sezione "Prossimamente" e form di
-> feedback → GitHub Issues nelle Settings. Ancora da fare: consenso privacy/cookie e placeholder
-> AdSense (creati ma non montati, in attesa dell'approvazione dell'account Google AdSense), e
-> scaffolding non collegato per la **quick add AI** (creazione task da linguaggio naturale —
-> l'utente scrive/detta una frase e l'AI pre-compila titolo/data/ora/importanza nel form; serve
-> ancora un backend/proxy per non esporre la chiave API lato client) e per un futuro sistema di
-> profili utente, entrambi in attesa di un database reale.
->
-> 📱 Il 2026-08-14 sono stati trovati e corretti 6 bug di layout mobile mai emersi prima (verificati
-> su emulatore Android reale, non solo browser desktop) — dettaglio in [`PLAN.md`](PLAN.md#-debito-tecnico-aperto)
-> (DS-07..DS-12).
->
-> 🐛 Dal 2026-08-15 sono stati ripresi 7 bug segnalati da un uso reale dell'app: **tutti e 7 risolti**,
-> l'ultimo (notifiche non recapitate su mobile) il 2026-08-25 con un backend Web Push dedicato
-> (`server/`, deploy su Render + Supabase) — dettaglio in
-> [`PLAN.md`](PLAN.md#-bug-reali-trovati-in-uso-reale--sessioni-2026-08-15--2026-08-18).
+> Stato dettagliato, cronologia delle sessioni e roadmap: [`PLAN.md`](PLAN.md).
 
 ---
 
@@ -46,13 +32,14 @@ Il valore principale dell'app è:
 | **Persistenza** | Salvataggio su localStorage, date serializzate ISO | ✅ Funzionante |
 | **Importanza** | 3 livelli (Bassa/Media/Alta) per priorità e visualizzazione | ✅ Funzionante |
 | **Agenda** | Vista giornaliera/settimanale/prossime + filtri, con scorciatoie rapide in Filtri | ✅ Funzionante |
-| **Dashboard** | Panoramica immediata: imminenti, scaduti, alta priorità, compleanni, calendario | ✅ Funzionante |
-| **Filtri** | Per tipo, stato, importanza, data + 7 scorciatoie rapide (pagina Filtri) | ✅ Funzionante |
+| **Dashboard** | Panoramica: scadenze imminenti, priorità Alta/Media/Bassa (ciascuna cliccabile → Agenda già filtrata sulla vista "Prossime"), prossimo compleanno (solo quando si avvicina, non tutto l'anno), calendario. I task completati spariscono da soli a fine giornata (restano sempre in Agenda) | ✅ Funzionante |
+| **Quick Add AI** | Scrivi una frase libera, l'AI (Gemini) estrae titolo/data/ora/importanza. Se la frase specifica data e ora, il task si salva subito (con "Annulla"); altrimenti pre-compila il form per la revisione. Limite 5/giorno per dispositivo | ✅ Funzionante — richiede il backend configurato, vedi [Setup Progetto](#-setup-progetto) |
+| **Filtri** | Per tipo, stato, importanza, data (incluso "Imminenti") + 7 scorciatoie rapide (pagina Filtri) | ✅ Funzionante |
 | **Notifiche (app aperta)** | Promemoria ripetuti e configurabili, con cronologia (pagina Alerts) | ✅ Funzionante |
 | **Notifiche (app chiusa)** | Web Push (VAPID) con backend su Render + Supabase | ✅ Funzionante, verificato su device reale — richiede un passo di setup lato utente, vedi [Limitazioni note](#️-limitazioni-note) |
 | **PWA installabile** | Manifest + icone + banner "Installa App" su mobile, e pulsante equivalente sempre raggiungibile in Settings | ✅ Funzionante |
 | **Preferenze** | Tema (chiaro/scuro/sistema), vibrazione e notifiche silenziose, in Settings | ✅ Funzionante, tema scuro esteso a tutta l'app (verificato su device reale) |
-| **Immagine profilo** | Scelta avatar (9 preset icona+colore) al posto del placeholder generico, in Settings | ✅ Funzionante — salvata in localStorage, non sincronizzata tra dispositivi (nessun account/login nel progetto) |
+| **Immagine profilo** | Scelta avatar (12 segni zodiacali, illustrazioni proprie, stesso colore via CSS mask) al posto del placeholder generico, in Settings | ✅ Funzionante — salvata in localStorage, non sincronizzata tra dispositivi (nessun account/login nel progetto) |
 | **Tailwind CSS** | Stili utility-first per UI responsive | ✅ Tema custom attivo (vedi sotto) |
 | **Design System** | Tema personalizzato da Google Stitch | ✅ `@theme` in `global.css` — unica sorgente di verità |
 | **SEO** | Meta tag Open Graph + structured data JSON-LD | ✅ Funzionante |
@@ -65,43 +52,11 @@ Il valore principale dell'app è:
 
 ## ⚠️ Limitazioni note
 
-Punti da conoscere prima di lavorare sul progetto. Storico completo in [`PLAN.md`](PLAN.md).
+### Notifiche con app chiusa (Web Push) — richiede un passo di setup manuale su Android
 
-<a id="tema-tailwind-ora-attivo"></a>
-### Il tema Tailwind (nota storica — DS-01/DS-02 risolti il 2026-08-12)
-
-`src/styles/global.css` conteneva solo `@import "tailwindcss"`. In **Tailwind v4** un `tailwind.config.js` viene letto soltanto se dichiarato con `@config` (o se i token sono definiti in un blocco `@theme`) — non accadeva nessuno dei due, quindi tutto `tailwind.config.js` era codice morto e classi come `font-headline-md`, `p-lg`, `gap-md`, `px-margin-mobile` non producevano CSS pur essendo usate in tutta la UI.
-
-**Fix applicato:** tutti i token (colori, spacing, border-radius, box-shadow, font, typography) sono stati migrati in un blocco `@theme` dentro `src/styles/global.css`, insieme a `@plugin` per `@tailwindcss/forms`/`@tailwindcss/container-queries` e `@custom-variant dark` per `dark:`. Il vecchio `tailwind.config.js` è stato rinominato in `tailwind.config.js.deprecated` (tenuto solo per riferimento, non più letto da nulla) — così anche il doppio sistema colori (config **+** CSS vars manuali in `:root`) è sparito: `global.css` è ora l'unica sorgente di verità.
-
-Eccezione: Tailwind v4 non ha un namespace `@theme` per `z-index`/`width` con chiavi nominate (solo `--color-*`, `--font-*`, `--text-*`, `--radius-*`, `--shadow-*`, `--spacing-*`, ecc. sono supportati — verificato in `node_modules/tailwindcss/theme.css`). Per questo `z-fab`, `z-navbar`, `w-nav-desktop`, `w-sidebar` restano 4 classi scritte a mano in `global.css`, non duplicate altrove.
-
-**Prova:** dopo `npm run build`, `grep -oE "\.(gap-md|p-lg|font-body-md|text-headline-md|z-fab)\{[^}]*\}" dist/assets/index-*.css` restituisce tutte le regole. `npm run lint` invariato a 0 errori/40 warning.
-
-**Prima di usare una classe custom, verificare comunque che esista in `global.css`:**
-```bash
-grep "\.nome-classe" src/styles/global.css
-```
-
-### Tema scuro (risolto il 2026-08-25)
-
-In Settings → Preferenze si può scegliere Chiaro/Scuro/Sistema: la scelta persiste e si applica
-davvero (`.dark` su `<html>`, gestito da `src/logic/preferences.js`) a **tutta l'app**, non solo alla
-navigazione. I token colore (`--color-surface`, `--color-on-surface`, `--color-error`, ecc.) generati
-da `@theme` in `global.css` vengono ridefiniti dentro un blocco `.dark { ... }`: ogni utility Tailwind
-che li referenzia si aggiorna automaticamente in cascata. `--color-primary` (usato anche da solo come
-colore di testo/icona/bordo, non solo come sfondo bottoni) è scambiato di tono con `--color-on-primary`
-in scuro, altrimenti il navy quasi nero risulterebbe invisibile su sfondo scuro. Verificato su device
-reale (Samsung Galaxy S21).
-
-### Notifiche con app chiusa (Web Push, risolto il 2026-08-25) — richiede un passo di setup manuale
-
-Il web non offre notifiche programmate garantite senza un backend push: `sync`/`periodicSync` sono
-opportunistici e non danno garanzie, `setTimeout` in pagina funziona solo ad app aperta. Per questo
-esiste un **backend dedicato** (`server/`, Node/Express su Render + Postgres su Supabase) che manda
-Web Push reali (VAPID) indipendentemente dallo stato dell'app — l'unico meccanismo web che consegna
-puntualmente anche a telefono bloccato. Un cron esterno (il Cron Job nativo di Render non è più
-gratuito) chiama `/api/tick` ogni 5 minuti.
+Un backend dedicato (`server/`, Node/Express su Render + Postgres su Supabase) invia notifiche push
+reali (VAPID) indipendentemente dallo stato dell'app — l'unico meccanismo web che consegna
+puntualmente anche a telefono bloccato.
 
 ⚠️ **Su Android, se il sistema limita l'app/il browser in background, le notifiche push arrivano in
 ritardo o non arrivano affatto** — non è un bug del progetto, è la gestione batteria del telefono che
@@ -175,9 +130,12 @@ src/
 │   │   ├── sync.js                 # syncSubscriptionToServer, deleteSubscriptionFromServer, isSyncConfigured
 │   │   ├── toast.js                # pub/sub verso il ToastProvider React (showToast, subscribeToToasts)
 │   │   └── index.js                # barrel
-│   └── time/
-│       ├── status.js               # getTimeStatus (FAR, IMMINENT, DUE, OVERDUE)
-│       └── timezone.js             # parseDateTime, getCurrentDateInTZ, formatTime, isSameDay
+│   ├── time/
+│   │   ├── status.js               # getTimeStatus (FAR, IMMINENT, DUE, OVERDUE)
+│   │   └── timezone.js             # parseDateTime, getCurrentDateInTZ, formatTime, isSameDay
+│   └── ai/                         # Quick Add: client per il backend Gemini
+│       ├── deviceId.js             # getDeviceId — id dispositivo persistito in localStorage, per il rate limit
+│       └── quickAdd.js             # requestQuickAdd, isQuickAddConfigured
 │
 ├── ui/
 │   ├── App.jsx                     # Routing con React.lazy + Suspense
@@ -195,12 +153,12 @@ src/
 │       ├── InstallBanner/          # Banner "Installa App" (beforeinstallprompt), mobile only
 │       ├── AgendaItem/             # AgendaItem, AgendaItemCard, AgendaItemActions, AgendaItemCompact
 │       ├── AgendaView/             # AgendaView, AgendaHeader, DailyView, WeeklyView, UpcomingList, ViewToggle
-│       ├── Dashboard/              # Dashboard, QuickStats, CalendarWidget, UpcomingCards, PriorityList,
-│       │                           # UpcomingSection, OverdueSection, HighPrioritySection, BirthdaysSection,
-│       │                           # CompletedSection, StatsCard, GlassmorphismCard
+│       ├── Dashboard/              # QuickStats, CalendarWidget, UpcomingCards, PriorityList, StatsCard,
+│       │                           # GlassmorphismCard, AutoCleanupNotice
 │       ├── Filters/                # FilterBar, FilterChip, FilterDropdown, SortDropdown, useFilters
-│       ├── Forms/                  # TaskForm, BirthdayForm, FormField, useTaskForm, useBirthdayForm
+│       ├── Forms/                  # TaskForm, BirthdayForm, FormField, QuickAddInput, useTaskForm, useBirthdayForm
 │       ├── Toast/                  # ToastProvider, Toast, useToast
+│       ├── Avatar/                 # Avatar, AvatarPicker, avatarOptions (12 segni zodiacali)
 │       ├── Animations/             # FadeIn, SlideUp, ScaleIn
 │       ├── ConfirmDialog.jsx
 │       ├── EmptyState.jsx
@@ -219,9 +177,11 @@ server/                             # Backend Web Push (VAPID), deploy separato 
 │   ├── auth.js                     # Verifica Authorization: Bearer $SYNC_SECRET
 │   ├── db.js                       # Interfaccia storage (Postgres/Supabase), tabelle isolate dal client
 │   ├── tick.js                     # runTick/isDueWithinWindow — riusa calculateNextNotificationTime dal client
+│   ├── ai.js                       # extractTaskFromText — chiama Gemini via REST per la Quick Add
 │   └── routes/
 │       ├── subscribe.js            # POST/DELETE /api/subscribe
 │       ├── sync.js                 # POST /api/sync — mirror minimo degli item
+│       ├── quickAdd.js             # POST /api/quick-add — estrazione AI + rate limit 5/giorno per dispositivo
 │       └── tick.js                 # GET /api/tick — chiamato dal cron esterno
 └── .env.example                    # Variabili richieste, vedi Setup Progetto sotto
 ```
@@ -239,13 +199,15 @@ server/                             # Backend Web Push (VAPID), deploy separato 
 | **react-router-dom** | ^6.20.0 | Routing | Navigazione tra le pagine |
 | **vite-plugin-pwa** | ^0.17.0 | PWA | Strategia **`injectManifest`**: il SW è `src/sw.js` |
 | **Workbox** | ^7.0.0 | Service Worker | `workbox-precaching`, `workbox-routing`, `workbox-strategies`, `workbox-expiration`, `workbox-window` |
-| **Tailwind CSS** | ^4.3.3 | Stili utility-first | ⚠️ tema custom non attivo, vedi Limitazioni |
+| **Tailwind CSS** | ^4.3.3 | Stili utility-first | Tema custom nel blocco `@theme` di `global.css` |
 | **localStorage** | - | Persistenza dati | Semplice, sufficiente per un MVP monoutente |
 | **IndexedDB** | - | Notifiche pianificate | Accessibile anche dal Service Worker |
 | **Notifications API** | - | Notifiche browser | Standard web |
 | **date-fns** | ^2.30.0 | Manipolazione date | Usata in `WeeklyView` e `CalendarWidget` |
 | **uuid** | ^9.0.0 | ID univoci | `items/actions.js`, `Toast/useToast.js` |
 | **@mindraseugen/utility-kit** | ^1.0.0 | Utility condivise | Solo `fadeIn` in `Animations/FadeIn.jsx` |
+| **Google Gemini API** | gemini-3.6-flash | Estrazione AI per Quick Add | Chiamata REST diretta dal backend (`server/src/ai.js`), nessun SDK aggiunto |
+| **@supabase/supabase-js** | ^2.112.4 | Client Supabase Auth | Bozza non ancora collegata, vedi [Cloud-sync](#cloud-sync--autenticazione-in-arrivo-bozza-non-ancora-attiva) |
 
 > `sass` è ancora fra le devDependencies ma non esiste più alcun file `.scss`: rimuovibile.
 
@@ -303,6 +265,23 @@ chiama `GET /api/tick` ogni `TICK_WINDOW_MINUTES` (default 5) — il Cron Job na
 più gratuito. Il frontend deployato ha bisogno delle stesse `VAPID_PUBLIC_KEY`/`SYNC_SECRET` del
 server, esposte come `VITE_VAPID_PUBLIC_KEY`/`VITE_SYNC_SECRET` a build-time.
 
+### Quick Add AI (opzionale, richiede una chiave Gemini)
+
+Il frontend nasconde il campo "Quick add con AI" in creazione task se `VITE_SYNC_API_URL`/
+`VITE_SYNC_SECRET` non sono configurate (stesso backend del Web Push, vedi sopra). Per attivarla
+davvero serve anche una chiave Gemini lato server:
+
+```bash
+cd server
+# nel .env già creato per il Web Push, aggiungere anche:
+# GEMINI_API_KEY=<chiave da https://aistudio.google.com/apikey>
+# GEMINI_MODEL=gemini-3.6-flash (default)
+# QUICK_ADD_DAILY_LIMIT=5 (default, per dispositivo)
+```
+
+Senza `GEMINI_API_KEY`, `/api/quick-add` risponde sempre "AI non configurata" — il resto del server
+(notifiche push) continua a funzionare normalmente.
+
 ### Cloud-sync / Autenticazione (in arrivo, bozza non ancora attiva)
 
 L'app supporterà a breve **login/registrazione e sincronizzazione dati su più dispositivi** tramite
@@ -354,7 +333,7 @@ Utile da leggere prima di modificare `src/logic/notifications/`.
 - `@typedef` per i tipi complessi, `@param` e `@returns` sulle funzioni pubbliche
 
 ### Store Zustand
-- **Un solo store** centrale (`logic/store/index.js`), che contiene `items`, `filterCriteria` e `sortCriteria`
+- **Un solo store** centrale (`logic/store/index.js`), che contiene `items`, `filterCriteria`, `sortCriteria` e `viewMode`
 - **Selector** per i dati derivati; i componenti non ricalcolano ciò che i selettori già espongono
 - Lo stato condiviso va nello store, **mai** in variabili a livello di modulo: non provocano re-render
 
@@ -369,7 +348,7 @@ Utile da leggere prima di modificare `src/logic/notifications/`.
 ### Cognitive Protocol (da Google Stitch)
 **"Effortless Precision"** — interfaccia noise-free che permette di gestire schedule complessi con calma e controllo: whitespace generoso, allineamento sistematico, palette restrittiva, motion sottile.
 
-> I token qui sotto sono definiti nel blocco `@theme` di `src/styles/global.css`, l'unica sorgente di verità per colori, spaziature e tipografia (vedi [nota storica](#tema-tailwind-ora-attivo)).
+> I token qui sotto sono definiti nel blocco `@theme` di `src/styles/global.css`, l'unica sorgente di verità per colori, spaziature e tipografia.
 
 ### Color Palette
 | Ruolo | Hex | Uso |
@@ -411,13 +390,16 @@ Container e card 6px · Badge 4px · FAB circolare
 ## 🎯 Come Usare l'App
 
 ### Dashboard
-Panoramica con stato rapido, scadenze imminenti, alta priorità, prossimi compleanni e calendario.
+Panoramica con stato rapido, scadenze imminenti, priorità Alta/Media/Bassa e prossimo compleanno —
+ogni categoria è cliccabile e porta in Agenda già filtrata. I task completati spariscono da soli a
+fine giornata.
 
 ### Agenda
 Vista cronologica con header, filtri e elementi con strip colorati.
 
 ### Nuovo Elemento
-Form per Task (con notifiche configurabili) o Compleanno (ricorrenza annuale).
+Form per Task (con notifiche configurabili) o Compleanno (ricorrenza annuale), oppure Quick Add con
+AI: scrivi una frase libera e lascia che sia l'AI a pre-compilare (o salvare subito) il task.
 
 ### Impostazioni
 Attivazione del permesso notifiche e stato corrente dell'autorizzazione.
@@ -432,5 +414,6 @@ Attivazione del permesso notifiche e stato corrente dell'autorizzazione.
 ## 📄 Riferimenti
 - **Piano dettagliato, audit e stato dei task:** [`PLAN.md`](PLAN.md)
 - **Roadmap prossimi sviluppi (ROAD-01..08):** [`PLAN.md` § Roadmap](PLAN.md#️-roadmap--prossimi-sviluppi-handoff-2026-08-14)
+- **Fix UX da uso reale, sessione 2026-08-27:** [`PLAN.md` § Fix UX](PLAN.md#-fix-ux-da-uso-reale--sessione-2026-08-27)
 - **Bug da uso reale, tutti risolti:** [`PLAN.md` § Bug reali](PLAN.md#-bug-reali-trovati-in-uso-reale--sessioni-2026-08-15--2026-08-18)
 - **Design Reference:** Google Stitch — Cognitive Protocol

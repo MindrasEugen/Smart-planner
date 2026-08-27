@@ -5,10 +5,14 @@
 > **Ultimo aggiornamento:** 2026-08-27
 >
 > 🎨 **Fix UX da uso reale — sessione 2026-08-27** (handoff `prompt-fix-ux-agenda-intelligente.md`,
-> 5 punti "alta priorità" segnalati dall'utente dopo l'uso reale dell'app online — vedi sezione
+> 5 punti "alta priorità" segnalati dall'utente dopo l'uso reale dell'app online, più altrettante
+> richieste emerse durante la stessa sessione — vedi sezione
 > [🎨 Fix UX da uso reale — sessione 2026-08-27](#-fix-ux-da-uso-reale--sessione-2026-08-27)):
-> **4 su 5 implementati e verificati**, il 5° (avviso sonoro) rimandato su richiesta dell'utente.
-> Nessuna modifica ancora committata a fine sessione.
+> **11 su 12 implementati e verificati**, solo l'avviso sonoro rimandato su richiesta dell'utente
+> (aggiunto a "Prossimamente" in Settings). Tutto committato (`fbbda6e`, `c9b31b5`, `245b85e`).
+> README.md rivisto in profondità nella stessa sessione: intro accorciata, tolti due post-mortem di
+> bug ormai chiusi dalla sezione "Limitazioni note" (restava solo la cronaca, non più una
+> limitazione), architettura/tabella funzionalità aggiornate.
 >
 > 🐛 **Bug da uso reale, sessioni 2026-08-15 → 2026-08-25** (handoff originario del 2026-08-14, poi
 > `BUGS.md`, ora integrato per intero in questo file — vedi sezione
@@ -591,12 +595,14 @@ già in uso per ButlerAI).
 ## 🎨 Fix UX da uso reale — sessione 2026-08-27
 
 > Handoff ricevuto come `prompt-fix-ux-agenda-intelligente.md` (root del repo, non committato — file
-> di lavoro dell'utente): 5 punti "alta priorità" emersi dall'uso reale dell'app online, discussi uno
-> per uno con l'utente prima di implementare (non presi alla lettera: 2 punti sono stati corretti in
-> corso d'opera rispetto a come erano scritti nel prompt, vedi sotto). **Verificato ad ogni passo**:
-> `npm run lint` (0 errori), `npm run build`, `npm test` (49/49 client, 4/4 server), più verifica
-> visiva reale (Playwright headless mobile-viewport, e per il punto 1 anche emulatore Android reale
-> via CDP). Nulla committato a fine sessione.
+> di lavoro dell'utente, poi cancellato una volta integrato qui): 5 punti "alta priorità" emersi
+> dall'uso reale dell'app online, discussi uno per uno con l'utente prima di implementare (non presi
+> alla lettera: 2 punti sono stati corretti in corso d'opera rispetto a come erano scritti nel
+> prompt, vedi sotto). **Verificato ad ogni passo**: `npm run lint` (0 errori), `npm run build`,
+> `npm test` (49/49 client, 4/4 server), più verifica visiva reale (Playwright headless
+> mobile-viewport, e per il punto 1 anche emulatore Android reale via CDP). Seconda parte della
+> stessa sessione — ulteriori richieste emerse in conversazione, non dal prompt originale — in fondo
+> a questa sezione. **Tutto committato** (`fbbda6e`, `c9b31b5`, `245b85e`).
 
 | # | Cosa | Stato | Dettaglio |
 |---|------|-------|-----------|
@@ -605,6 +611,22 @@ già in uso per ButlerAI).
 | 3 | Quick Add — salvataggio automatico | ✅ DONE | Guardrail deciso insieme all'utente (non "auto-save sempre"): Gemini ora restituisce anche `dateSpecified`/`timeSpecified` (booleani, true solo se il testo conteneva un riferimento esplicito, anche vago). Task salvato subito **solo se entrambi true**; altrimenti resta il flusso attuale (form pre-compilato, revisione manuale). Aggiunto toast di conferma con pulsante **Annulla** (estesa `useToast`/`Toast.jsx` con un `action` opzionale) che cancella il task appena creato. Verificato con chiamate reali a Gemini: "venerdì alle 15" → auto-save; "comprare il latte" (niente data/ora) → form; "domani" senza ora → form (il gate richiede *entrambi*) |
 | 4 | Dashboard — categorie cliccabili con filtro | ✅ DONE | La Dashboard reale (`DashboardPage.jsx`) è diversa da un componente `Dashboard.jsx` che avevo letto per primo — quello è **codice morto**, mai importato: analisi iniziale corretta a metà lavoro. Aggiunte sezioni Media/Bassa priorità (prima solo Alta) via `getMediumPriorityItems`/`getLowPriorityItems` (nuovi selector, riusano `getItemsByImportance` già esistente); `PriorityList.jsx` generalizzato con `title`+`importance`, intestazione cliccabile → naviga in Agenda con quel filtro. Aggiunto nuovo valore filtro **"Imminenti"** in `useFilters.js`/`filters.js` (`dateFilter: 'IMMINENT'`, stesso criterio della card Dashboard) — si inserisce nel dropdown "Data" già esistente in `FilterBar.jsx`, nessuna nuova UI. "Scadenze Imminenti" ora cliccabile anch'essa |
 | 5 | Avviso sonoro per le scadenze | ⬜ RIMANDATO | Su richiesta dell'utente, non implementato ora — da riprendere in futuro. Nota tecnica lasciata in sospeso: un audio personalizzato può suonare solo ad app aperta (foreground), non da un push in background (limite del Service Worker, non di questo progetto) |
+
+### Seconda parte della sessione — richieste emerse in conversazione (non dal prompt originale)
+
+| # | Cosa | Stato | Dettaglio |
+|---|------|-------|-----------|
+| 6 | Task completati nascosti dalla Dashboard a fine giornata | ✅ DONE | Nuovo `isStaleCompleted(item)` in `selectors.js`: nasconde dalla Dashboard (non dai dati, restano sempre in Agenda) i task completati la cui giornata di scadenza è passata. Applicato in `hooks.js` a `upcomingItems`/`overdueItems`/`highPriorityItems`/`mediumPriorityItems`/`lowPriorityItems` — **filtrati anche per `type === 'TASK'`**, perché durante la verifica è emerso un bug reale preesistente: i Compleanni comparivano comunque in quelle liste (nessun filtro le escludeva), bypassando del tutto la finestra temporale del punto 7 sotto |
+| 7 | Compleanno visibile in Dashboard solo in una finestra, non tutto l'anno | ✅ DONE | Nuovo `getUpcomingBirthdayForDashboard()` in `selectors.js`: mostra il compleanno solo tra "prima notifica" (scadenza − `startBefore`) e fine della giornata del compleanno. `nextBirthday` esposto da `useAgenda()`, sostituisce il vecchio `birthdays[0]` (mostrava sempre il primo compleanno in assoluto, senza criterio) |
+| 8 | Nota "task completati rimossi a fine giornata" in Dashboard | ✅ DONE | Nuovo `AutoCleanupNotice.jsx`: compare a ogni apertura dell'app, sparisce da sola dopo 30s con fade-out (`animate-fade-out`, nuovo keyframe in `global.css`), o subito col tasto ✕. Verificato con `page.clock` di Playwright (visibile a 29s, in dissolvenza a 30.5s, rimossa dal DOM dopo il fade-out) |
+| 9 | Toast troppo trasparente | ✅ DONE | `Toast.jsx`: sfondo passato da `bg-{colore}/10` (10% opacità) a `bg-surface-container-lowest` solido + bordo colorato pieno a sinistra, `shadow-lg` + `border-outline-variant`. Verificato con una vera notifica di auto-save Quick Add |
+| 10 | Colore priorità Bassa poco visibile | ✅ DONE | `PriorityList.jsx`: da `bg-tertiary-container` (`#003f23`, verde quasi nero) a `bg-tertiary-fixed` (`#91f8b8`, stesso verde ma chiaro) — stesso token della palette, non cambia tra i temi |
+| 11 | Click categorie Dashboard → vista "Prossime" automatica | ✅ DONE | `viewMode` spostato dallo stato locale di `AgendaView.jsx` allo store condiviso (stesso pattern di `filterCriteria`/`sortCriteria`), con `setViewMode`. I 4 click Dashboard (Alta/Media/Bassa Priorità, Scadenze Imminenti) impostano `viewMode: 'upcoming'` insieme al filtro, prima di navigare. Verificato: click "Alta Priorità" con due task futuri → arriva su Agenda con tab "Prossime" già attiva e task raggruppati per data |
+| 12 | Avatar sostituiti con segni zodiacali | ✅ DONE | Primo tentativo con simboli Unicode (U+2648–U+2653, verificato prima che Material Symbols non abbia icone zodiacali) — **scartato dall'utente**, troppo dipendente dal font di sistema, esito visivo incoerente. Provate diverse direzioni di riferimento (icone monolinea, IconScout multicolore, medaglioni dorati, badge a contorno colorato) prima che l'utente fornisse **12 immagini disegnate da lui** (PNG 260×260, linea nera su trasparente, un file per segno in `public/avatars/`). Colore gestito via **CSS mask** (`mask-image`/`-webkit-mask-image` + `background-color: currentColor`, nuovo helper `maskStyle()` in `Avatar.jsx`, riusato da `AvatarPicker.jsx`) invece che via colore intrinseco dell'immagine — resta un solo colore (`primary-container`) come richiesto, gestito da Tailwind/tema come tutto il resto. Chi aveva scelto un vecchio avatar torna al placeholder di default (nessuna migrazione, comportamento già gestito) |
+
+Verificato ad ogni punto: `npm run lint` (0 errori), `npm run build`, `npm test` (49/49), più verifica
+visiva reale in browser (Playwright, incluso `page.clock` per il timer della nota e una vera chiamata
+Gemini per il toast).
 
 ---
 
