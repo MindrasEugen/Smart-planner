@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { createPortal } from 'react-dom';
 
 /**
  * @typedef {Object} ConfirmDialogProps
@@ -130,7 +131,13 @@ export default function ConfirmDialog({
 
   const { icon, iconColor, bgColor, borderColor, confirmBtnColor } = getVariantConfig();
 
-  return (
+  return createPortal(
+    // Portato in document.body: annidato nell'albero di AgendaItemActions,
+    // questo overlay "fixed" veniva ripaintato in modo incompleto su alcuni
+    // browser mobile (Samsung Browser incluso) durante gli aggiornamenti del
+    // componente sottostante, lasciando intravedere il pannello azioni da
+    // cui l'eliminazione era stata avviata. Il portal isola la subtree dal
+    // resto dell'albero React, eliminando il problema alla radice.
     // Il click sul backdrop per chiudere è un pattern standard dei dialog
     // modali; l'equivalente da tastiera è già gestito da Escape
     // (document-level, sopra) e i controlli davvero interattivi sono i
@@ -187,6 +194,7 @@ export default function ConfirmDialog({
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
