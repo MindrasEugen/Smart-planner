@@ -8,12 +8,26 @@ const MAX_TEXT_LENGTH = 500;
 const DAILY_LIMIT = Number(process.env.QUICK_ADD_DAILY_LIMIT ?? 5);
 
 /**
- * Data odierna nel fuso Europe/Rome (stesso criterio di db.js/todayInRome,
- * serve qui solo per passarla nel prompt).
- * @returns {string} Data in formato YYYY-MM-DD
+ * Data e ora correnti nel fuso Europe/Rome, calcolate da un solo Date per
+ * evitare disallineamenti tra i due valori. Servono entrambe nel prompt: senza
+ * l'ora, espressioni relative all'istante attuale ("tra 10 minuti", "adesso")
+ * sono impossibili da risolvere per il modello, che non ha altro modo di
+ * sapere che ore sono ora (era la causa dell'orario sempre sbagliato su
+ * queste richieste).
+ * @returns {{ date: string, time: string }} Data YYYY-MM-DD e ora HH:mm
  */
-function todayInRome() {
-  return new Date().toLocaleDateString('en-CA', { timeZone: 'Europe/Rome' });
+function nowInRome() {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Europe/Rome',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  }).formatToParts(new Date());
+  const get = (type) => parts.find((p) => p.type === type).value;
+  return { date: `${get('year')}-${get('month')}-${get('day')}`, time: `${get('hour')}:${get('minute')}` };
 }
 
 quickAddRouter.post('/api/quick-add', async (req, res) => {
@@ -42,9 +56,11 @@ quickAddRouter.post('/api/quick-add', async (req, res) => {
       });
     }
 
+    const { date: todayISO, time: nowTime } = nowInRome();
     const { dateSpecified, timeSpecified, ...draft } = await extractTaskFromText(
       text.trim(),
-      todayInRome()
+      todayISO,
+      nowTime
     );
     const newTotal = await incrementQuickAddUsage(deviceId);
 
