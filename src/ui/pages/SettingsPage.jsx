@@ -37,6 +37,14 @@ import {
   syncSubscriptionToServer,
   deleteSubscriptionFromServer,
 } from '../../logic/notifications/sync.js';
+import {
+  getNativeNotificationPermission,
+  requestNativeNotificationPermission,
+  hasExactAlarmPermission,
+  openExactAlarmSettings,
+} from '../../logic/notifications/native.js';
+import { refreshNotifications } from '../../logic/notifications/integration.js';
+import { isNativeApp } from '../../logic/platform.js';
 
 const THEME_OPTIONS = [
   { value: 'light', label: 'Chiaro', icon: 'light_mode' },
@@ -169,6 +177,117 @@ function NotificationSettings() {
   );
 }
 
+/** Come PERMISSION_LABELS, ma il blocco viene da Android e non dal browser */
+const NATIVE_PERMISSION_LABELS = {
+  ...PERMISSION_LABELS,
+  denied: { label: 'Bloccate', className: 'text-error' },
+};
+
+/**
+ * Sezione notifiche dell'app nativa Android: permesso notifiche e permesso
+ * "Sveglie e promemoria" (senza, gli avvisi possono slittare di qualche minuto).
+ * Sostituisce NotificationSettings e PushNotificationsSettings, che si basano
+ * su API web assenti nella WebView.
+ * @returns {JSX.Element} Sezione impostazioni notifiche native
+ */
+function NativeNotificationSettings() {
+  const [permission, setPermission] = useState('default');
+  const [exactAllowed, setExactAllowed] = useState(true);
+
+  const refreshStatus = useCallback(async () => {
+    try {
+      setPermission(await getNativeNotificationPermission());
+      setExactAllowed(await hasExactAlarmPermission());
+    } catch (e) {
+      console.error('Errore lettura permessi notifiche:', e);
+    }
+  }, []);
+
+  // I permessi possono cambiare dalle impostazioni di Android
+  useEffect(() => {
+    refreshStatus();
+    const onVisibilityChange = () => {
+      if (document.visibilityState === 'visible') refreshStatus();
+    };
+    document.addEventListener('visibilitychange', onVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', onVisibilityChange);
+  }, [refreshStatus]);
+
+  const handleRequest = useCallback(async () => {
+    const result = await requestNativeNotificationPermission();
+    setPermission(result);
+    if (result === 'granted') {
+      showToast('Notifiche attivate', 'success');
+      refreshNotifications();
+    } else {
+      showToast('Notifiche bloccate: autorizzale dalle impostazioni di Android', 'error');
+    }
+  }, []);
+
+  const handleExact = useCallback(async () => {
+    const allowed = await openExactAlarmSettings();
+    setExactAllowed(allowed);
+    // Ripianifica: le notifiche gia' in coda erano state create inesatte
+    if (allowed) refreshNotifications();
+  }, []);
+
+  const status = NATIVE_PERMISSION_LABELS[permission] ?? NATIVE_PERMISSION_LABELS.default;
+
+  return (
+    <section className="bg-surface-container-low rounded-xl border border-outline-variant p-6 mt-6">
+      <h2 className="text-xl font-semibold text-on-surface">Notifiche</h2>
+      <p className="text-sm text-on-surface-variant mt-2">
+        Stato: <span className={status.className}>{status.label}</span>
+      </p>
+      <p className="text-sm text-on-surface-variant mt-2">
+        I promemoria arrivano anche ad app chiusa e senza connessione.
+      </p>
+
+      {permission === 'default' && (
+        <button
+          type="button"
+          onClick={handleRequest}
+          className="mt-4 px-4 py-2 bg-primary hover:brightness-90 rounded-xl text-on-primary text-sm font-medium transition-colors active:scale-95"
+          aria-label="Abilita le notifiche"
+        >
+          Abilita notifiche
+        </button>
+      )}
+
+      {permission === 'denied' && (
+        <p className="text-sm text-on-surface-variant mt-4">
+          Le notifiche sono bloccate: riattivale da Impostazioni di Android &gt;
+          App &gt; Agenda Intelligente &gt; Notifiche.
+        </p>
+      )}
+
+      {permission === 'granted' && !exactAllowed && (
+        <>
+          <p className="text-sm text-on-surface-variant mt-4">
+            Per ricevere i promemoria all&apos;orario esatto, consenti
+            &quot;Sveglie e promemoria&quot;: senza, possono arrivare con
+            qualche minuto di ritardo.
+          </p>
+          <button
+            type="button"
+            onClick={handleExact}
+            className="mt-4 px-4 py-2 bg-primary hover:brightness-90 rounded-xl text-on-primary text-sm font-medium transition-colors active:scale-95"
+            aria-label="Consenti sveglie e promemoria"
+          >
+            Consenti promemoria puntuali
+          </button>
+        </>
+      )}
+
+      <p className="text-xs text-on-surface-variant mt-4">
+        Su alcuni telefoni (es. Xiaomi, Huawei, Oppo) il risparmio energetico
+        può bloccare i promemoria: se non arrivano, escludi l&apos;app
+        dall&apos;ottimizzazione della batteria.
+      </p>
+    </section>
+  );
+}
+
 /**
  * Sezione per attivare le notifiche push (VAPID), consegnate dal backend.
  * A differenza di NotificationSettings sopra (permesso browser, richieste
@@ -287,6 +406,8 @@ function PreferencesSettings() {
     const enabled = e.target.checked;
     setVibrationEnabled(enabled);
     setVibrationEnabledState(enabled);
+    // Nativo: la preferenza sceglie il canale Android delle notifiche pianificate
+    if (isNativeApp) refreshNotifications();
     // Anteprima immediata, solo se il dispositivo la supporta davvero
     if (enabled && 'vibrate' in navigator) navigator.vibrate(100);
   }, []);
@@ -295,6 +416,7 @@ function PreferencesSettings() {
     const value = e.target.checked;
     setSilentNotifications(value);
     setSilentState(value);
+    if (isNativeApp) refreshNotifications();
   }, []);
 
   return (
@@ -529,10 +651,10 @@ export default function SettingsPage() {
         <FadeIn>
           <h1 className="font-headline-md text-on-surface">Impostazioni</h1>
           <ProfileSettings />
-          <NotificationSettings />
-          <PushNotificationsSettings />
+          {isNativeApp ? <NativeNotificationSettings /> : <NotificationSettings />}
+          {!isNativeApp && <PushNotificationsSettings />}
           <PreferencesSettings />
-          <InstallSettings />
+          {!isNativeApp && <InstallSettings />}
           <FeedbackForm />
           <RecentUpdatesSettings />
           <ComingSoonSettings />
@@ -544,10 +666,10 @@ export default function SettingsPage() {
         <FadeIn>
           <h1 className="font-headline-lg text-on-surface mb-xl">Impostazioni</h1>
           <ProfileSettings />
-          <NotificationSettings />
-          <PushNotificationsSettings />
+          {isNativeApp ? <NativeNotificationSettings /> : <NotificationSettings />}
+          {!isNativeApp && <PushNotificationsSettings />}
           <PreferencesSettings />
-          <InstallSettings />
+          {!isNativeApp && <InstallSettings />}
           <FeedbackForm />
           <RecentUpdatesSettings />
           <ComingSoonSettings />

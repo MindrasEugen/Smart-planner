@@ -185,3 +185,42 @@ console.log(`${join(OUT_DIR, 'icons', 'apple-touch-icon.png')}  ${apple.length} 
 const ico = encodeICO([16, 32, 48].map((size) => ({ size, png: encodePNG(size, size, render(size)) })));
 writeFileSync(join(OUT_DIR, 'favicon.ico'), ico);
 console.log(`${join(OUT_DIR, 'favicon.ico')}  ${ico.length} byte (16/32/48)`);
+
+// --- Icone Android (app nativa Capacitor) ---
+// Uso: node scripts/generate-icons.mjs public --android android/app/src/main/res
+const androidFlag = process.argv.indexOf('--android');
+if (androidFlag !== -1) {
+  const RES_DIR = process.argv[androidFlag + 1];
+  if (!RES_DIR) throw new Error('Uso: --android <cartella res del progetto Android>');
+
+  /**
+   * Icona di lato `inner` centrata in un quadrato trasparente di lato `canvas`
+   * @returns {Buffer} Buffer RGBA
+   */
+  function renderPadded(canvas, inner) {
+    const out = Buffer.alloc(canvas * canvas * 4);
+    const src = render(inner);
+    const offset = Math.round((canvas - inner) / 2);
+    for (let y = 0; y < inner; y++) {
+      src.copy(out, ((y + offset) * canvas + offset) * 4, y * inner * 4, (y + 1) * inner * 4);
+    }
+    return out;
+  }
+
+  // Lato in px dell'icona legacy (48dp) per densita'
+  const DENSITIES = { mdpi: 48, hdpi: 72, xhdpi: 96, xxhdpi: 144, xxxhdpi: 192 };
+  for (const [density, size] of Object.entries(DENSITIES)) {
+    const dir = join(RES_DIR, `mipmap-${density}`);
+    mkdirSync(dir, { recursive: true });
+    const legacy = encodePNG(size, size, render(size));
+    writeFileSync(join(dir, 'ic_launcher.png'), legacy);
+    writeFileSync(join(dir, 'ic_launcher_round.png'), legacy);
+    // Icona adattiva: livello di 108dp di cui il launcher mostra i 72dp
+    // centrali. L'icona occupa esattamente quei 72dp: il glifo resta entro la
+    // safe zone, e lo sfondo (stesso colore BG) riempie i bordi mascherati.
+    const fg = (size * 108) / 48;
+    const inner = (size * 72) / 48;
+    writeFileSync(join(dir, 'ic_launcher_foreground.png'), encodePNG(fg, fg, renderPadded(fg, inner)));
+    console.log(`${dir}  ic_launcher (${size}px), ic_launcher_foreground (${fg}px)`);
+  }
+}

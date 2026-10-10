@@ -282,6 +282,32 @@ cd server
 Senza `GEMINI_API_KEY`, `/api/quick-add` risponde sempre "AI non configurata" — il resto del server
 (notifiche push) continua a funzionare normalmente.
 
+### App Android (Capacitor)
+
+L'app gira anche come app nativa Android (appId `com.m.e.t.agenda`), con lo stesso codice
+React: Capacitor impacchetta la build di `dist/` in un progetto Android (`android/`).
+iOS non è ancora configurato (serve un Mac con Xcode).
+
+Differenze rispetto alla versione web, gestite automaticamente tramite `isNativeApp`
+(`src/logic/platform.js`):
+- **Notifiche locali** (`@capacitor/local-notifications`, `src/logic/notifications/native.js`)
+  al posto di Service Worker e Web Push, che la WebView Android non supporta. Il telefono
+  programma da solo gli avvisi (anche ad app chiusa e offline), entro 14 giorni e al
+  massimo 400 avvisi: ogni apertura dell'app ripianifica ed estende l'orizzonte.
+- Nessun Service Worker, banner di installazione o sezione "Notifiche push" in Impostazioni.
+
+Prerequisiti: Android Studio (con Android SDK) e JDK 21. Poi:
+
+```bash
+cp .env.example .env              # compilare le variabili VITE_* (vedi commenti)
+npm run android:sync              # build web + copia in android/
+npm run android:open              # apre il progetto in Android Studio (Run ▶ su emulatore/telefono)
+```
+
+Dopo ogni modifica al codice web va rieseguito `npm run android:sync`. Le icone Android si
+rigenerano con `npm run icons:android`. Per la Quick Add AI dall'app, `ALLOWED_ORIGIN` del
+server deve includere `https://localhost` (l'origine della WebView Capacitor su Android).
+
 ### Cloud-sync / Autenticazione (in arrivo, bozza non ancora attiva)
 
 L'app supporterà a breve **login/registrazione e sincronizzazione dati su più dispositivi** tramite

@@ -15,6 +15,12 @@ import {
 } from './db.js';
 import { syncItemsToServer } from './sync.js';
 import { getPushEnabled } from '../preferences.js';
+import { isNativeApp } from '../platform.js';
+import {
+  getNativeNotificationPermission,
+  requestNativeNotificationPermission,
+  rescheduleNativeNotifications,
+} from './native.js';
 
 // Timeout in-page attivi, per item (fallback mentre l'app e' aperta)
 const scheduledNotifications = new Map();
@@ -158,6 +164,9 @@ async function showNotificationForItem(item) {
  * @returns {Promise<void>}
  */
 export async function cancelItemNotification(id) {
+  // Nativo: la modifica dello store che segue ripianifica gia' tutto da zero
+  if (isNativeApp) return;
+
   clearItemTimeout(id);
 
   try {
@@ -208,6 +217,11 @@ function queueReschedule(items) {
  * @returns {Promise<void>}
  */
 async function rescheduleAll(items) {
+  if (isNativeApp) {
+    await rescheduleNativeNotifications(items, formatItemNotification);
+    return;
+  }
+
   // La pulizia va attesa: se partisse in parallelo alla pianificazione,
   // cancellerebbe le notifiche appena create
   await cancelAllScheduledNotifications();
@@ -291,11 +305,52 @@ export function startNotificationMonitor() {
 }
 
 /**
+ * Ripianifica subito tutte le notifiche (es. dopo aver concesso un permesso
+ * o cambiato le preferenze vibrazione/silenzioso, che nell'app nativa
+ * determinano il canale Android)
+ * @returns {Promise<void>}
+ */
+export function refreshNotifications() {
+  return queueReschedule(agendaStore.getState().items);
+}
+
+/**
+ * Monitor dell'app nativa: niente timeout in-page, Service Worker o sync col
+ * backend push. Le notifiche locali sono pianificate in anticipo entro un
+ * orizzonte, che viene esteso a ogni ritorno in primo piano.
+ * @returns {Function} Funzione di cleanup
+ */
+function startNativeNotificationMonitor() {
+  const unsubscribe = agendaStore.subscribe(
+    (state) => state.items,
+    (items) => queueReschedule(items)
+  );
+
+  const onVisibilityChange = () => {
+    if (document.visibilityState === 'visible') refreshNotifications();
+  };
+  document.addEventListener('visibilitychange', onVisibilityChange);
+
+  // Android 13+: il permesso va chiesto esplicitamente, una volta
+  getNativeNotificationPermission()
+    .then((permission) => (permission === 'default' ? requestNativeNotificationPermission() : null))
+    .catch((e) => console.error('Errore richiesta permesso notifiche:', e))
+    .finally(() => refreshNotifications());
+
+  return () => {
+    unsubscribe();
+    document.removeEventListener('visibilitychange', onVisibilityChange);
+  };
+}
+
+/**
  * Inizializza il monitoraggio automatico delle notifiche
  * @returns {Function} Funzione di cleanup
  */
 export function setupAutoNotifications() {
   try {
+    if (isNativeApp) return startNativeNotificationMonitor();
+
     // Il Service Worker e' registrato da vite-plugin-pwa in main.jsx
     return startNotificationMonitor();
   } catch (e) {

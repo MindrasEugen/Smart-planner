@@ -1,5 +1,9 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { calculateNextNotificationTime, shouldNotifyNow } from './scheduler.js';
+import {
+  calculateNextNotificationTime,
+  calculateUpcomingNotificationTimes,
+  shouldNotifyNow,
+} from './scheduler.js';
 
 /**
  * Costruisce un item minimo per i test, con dueDate/dueTime nel formato
@@ -221,5 +225,55 @@ describe('shouldNotifyNow', () => {
       dueTime: '10:30',
     });
     expect(shouldNotifyNow(item)).toBe(false);
+  });
+});
+
+describe('calculateUpcomingNotificationTimes', () => {
+  const FAR = new Date(2030, 0, 1);
+
+  it('elenca tutte le ripetizioni dalla partenza fino alla scadenza inclusa', () => {
+    // scadenza 12:00, inizio 60 min prima, ogni 30 min -> 11:00, 11:30, 12:00
+    const item = makeItem({ dueDate: new Date(2026, 7, 13), dueTime: '12:00' });
+    const times = calculateUpcomingNotificationTimes(item, { limit: 10, until: FAR, now: NOW });
+    expect(times).toEqual([
+      new Date(2026, 7, 13, 11, 0),
+      new Date(2026, 7, 13, 11, 30),
+      new Date(2026, 7, 13, 12, 0),
+    ]);
+  });
+
+  it("a meta' periodo restituisce solo gli orari successivi a now", () => {
+    const item = makeItem({ dueDate: new Date(2026, 7, 13), dueTime: '12:00' });
+    const now = new Date(2026, 7, 13, 11, 10);
+    const times = calculateUpcomingNotificationTimes(item, { limit: 10, until: FAR, now });
+    expect(times).toEqual([new Date(2026, 7, 13, 11, 30), new Date(2026, 7, 13, 12, 0)]);
+  });
+
+  it('rispetta il limite quando le ripetizioni dopo la scadenza sono infinite', () => {
+    const item = makeItem({
+      dueDate: new Date(2026, 7, 13),
+      dueTime: '09:00',
+      repeatEvery: 15,
+      notifyAfterDeadline: true,
+    });
+    const times = calculateUpcomingNotificationTimes(item, { limit: 4, until: FAR, now: NOW });
+    expect(times).toEqual([
+      new Date(2026, 7, 13, 10, 15),
+      new Date(2026, 7, 13, 10, 30),
+      new Date(2026, 7, 13, 10, 45),
+      new Date(2026, 7, 13, 11, 0),
+    ]);
+  });
+
+  it("si ferma all'orizzonte until", () => {
+    const item = makeItem({ dueDate: new Date(2026, 7, 13), dueTime: '12:00' });
+    const until = new Date(2026, 7, 13, 11, 30);
+    const times = calculateUpcomingNotificationTimes(item, { limit: 10, until, now: NOW });
+    expect(times).toEqual([new Date(2026, 7, 13, 11, 0), new Date(2026, 7, 13, 11, 30)]);
+  });
+
+  it('restituisce un array vuoto per item completati', () => {
+    const item = makeItem({ status: 'COMPLETED', dueDate: new Date(2026, 7, 13) });
+    expect(calculateUpcomingNotificationTimes(item, { limit: 10, until: FAR, now: NOW })).toEqual([]);
   });
 });

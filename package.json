@@ -11,9 +11,15 @@
     "test": "cross-env NODE_OPTIONS=--no-experimental-webstorage vitest run",
     "test:watch": "cross-env NODE_OPTIONS=--no-experimental-webstorage vitest",
     "icons": "node scripts/generate-icons.mjs public",
-    "icons:verify": "node scripts/verify-icons.mjs dist"
+    "icons:verify": "node scripts/verify-icons.mjs dist",
+    "icons:android": "node scripts/generate-icons.mjs public --android android/app/src/main/res",
+    "android:sync": "vite build && cap sync android",
+    "android:open": "cap open android"
   },
   "dependencies": {
+    "@capacitor/android": "^8.5.3",
+    "@capacitor/core": "^8.5.3",
+    "@capacitor/local-notifications": "^8.3.1",
     "@mindraseugen/utility-kit": "^1.0.0",
     "@supabase/supabase-js": "^2.112.4",
     "date-fns": "^2.30.0",
@@ -24,6 +30,7 @@
     "zustand": "^4.4.7"
   },
   "devDependencies": {
+    "@capacitor/cli": "^8.5.3",
     "@tailwindcss/container-queries": "^0.1.1",
     "@tailwindcss/forms": "^0.5.11",
     "@tailwindcss/postcss": "^4.3.3",

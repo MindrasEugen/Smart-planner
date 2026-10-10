@@ -1,7 +1,7 @@
 module.exports = {
   root: true,
   env: { browser: true, es2021: true, node: true },
-  ignorePatterns: ['dist/**', 'node_modules/**', 'public/**'],
+  ignorePatterns: ['dist/**', 'node_modules/**', 'public/**', 'android/**'],
   extends: [
     'eslint:recommended',
     'plugin:react/recommended',

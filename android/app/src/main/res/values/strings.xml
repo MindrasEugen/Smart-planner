@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Agenda Intelligente</string>
+    <string name="title_activity_main">Agenda Intelligente</string>
+    <string name="package_name">com.m.e.t.agenda</string>
+    <string name="custom_url_scheme">com.m.e.t.agenda</string>
+</resources>

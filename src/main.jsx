@@ -8,6 +8,7 @@ import { agendaStore } from './logic/store/index.js';
 import { setupStorePersistence } from './logic/store/persistence.js';
 import { setupAutoNotifications } from './logic/notifications/integration.js';
 import { applyTheme, watchSystemTheme } from './logic/preferences.js';
+import { isNativeApp } from './logic/platform.js';
 // import './styles/theme.scss'; // Disabilitato temporaneamente - usando Tailwind CSS
 import './styles/global.css';
 
@@ -33,7 +34,11 @@ window.addEventListener('vite:preloadError', () => {
 // UNICO punto di registrazione del Service Worker (src/sw.js).
 // Va prima delle notifiche: queste attendono la registrazione per poter
 // mostrare le notifiche di sistema.
-registerSW({ immediate: true });
+// Non nell'app nativa: li' le notifiche sono locali (Capacitor) e un SW
+// servirebbe dalla cache gli asset di una versione precedente dell'app.
+if (!isNativeApp) {
+  registerSW({ immediate: true });
+}
 
 // Inizializza persistenza automatica all'avvio
 // Usiamo agendaStore (vanilla store) invece di useAgendaStore (hook)

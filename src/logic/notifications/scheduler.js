@@ -33,16 +33,16 @@ function getSafeNotificationSettings(item) {
  * L'orario restituito e' sempre strettamente nel futuro: se non lo fosse,
  * il chiamante ripianificherebbe all'infinito notificando in continuazione.
  * @param {AgendaItem} item - Item agenda
+ * @param {Date} [now] - Istante di riferimento (default: adesso)
  * @returns {Date | null} Prossimo orario notifica o null
  */
-export function calculateNextNotificationTime(item) {
+export function calculateNextNotificationTime(item, now = getCurrentDateInTZ()) {
   // Non notificare per item completati
   if (item.status === 'COMPLETED') {
     return null;
   }
 
   const { startBefore, repeatEvery, notifyAfterDeadline } = getSafeNotificationSettings(item);
-  const now = getCurrentDateInTZ();
   const dueDateTime = parseDateTime(item.dueDate, item.dueTime);
 
   if (Number.isNaN(dueDateTime.getTime())) {
@@ -88,6 +88,30 @@ export function calculateNextNotificationTime(item) {
   }
 
   return nextTime;
+}
+
+/**
+ * Calcola in anticipo i prossimi orari di notifica di un item, in ordine.
+ * Serve all'app nativa: le notifiche locali scattano ad app chiusa, quindi
+ * le ripetizioni vanno pianificate tutte prima, non una alla volta.
+ * @param {AgendaItem} item - Item agenda
+ * @param {{ limit: number, until: Date, now?: Date }} options - Massimo numero
+ *   di orari, orizzonte oltre cui fermarsi e istante di partenza
+ * @returns {Date[]} Orari futuri, strettamente crescenti
+ */
+export function calculateUpcomingNotificationTimes(item, { limit, until, now = getCurrentDateInTZ() }) {
+  const times = [];
+  let cursor = now;
+
+  while (times.length < limit) {
+    const next = calculateNextNotificationTime(item, cursor);
+    // next e' sempre > cursor: il ciclo avanza e termina
+    if (!next || next > until) break;
+    times.push(next);
+    cursor = next;
+  }
+
+  return times;
 }
 
 /**

@@ -9,6 +9,7 @@ import FAB from '../Navigation/FAB.jsx';
 import SideNavBar from './SideNavBar.jsx';
 import DesktopTopAppBar from './DesktopTopAppBar.jsx';
 import InstallBanner from '../InstallBanner/InstallBanner.jsx';
+import { isNativeApp } from '../../../logic/platform.js';
 
 /**
  * Layout principale secondo Google Stitch Cognitive Protocol
@@ -108,7 +109,7 @@ export default function MainLayout({ children }) {
       </div>
 
       {/* Banner "Installa App" - solo mobile, sopra la Bottom Navigation */}
-      {!hideNav && <InstallBanner />}
+      {!hideNav && !isNativeApp && <InstallBanner />}
 
       {/* Bottom Navigation - solo mobile, fixed bottom, sempre visibile
           (anche in creazione/modifica: vedi nota su hideNav sopra) */}
