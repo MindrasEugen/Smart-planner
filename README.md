@@ -1,447 +1,55 @@
-# Agenda Intelligente con Notifiche Persistenti
+# Agenda Intelligente
 
-> Agenda personale con **notifiche ripetute** finché non confermi di aver completato ciò che scade,
-> **Quick Add via AI** (scrivi una frase libera, l'AI crea il task), e notifiche push reali anche ad
-> app chiusa.
->
-> **Live**: frontend https://smart-planner-vjgl.onrender.com · backend Web Push
-> https://agenda-push-server.onrender.com
->
-> Progetto **React 18 + JavaScript + JSDoc + Tailwind CSS v4 + PWA**. Design Reference: Google Stitch
-> Cognitive Protocol.
->
-> Stato dettagliato, cronologia delle sessioni e roadmap: [`PLAN.md`](PLAN.md).
+Un'agenda personale che **non ti lascia dimenticare le cose**: ti ricorda ripetutamente ciò che
+sta per scadere, finché non lo segni come fatto.
+
+**Provala subito:** https://smart-planner-vjgl.onrender.com — oppure installa l'app Android.
 
 ---
 
-## 🎯 Obiettivo
+## Cosa fa
 
-Sviluppare una **agenda personale intelligente** che aiuti l'utente a non dimenticare attività, appuntamenti, scadenze e compleanni tramite **notifiche ripetute** fino al completamento dell'elemento.
+- **Promemoria che insistono** — scegli quando iniziare ad avvisarti (es. 2 ore prima) e ogni quanto
+  ripetere (es. ogni 30 minuti), anche dopo la scadenza. Si fermano solo quando completi l'impegno.
+- **Scrivi come parli** — "Chiamare il dentista domani alle 10": l'intelligenza artificiale crea
+  l'impegno da sola, con data, ora e importanza.
+- **Tutto a colpo d'occhio** — la Dashboard mostra cosa scade a breve e cosa è più importante;
+  l'Agenda ti dà la vista del giorno, della settimana e dei prossimi impegni.
+- **Anche i compleanni** — con ricorrenza annuale, messi in evidenza quando si avvicinano.
+- **Tua e personale** — tema chiaro o scuro, avatar, notifiche con o senza vibrazione e suono.
 
-Il valore principale dell'app è:
-> **Ricordare ripetutamente all'utente ciò che sta per scadere finché non conferma di averlo completato.**
+## Dove si usa
 
----
+| | Come | Notifiche |
+|---|---|---|
+| **Web** (PC e telefono) | Apri il link sopra; su telefono puoi installarla dalla pagina Impostazioni | Arrivano anche ad app chiusa, dopo averle attivate in Impostazioni |
+| **App Android** | Installa l'APK (in arrivo sul Play Store) | Arrivano anche ad app chiusa e **senza internet** |
 
-## 📋 Panoramica Funzionalità
+> ⚠️ **Se le notifiche non arrivano su Android**: alcuni telefoni (Samsung, Xiaomi, Huawei, Oppo…)
+> bloccano le app in background per risparmiare batteria. Vai in *Impostazioni Android → App →
+> Agenda Intelligente (o Chrome, per la versione web) → Batteria → Nessuna restrizione*.
 
-| Area | Descrizione | Stato |
-|------|-------------|-------|
-| **Gestione Elementi** | Creazione/modifica/eliminazione di Task e Compleanni | ✅ Funzionante |
-| **Scadenze** | Data + ora configurabili separatamente | ✅ Funzionante |
-| **Persistenza** | Salvataggio su localStorage, date serializzate ISO | ✅ Funzionante |
-| **Importanza** | 3 livelli (Bassa/Media/Alta) per priorità e visualizzazione | ✅ Funzionante |
-| **Agenda** | Vista giornaliera/settimanale/prossime + filtri, con scorciatoie rapide in Filtri | ✅ Funzionante |
-| **Dashboard** | Panoramica: scadenze imminenti, priorità Alta/Media/Bassa (ciascuna cliccabile → Agenda già filtrata sulla vista "Prossime"), prossimo compleanno (solo quando si avvicina, non tutto l'anno), calendario. I task completati spariscono da soli a fine giornata (restano sempre in Agenda) | ✅ Funzionante |
-| **Quick Add AI** | Scrivi una frase libera, l'AI (Gemini) estrae titolo/data/ora/importanza. Se la frase specifica data e ora, il task si salva subito (con "Annulla"); altrimenti pre-compila il form per la revisione. Limite 5/giorno per dispositivo | ✅ Funzionante — richiede il backend configurato, vedi [Setup Progetto](#-setup-progetto) |
-| **Filtri** | Per tipo, stato, importanza, data (incluso "Imminenti") + 7 scorciatoie rapide (pagina Filtri) | ✅ Funzionante |
-| **Notifiche (app aperta)** | Promemoria ripetuti e configurabili, con cronologia (pagina Alerts) | ✅ Funzionante |
-| **App Android** | App nativa (Capacitor 8, appId `com.m.e.t.agenda`) con notifiche locali: arrivano ad app chiusa e offline, senza dipendere dal server | 🟡 Verificata su emulatore, da provare su telefono reale — vedi [App Android](#app-android-capacitor) |
-| **Notifiche (app chiusa)** | Web Push (VAPID) con backend su Render + Supabase | ✅ Funzionante, verificato su device reale — richiede un passo di setup lato utente, vedi [Limitazioni note](#️-limitazioni-note) |
-| **PWA installabile** | Manifest + icone + banner "Installa App" su mobile, e pulsante equivalente sempre raggiungibile in Settings | ✅ Funzionante |
-| **Preferenze** | Tema (chiaro/scuro/sistema), vibrazione e notifiche silenziose, in Settings | ✅ Funzionante, tema scuro esteso a tutta l'app (verificato su device reale) |
-| **Immagine profilo** | Scelta avatar (12 segni zodiacali, illustrazioni proprie, stesso colore via CSS mask) al posto del placeholder generico, in Settings | ✅ Funzionante — salvata in localStorage, non sincronizzata tra dispositivi (nessun account/login nel progetto) |
-| **Tailwind CSS** | Stili utility-first per UI responsive | ✅ Tema custom attivo (vedi sotto) |
-| **Design System** | Tema personalizzato da Google Stitch | ✅ `@theme` in `global.css` — unica sorgente di verità |
-| **SEO** | Meta tag Open Graph + structured data JSON-LD | ✅ Funzionante |
-| **Test automatici** | Vitest, layer logic | ✅ 54/54 (`npm test`) |
-| **Deploy** | Static Site su Render | ✅ Live — https://smart-planner-vjgl.onrender.com |
-| **Sezione "Prossimamente"** | Anteprima roadmap nelle Settings, pilotata da un array | ✅ Funzionante |
-| **Feedback** | Form categorizzato → issue GitHub precompilata, nessun backend | ✅ Funzionante |
+I tuoi impegni restano **sul tuo dispositivo**: non serve un account.
 
 ---
 
-## ⚠️ Limitazioni note
+## Documentazione
 
-### Notifiche con app chiusa (Web Push) — richiede un passo di setup manuale su Android
+| Documento | Contenuto |
+|---|---|
+| [Funzionalità](docs/funzionalita.md) | Ogni funzione nel dettaglio, come si usa, limiti noti |
+| [Sviluppo](docs/sviluppo.md) | Avvio in locale, backend, app Android, tecnologie, convenzioni |
+| [Architettura](docs/architettura.md) | Struttura del codice e funzionamento delle notifiche |
+| [Design System](docs/design-system.md) | Colori, tipografia, spaziature |
+| [PLAN](PLAN.md) | Stato del progetto, roadmap e storico dei lavori ([`docs/plan/`](docs/plan/)) |
 
-Un backend dedicato (`server/`, Node/Express su Render + Postgres su Supabase) invia notifiche push
-reali (VAPID) indipendentemente dallo stato dell'app — l'unico meccanismo web che consegna
-puntualmente anche a telefono bloccato.
-
-⚠️ **Su Android, se il sistema limita l'app/il browser in background, le notifiche push arrivano in
-ritardo o non arrivano affatto** — non è un bug del progetto, è la gestione batteria del telefono che
-sospende il processo prima che possa ricevere il push. **Passo di setup consigliato dopo
-l'installazione**: Impostazioni Android → App → Chrome (o il nome dell'app se installata come PWA) →
-Batteria → **"Nessuna restrizione"**. Verificato che risolve il problema su un Samsung Galaxy S21
-reale (One UI); la stessa impostazione — o l'equivalente su altri produttori (Xiaomi/MIUI,
-Huawei, Oppo, Vivo) — va cercata caso per caso. La stessa nota è mostrata direttamente in Settings →
-Notifiche push, nell'app.
-
----
-
-## 🖼️ Icone
-
-Le icone sono **generate proceduralmente**, non disegnate a mano: uno script senza dipendenze
-rasterizza il glifo con supersampling 4x e codifica PNG e ICO a livello di byte, usando i colori
-del design system (sfondo `#002045`, fascia `#b51822`).
-
-| File | Uso |
-|------|-----|
-| `public/icons/icon-192x192.png` | manifest (`any` + `maskable`) |
-| `public/icons/icon-512x512.png` | manifest (`any` + `maskable`) |
-| `public/icons/apple-touch-icon.png` | iOS, 180x180 |
-| `public/favicon.ico` | favicon, 3 PNG incorporati (16/32/48) |
-
-Il contenuto sta entro la safe zone centrale, quindi le stesse immagini valgono anche come
-`maskable` su Android.
+Per sviluppatori, in breve:
 
 ```bash
-npm run icons          # rigenera tutte le icone in public/
-npm run build
-npm run icons:verify   # valida i file in dist/: CRC dei chunk PNG, zlib, IEND, struttura ICO
+pnpm install
+pnpm dev      # http://localhost:5173
+pnpm test
 ```
 
-Per cambiare l'aspetto, modificare la palette o la geometria in `scripts/generate-icons.mjs`
-(coordinate normalizzate 0..1). Sostituirle con file disegnati a mano è altrettanto lecito,
-purché restino **opache** e con il glifo entro il **60% centrale**, altrimenti il ritaglio
-`maskable` di Android lo taglia.
-
----
-
-## 🏗️ Architettura
-
-```
-src/
-├── types/                          # Tipi JSDoc condivisi
-│   ├── index.js                    # Importance, Status, ItemType, NotificationSettings
-│   ├── agendaItem.js               # Task, Birthday, AgendaItem
-│   ├── status.js                   # TimeStatus
-│   ├── notifications.js            # NotificationSettings
-│   └── timezone.js                 # Tipi per timezone
-│
-├── logic/                          # Logica applicativa (NO React)
-│   ├── hooks.js                    # useAgenda — hook principale (dati, filtri, CRUD)
-│   ├── preferences.js              # Tema, vibrazione, notifiche silenziose — localStorage
-│   ├── store/
-│   │   ├── index.js                # useAgendaStore + subscribeWithSelector; items, filterCriteria, sortCriteria
-│   │   └── persistence.js          # saveToStorage, loadFromStorage, setupStorePersistence (sottoscritta ai soli items)
-│   ├── items/
-│   │   ├── actions.js              # createTask, createBirthday, addItem, updateItem, deleteItem, toggleComplete
-│   │   ├── selectors.js            # getTasks, getBirthdays, getUpcomingItems, getOverdueItems, getHighPriorityItems
-│   │   ├── filters.js              # applyFilters, applySort, applyFiltersAndSort
-│   │   └── index.js
-│   ├── notifications/
-│   │   ├── scheduler.js            # calculateNextNotificationTime (orario sempre strettamente futuro), shouldNotifyNow
-│   │   ├── browser.js              # isNotificationSupported, canNotify, getNotificationPermission,
-│   │   │                           # requestNotificationPermission, showBrowserNotification, getServiceWorkerRegistration
-│   │   ├── db.js                   # IndexedDB: save/remove/getExpired/removeByItemId delle notifiche pianificate
-│   │   ├── integration.js          # setupAutoNotifications, cancelItemNotification, flushExpiredNotifications
-│   │   ├── push.js                 # subscribeToPush, unsubscribeFromPush, getExistingPushSubscription (Push API)
-│   │   ├── sync.js                 # syncSubscriptionToServer, deleteSubscriptionFromServer, isSyncConfigured
-│   │   ├── toast.js                # pub/sub verso il ToastProvider React (showToast, subscribeToToasts)
-│   │   └── index.js                # barrel
-│   ├── time/
-│   │   ├── status.js               # getTimeStatus (FAR, IMMINENT, DUE, OVERDUE)
-│   │   └── timezone.js             # parseDateTime, getCurrentDateInTZ, formatTime, isSameDay
-│   └── ai/                         # Quick Add: client per il backend Gemini
-│       ├── deviceId.js             # getDeviceId — id dispositivo persistito in localStorage, per il rate limit
-│       └── quickAdd.js             # requestQuickAdd, isQuickAddConfigured
-│
-├── ui/
-│   ├── App.jsx                     # Routing con React.lazy + Suspense
-│   ├── pages/
-│   │   ├── DashboardPage.jsx
-│   │   ├── AgendaPage.jsx
-│   │   ├── CreatePage.jsx
-│   │   ├── TasksPage.jsx
-│   │   ├── AlertsPage.jsx          # Cronologia notifiche mostrate (IndexedDB)
-│   │   ├── FiltersPage.jsx         # 7 scorciatoie di filtro rapide
-│   │   └── SettingsPage.jsx        # Permesso notifiche, preferenze, installazione PWA, feedback
-│   └── components/
-│       ├── Layout/                 # MainLayout, TopAppBar, DesktopTopAppBar, SideNavBar, MobileSideNav, BottomNav
-│       ├── Navigation/             # FAB
-│       ├── InstallBanner/          # Banner "Installa App" (beforeinstallprompt), mobile only
-│       ├── AgendaItem/             # AgendaItem, AgendaItemCard, AgendaItemActions, AgendaItemCompact
-│       ├── AgendaView/             # AgendaView, AgendaHeader, DailyView, WeeklyView, UpcomingList, ViewToggle
-│       ├── Dashboard/              # QuickStats, CalendarWidget, UpcomingCards, PriorityList, StatsCard,
-│       │                           # GlassmorphismCard, AutoCleanupNotice
-│       ├── Filters/                # FilterBar, FilterChip, FilterDropdown, SortDropdown, useFilters
-│       ├── Forms/                  # TaskForm, BirthdayForm, FormField, QuickAddInput, useTaskForm, useBirthdayForm
-│       ├── Toast/                  # ToastProvider, Toast, useToast
-│       ├── Avatar/                 # Avatar, AvatarPicker, avatarOptions (12 segni zodiacali)
-│       ├── Animations/             # FadeIn, SlideUp, ScaleIn
-│       ├── ConfirmDialog.jsx
-│       ├── EmptyState.jsx
-│       ├── LoadingSpinner.jsx
-│       └── index.js
-│
-├── styles/
-│   └── global.css                  # @import "tailwindcss" + variabili tema + utility scritte a mano
-│
-├── sw.js                           # Service Worker (sorgente per injectManifest) — NON metterlo in public/
-└── main.jsx                        # Entry point: registra il SW, avvia persistenza e notifiche
-
-server/                             # Backend Web Push (VAPID), deploy separato su Render
-├── src/
-│   ├── index.js                    # Entry point Express, valida le env var richieste all'avvio
-│   ├── auth.js                     # Verifica Authorization: Bearer $SYNC_SECRET
-│   ├── db.js                       # Interfaccia storage (Postgres/Supabase), tabelle isolate dal client
-│   ├── tick.js                     # runTick/isDueWithinWindow — riusa calculateNextNotificationTime dal client
-│   ├── ai.js                       # extractTaskFromText — chiama Gemini via REST per la Quick Add
-│   └── routes/
-│       ├── subscribe.js            # POST/DELETE /api/subscribe
-│       ├── sync.js                 # POST /api/sync — mirror minimo degli item
-│       ├── quickAdd.js             # POST /api/quick-add — estrazione AI + rate limit 5/giorno per dispositivo
-│       └── tick.js                 # GET /api/tick — chiamato dal cron esterno
-└── .env.example                    # Variabili richieste, vedi Setup Progetto sotto
-```
-
----
-
-## 🛠️ Tecnologie
-
-| Tecnologia | Versione | Uso | Motivazione |
-|------------|---------|-----|-------------|
-| **React** | ^18.2.0 | Framework UI | Standard industria |
-| **JavaScript + JSDoc** | - | Tipizzazione | Modello dati forte senza step di compilazione |
-| **Vite** | ^5.0.8 | Bundler | Velocità di sviluppo |
-| **Zustand** | ^4.4.7 | State Management | Leggero; middleware `subscribeWithSelector` per le sottoscrizioni mirate |
-| **react-router-dom** | ^6.20.0 | Routing | Navigazione tra le pagine |
-| **vite-plugin-pwa** | ^0.17.0 | PWA | Strategia **`injectManifest`**: il SW è `src/sw.js` |
-| **Workbox** | ^7.0.0 | Service Worker | `workbox-precaching`, `workbox-routing`, `workbox-strategies`, `workbox-expiration`, `workbox-window` |
-| **Tailwind CSS** | ^4.3.3 | Stili utility-first | Tema custom nel blocco `@theme` di `global.css` |
-| **localStorage** | - | Persistenza dati | Semplice, sufficiente per un MVP monoutente |
-| **IndexedDB** | - | Notifiche pianificate | Accessibile anche dal Service Worker |
-| **Notifications API** | - | Notifiche browser | Standard web |
-| **date-fns** | ^2.30.0 | Manipolazione date | Usata in `WeeklyView` e `CalendarWidget` |
-| **uuid** | ^9.0.0 | ID univoci | `items/actions.js`, `Toast/useToast.js` |
-| **@mindraseugen/utility-kit** | ^1.0.0 | Utility condivise | Solo `fadeIn` in `Animations/FadeIn.jsx` |
-| **Google Gemini API** | gemini-3.6-flash | Estrazione AI per Quick Add | Chiamata REST diretta dal backend (`server/src/ai.js`), nessun SDK aggiunto |
-| **@supabase/supabase-js** | ^2.112.4 | Client Supabase Auth | Bozza non ancora collegata, vedi [Cloud-sync](#cloud-sync--autenticazione-in-arrivo-bozza-non-ancora-attiva) |
-
-> `sass` è ancora fra le devDependencies ma non esiste più alcun file `.scss`: rimuovibile.
-
----
-
-## 🚀 Setup Progetto
-
-### Prerequisiti
-- Node.js 18+
-- npm 9+
-
-### Installazione
-```bash
-npm install
-npm run dev
-```
-
-L'app sarà disponibile su **http://localhost:5173** (o la prima porta libera successiva).
-
-Il **Service Worker è attivo anche in sviluppo** (`devOptions.enabled` in `vite.config.js`): serve per poter testare le notifiche senza fare una build.
-
-### Build per Produzione
-```bash
-npm run build
-npm run preview
-```
-
-### Lint
-```bash
-npm run lint     # atteso: 0 errori (il limite è --max-warnings 100)
-```
-
-### Test
-```bash
-npm test          # esegue tutta la suite una volta (Vitest)
-npm run test:watch  # modalità watch
-```
-
-### Backend Web Push (opzionale, solo per sviluppare/testare le notifiche ad app chiusa)
-
-Il frontend funziona anche senza: `isSyncConfigured()` nasconde la sezione "Notifiche push" in
-Settings se `VITE_SYNC_API_URL`/`VITE_SYNC_SECRET` non sono impostate. Per lavorare sul backend
-(cartella `server/`, Node/Express + Postgres):
-
-```bash
-cd server
-cp .env.example .env   # compila TZ, SYNC_SECRET, VAPID_*, DATABASE_URL — vedi i commenti nel file
-npm install
-npm start               # ascolta su PORT (default 3000)
-npm test                 # suite del server (tick, finestra di controllo)
-```
-
-In produzione gira come Web Service su Render (`server/`, root dir `server`) più un cron esterno
-(**cron-job.org**) che chiama `GET /api/tick` ogni `TICK_WINDOW_MINUTES` (default 5) con l'header
-`Authorization: Bearer <SYNC_SECRET>` — il Cron Job nativo di Render non è più gratuito. Il database
-è il progetto Supabase condiviso **todo-list-app**, con tabelle prefissate `AAA4_agenda_`. Il frontend deployato ha bisogno delle stesse `VAPID_PUBLIC_KEY`/`SYNC_SECRET` del
-server, esposte come `VITE_VAPID_PUBLIC_KEY`/`VITE_SYNC_SECRET` a build-time.
-
-### Quick Add AI (opzionale, richiede una chiave Gemini)
-
-Il frontend nasconde il campo "Quick add con AI" in creazione task se `VITE_SYNC_API_URL`/
-`VITE_SYNC_SECRET` non sono configurate (stesso backend del Web Push, vedi sopra). Per attivarla
-davvero serve anche una chiave Gemini lato server:
-
-```bash
-cd server
-# nel .env già creato per il Web Push, aggiungere anche:
-# GEMINI_API_KEY=<chiave da https://aistudio.google.com/apikey>
-# GEMINI_MODEL=gemini-3.6-flash (default)
-# QUICK_ADD_DAILY_LIMIT=5 (default, per dispositivo)
-```
-
-Senza `GEMINI_API_KEY`, `/api/quick-add` risponde sempre "AI non configurata" — il resto del server
-(notifiche push) continua a funzionare normalmente.
-
-### App Android (Capacitor)
-
-L'app gira anche come app nativa Android (appId `com.m.e.t.agenda`), con lo stesso codice
-React: Capacitor impacchetta la build di `dist/` in un progetto Android (`android/`).
-iOS non è ancora configurato (serve un Mac con Xcode).
-
-Differenze rispetto alla versione web, gestite automaticamente tramite `isNativeApp`
-(`src/logic/platform.js`):
-- **Notifiche locali** (`@capacitor/local-notifications`, `src/logic/notifications/native.js`)
-  al posto di Service Worker e Web Push, che la WebView Android non supporta. Il telefono
-  programma da solo gli avvisi (anche ad app chiusa e offline), entro 14 giorni e al
-  massimo 400 avvisi: ogni apertura dell'app ripianifica ed estende l'orizzonte.
-- Nessun Service Worker, banner di installazione o sezione "Notifiche push" in Impostazioni.
-
-Prerequisiti: Android Studio (con Android SDK) e JDK 21. Poi:
-
-```bash
-cp .env.example .env              # compilare le variabili VITE_* (vedi commenti)
-npm run android:sync              # build web + copia in android/
-npm run android:open              # apre il progetto in Android Studio (Run ▶ su emulatore/telefono)
-```
-
-Dopo ogni modifica al codice web va rieseguito `npm run android:sync`. Le icone Android si
-rigenerano con `npm run icons:android`. Per la Quick Add AI dall'app, `ALLOWED_ORIGIN` del
-server deve includere `https://localhost` (l'origine della WebView Capacitor su Android).
-
-### Cloud-sync / Autenticazione (in arrivo, bozza non ancora attiva)
-
-L'app supporterà a breve **login/registrazione e sincronizzazione dati su più dispositivi** tramite
-Supabase Auth (progetto condiviso todo-list-app: gli utenti Auth sono comuni alle altre app del progetto). Il codice esiste già come
-bozza nelle cartelle `src/logic/auth/` e `src/ui/components/Auth/`, ma **non è ancora collegato
-all'app**: oggi l'app funziona esattamente come prima, senza alcun login richiesto. `items` e
-`subscriptions` sono già sincronizzati su Supabase (per il backend Web Push, vedi sopra), ma senza
-alcun concetto di proprietario: sono dati anonimi/condivisi finché questa feature non collega ogni
-riga a uno `user_id` reale (vedi `supabase/drafts/add_user_ownership_and_rls.sql`).
-
-Per chi in futuro vorrà provare la feature una volta attivata: copiare `.env.example` in `.env` e
-valorizzare `VITE_SUPABASE_URL` e `VITE_SUPABASE_ANON_KEY` con le credenziali del progetto Supabase.
-
----
-
-## 🔔 Come funzionano le notifiche
-
-Utile da leggere prima di modificare `src/logic/notifications/`.
-
-1. **Permesso.** Va richiesto esplicitamente: Impostazioni → *Abilita notifiche*. `canNotify()` è `true` solo con `Notification.permission === 'granted'`; senza permesso l'app ricade su un **toast** in pagina.
-2. **Pianificazione.** `startNotificationMonitor()` si sottoscrive ai soli `items` dello store (serve `subscribeWithSelector`). A ogni cambiamento ripianifica tutto, con le ripianificazioni **serializzate su una coda** per non sovrapporsi.
-3. **Doppio canale.** Ogni notifica viene salvata in **IndexedDB** (per il Service Worker) e pianificata con un `setTimeout` in pagina (fallback mentre l'app è aperta).
-4. **Recupero.** All'avvio, `flushExpiredNotifications()` mostra e consuma le notifiche scadute rimaste in IndexedDB.
-5. **Service Worker.** `src/sw.js` gestisce `sync`, `periodicsync`, `notificationclick` e i messaggi dal client. È compilato da `vite-plugin-pwa`: **non** va duplicato in `public/`.
-6. **Web Push (canale che garantisce la consegna ad app chiusa).** Se il backend è configurato,
-   "Attiva notifiche push" in Settings chiama `pushManager.subscribe()` e registra la subscription sul
-   server (`src/logic/notifications/push.js` + `sync.js`). Il server (`server/`) confronta
-   periodicamente gli item sincronizzati con l'orario corrente e invia una push reale (VAPID) tramite
-   `web-push`; `src/sw.js` la riceve nell'evento `push` e la mostra anche a browser chiuso. Su Android
-   richiede che l'app/il browser non siano soggetti a restrizioni batteria — vedi
-   [Limitazioni note](#️-limitazioni-note).
-
-**Regole da rispettare:**
-- Un solo punto di registrazione del SW: `registerSW()` da `virtual:pwa-register` in `main.jsx`. Non aggiungere `navigator.serviceWorker.register()` altrove.
-- Mai attendere `navigator.serviceWorker.ready` senza timeout: non risolve **mai** se nessun SW è registrato.
-- Il layer logic non importa React: per parlare con la UI usa il pub/sub in `notifications/toast.js`.
-
----
-
-## 📝 Convenzioni
-
-### Nomi File
-- **PascalCase** per componenti React (`AgendaItem.jsx`)
-- **camelCase** per funzioni/hook (`useTaskForm.js`)
-- **SCREAMING_SNAKE_CASE** per costanti (`DEFAULT_SORT_CRITERIA`)
-
-### Tipi JSDoc
-- Tutti i tipi condivisi in `src/types/`, nessuna duplicazione nei componenti
-- `@typedef` per i tipi complessi, `@param` e `@returns` sulle funzioni pubbliche
-
-### Store Zustand
-- **Un solo store** centrale (`logic/store/index.js`), che contiene `items`, `filterCriteria`, `sortCriteria` e `viewMode`
-- **Selector** per i dati derivati; i componenti non ricalcolano ciò che i selettori già espongono
-- Lo stato condiviso va nello store, **mai** in variabili a livello di modulo: non provocano re-render
-
-### Cartelle
-- `src/logic/` non importa React; `src/ui/` non contiene logica di dominio
-- Nessun file in `public/` che possa collidere con un artefatto di build (`sw.js`, `index.html`)
-
----
-
-## 🎨 Design System
-
-### Cognitive Protocol (da Google Stitch)
-**"Effortless Precision"** — interfaccia noise-free che permette di gestire schedule complessi con calma e controllo: whitespace generoso, allineamento sistematico, palette restrittiva, motion sottile.
-
-> I token qui sotto sono definiti nel blocco `@theme` di `src/styles/global.css`, l'unica sorgente di verità per colori, spaziature e tipografia.
-
-### Color Palette
-| Ruolo | Hex | Uso |
-|-----------------|-----|-----|
-| Primary | `#002045` | Navigazione, azioni primarie |
-| Primary Container | `#1a365d` | Contenitori primari |
-| Secondary | `#b51822` | Alta priorità, scaduto |
-| Secondary Container | `#d93537` | Contenitori secondari |
-| Tertiary | `#002713` | Compleanni |
-| Tertiary Container | `#003f23` | Contenitori terziari |
-| Error | `#ba1a1a` | Errori |
-| Success | `#2d7d4b` | Completato (WCAG AA, 4.6:1 su bianco) |
-| Warning | `#b45f06` | Avvisi (WCAG AA, 5.1:1 su bianco) |
-
-### Surface Colors
-| Livello | Hex | Uso |
-|--------|-----|-----|
-| Base | `#f7fafc` | Sfondo base |
-| Cards | `#ffffff` | Sfondo card |
-
-### Typography (Inter Font)
-| Token | Size | Weight | Uso |
-|-------|------|--------|-----|
-| display-date | 34px | 700 | Date ancore |
-| headline-lg | 24px | 600 | Titoli principali |
-| headline-md | 20px | 600 | Titoli secondari |
-| body-lg | 16px | 400 | Testo corpo |
-| body-md | 14px | 400 | Testo standard |
-| label-caps | 12px | 700 | Badge |
-
-### Spacing (baseline 4px)
-**xs:** 4px · **sm:** 8px · **md:** 16px (gutter) · **lg:** 24px · **xl:** 32px
-
-### Shapes
-Container e card 6px · Badge 4px · FAB circolare
-
----
-
-## 🎯 Come Usare l'App
-
-### Dashboard
-Panoramica con stato rapido, scadenze imminenti, priorità Alta/Media/Bassa e prossimo compleanno —
-ogni categoria è cliccabile e porta in Agenda già filtrata. I task completati spariscono da soli a
-fine giornata.
-
-### Agenda
-Vista cronologica con header, filtri e elementi con strip colorati.
-
-### Nuovo Elemento
-Form per Task (con notifiche configurabili) o Compleanno (ricorrenza annuale), oppure Quick Add con
-AI: scrivi una frase libera e lascia che sia l'AI a pre-compilare (o salvare subito) il task.
-
-### Impostazioni
-Attivazione del permesso notifiche e stato corrente dell'autorizzazione.
-
-### Notifiche
-- **Ripetute** fino al completamento dell'elemento
-- **Configurabili**: quando iniziare, ogni quanto, se continuare dopo la scadenza
-- **Recuperate alla riapertura** se il browser non ha risvegliato il Service Worker
-
----
-
-## 📄 Riferimenti
-- **Stato attuale, roadmap e indice dello storico:** [`PLAN.md`](PLAN.md) (lo storico dei lavori chiusi è in [`docs/plan/`](docs/plan/))
-- **Roadmap prossimi sviluppi (ROAD-01..09):** [`PLAN.md` § Roadmap](PLAN.md#️-roadmap--prossimi-sviluppi-handoff-2026-08-14)
-- **Fix UX da uso reale, sessione 2026-08-27:** [`docs/plan/uso-reale-2026-08.md` § Fix UX](docs/plan/uso-reale-2026-08.md#-fix-ux-da-uso-reale--sessione-2026-08-27)
-- **Bug da uso reale, tutti risolti:** [`docs/plan/uso-reale-2026-08.md` § Bug reali](docs/plan/uso-reale-2026-08.md#-bug-reali-trovati-in-uso-reale--sessioni-2026-08-15--2026-08-18)
-- **Design Reference:** Google Stitch — Cognitive Protocol
+React 18 · Tailwind CSS v4 · Vite · PWA · Capacitor (Android) — design di riferimento: Google Stitch
+"Cognitive Protocol".

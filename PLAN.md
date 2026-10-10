@@ -13,7 +13,7 @@
 > Dipendenze del server aggiornate (`npm audit`: 0 vulnerabilità).
 >
 > **Linguaggio:** JavaScript (con JSDoc) | **Framework:** React 18 + Tailwind CSS v4 + Vite + PWA + Capacitor 8 (Android)
-> **Build:** ✅ OK | **Lint:** ✅ 0 errori | **Test automatici:** ✅ Vitest, 54/54 (`npm test`)
+> **Build:** ✅ OK | **Lint:** ✅ 0 errori | **Test automatici:** ✅ Vitest, 54/54 (`pnpm test`)
 > **Design Reference:** Google Stitch - Cognitive Protocol
 
 ## 🗂️ Indice
@@ -56,6 +56,9 @@ notifiche (in-app e Web Push ad app chiusa), filtri, layout responsive, accessib
 tutti completi e verificati manualmente in browser reale (dettaglio storico in
 [Debito Tecnico](docs/plan/debito-tecnico.md#-debito-tecnico-aperto)). **Il core plan è chiuso al 100% (92/92, 2026-08-13).**
 
+Dal 2026-10-10 esiste anche come **app nativa Android** (Capacitor), con notifiche locali che non
+dipendono da browser né server (ROAD-09).
+
 Dal 2026-08-14 il lavoro prosegue su una roadmap separata (non conteggiata nel 92/92): vedi
 [Roadmap](#️-roadmap--prossimi-sviluppi-handoff-2026-08-14) per cosa è attivo e cosa resta da fare.
 
@@ -82,7 +85,7 @@ Dal 2026-08-14 il lavoro prosegue su una roadmap separata (non conteggiata nel 9
 | **DEBITO TECNICO (DEBT)** | **6** | **6** | **100%** | Tutto il debito tecnico chiuso 2026-08-13 |
 | **RIFACIMENTO LAYOUT (UX-NEW)** | **6** | **6** | **100%** | Tutti chiusi 2026-08-12 |
 | **TOTALE** | **92** | **92** | **100%** | Tutti i task chiusi 2026-08-13 |
-| **ROADMAP (ROAD)** | **9** | **4** | **44%** | Nuova fase aggiunta 2026-08-14 (handoff brainstorming), **non conteggiata nel TOTALE sopra** — il core plan resta chiuso al 100%. ROAD-01 (deploy), ROAD-02 (sezione Prossimamente) e ROAD-03 (form feedback) chiusi — Priorità 1 completa. Vedi sezione [🗺️ Roadmap](#️-roadmap--prossimi-sviluppi-handoff-2026-08-14) |
+| **ROADMAP (ROAD)** | **9** | **5** | **56%** | Nuova fase aggiunta 2026-08-14 (handoff brainstorming), **non conteggiata nel TOTALE sopra** — il core plan resta chiuso al 100%. ROAD-01 (deploy), ROAD-02 (sezione Prossimamente) e ROAD-03 (form feedback) chiusi — Priorità 1 completa. ROAD-06 (Quick Add AI) e ROAD-08 (documentazione) chiusi; ROAD-07 (profili) e ROAD-09 (app Android) in corso. Vedi sezione [🗺️ Roadmap](#️-roadmap--prossimi-sviluppi-handoff-2026-08-14) |
 | **BUG (uso reale, 2026-08-15 → 08-25)** | **7** | **7** | **100%** | Handoff da uso reale (segnalati 2026-08-14), **non conteggiato nel TOTALE sopra**. BUG-01 (notifiche mobile): backend Web Push deployato su Render, testato e confermato funzionante su device reale (Samsung Galaxy S21) il 2026-08-25, incluso a schermo spento. Vedi sezione [🐛 Bug reali trovati in uso reale](docs/plan/uso-reale-2026-08.md#-bug-reali-trovati-in-uso-reale--sessioni-2026-08-15--2026-08-18) |
 
 > I task UX-01/02/03 (❌ CANCELLED) sono esclusi dal totale.
@@ -127,8 +130,7 @@ Dal 2026-08-14 il lavoro prosegue su una roadmap separata (non conteggiata nel 9
 | ID | Task | Owner | DependsOn | Stato | Priority | Acceptance |
 |----|------|-------|-----------|-------|----------|------------|
 | **ROAD-06** | **Quick add AI — Gemini + rate limit** | UI ENGINE + LOGIC ENGINE | - | ✅ **DONE (2026-08-26)** | LOW | Pipeline completa (non solo scaffolding), riusa il backend Express già deployato su Render per il Web Push (zero costo di hosting aggiuntivo). **Backend**: `server/src/ai.js` (Gemini via REST, `responseSchema` per output strutturato), `server/src/routes/quickAdd.js` (`POST /api/quick-add`, dietro lo stesso `requireSyncSecret` degli altri endpoint), rate limit **5/giorno per dispositivo** (non per utente: non esiste ancora login, vedi ROAD-07) via tabella `quick_add_usage` (RLS abilitata a secco, stessa postura delle altre tabelle), `GEMINI_API_KEY`/`GEMINI_MODEL`/`QUICK_ADD_DAILY_LIMIT` in `server/.env.example` + `render.yaml`. **Frontend** (delegato a Mistral, poi revisionato): `src/logic/ai/deviceId.js`, `src/logic/ai/quickAdd.js` (stesso pattern `authedFetch`/`isXConfigured` di `sync.js`), `QuickAddInput.jsx` montato in `CreatePage.jsx` solo per task nuovi, `initialData` propagato a `TaskForm.jsx`/`useTaskForm.js`. **Bug trovato e corretto in revisione**: `QuickAddInput.jsx` aveva un `return null` scritto PRIMA delle `useState` (violazione Rules of Hooks), spostato dopo. **Scoperta in verifica**: `gemini-2.5-flash` non è più disponibile per nuovi utenti (l'API risponde 404 e suggerisce il successore) — default cambiato a **`gemini-3.6-flash`** in `ai.js`/`.env.example`/`render.yaml`. **Verificato end-to-end con una `GEMINI_API_KEY` reale** (server locale su porta 3099, DB reale `vhyqsdabneswjymlytbe`): estrazione corretta di titolo/data (relativa, "venerdì" → data giusta)/ora/importanza (dedotta da "importante" → HIGH) su testo libero reale; 5 chiamate consecutive stesso `deviceId` → `remaining` scende 4→3→2→1→0, la 6ª risponde **429** col messaggio corretto; un `deviceId` diverso non è affetto dal limite dell'altro; testo >500 caratteri → 400; `deviceId`/`text` mancanti → 400; richiesta senza `Authorization` → 401. Dati di test ripuliti da `quick_add_usage` dopo la verifica. `npm run lint` 0 errori/53 warning, `npm run build` OK, `npm test` server 4/4 |
-| **ROAD-07** | **Sistema di profili utente reale (auth Supabase + RLS)** | LOGIC ENGINE + UI ENGINE | - | 🟡 IN_PROGRESS | LOW | **2026-08-26**: fix di sicurezza critico applicato — RLS abilitata "a secco" su `items`/`subscriptions`/`sent_notifications` (migrazione `enable_rls_lockdown_public_tables`, verificato via Security Advisor: solo notice INFO residue, nessun errore). Scaffolding auth completo, non ancora attivo end-to-end: `src/logic/auth/` (client Supabase, `signUp`/`signIn`/`signOut`, `useAuthSession`), `src/ui/components/Auth/` (`LoginForm`, `RegisterForm`, `ProtectedRoute`), `src/ui/pages/LoginPage.jsx` + `RegisterPage.jsx` montati su `/login`+`/register` in `App.jsx` (raggiungibili, ma inerti: senza `.env` locale `signIn`/`signUp` restituiscono sempre "Supabase Auth non configurato"). Migrazione SQL vera pronta in `supabase/drafts/add_user_ownership_and_rls.sql` (colonna `user_id`, policy `auth.uid()`, dati di test esistenti da cancellare — decisione presa, non ancora eseguita). Manca ancora: `.env` locale con credenziali Supabase, `ProtectedRoute` applicata alle route esistenti, esecuzione della migrazione vera, verifica con due utenti reali. **Target: entro fine settembre 2026** (annunciato in Settings → Prossimamente, date volutamente vaghe per scelta dell'utente) |
-| **ROAD-09** | **App nativa Android (Capacitor 8)** | ORCHESTRATOR | - | 🟡 IN_PROGRESS | MEDIUM | **2026-10-10**: progetto Android creato (`android/`, appId `com.m.e.t.agenda`, firma M.E.T.), iOS rimandato (nessun Mac). Decisione: **notifiche locali** (`@capacitor/local-notifications`) invece di push FCM — più puntuali (allarmi esatti di sistema, nessuna dipendenza da Render/cron), funzionano offline; le push native torneranno utili solo con il cloud-sync di ROAD-07. `src/logic/notifications/native.js`: pianificazione anticipata di tutte le ripetizioni (orizzonte 14 giorni, max 60/item e 400 totali), canali Android per vibrazione/silenzioso, storico Avvisi ricostruito dalla pianificazione precedente. Nuova `calculateUpcomingNotificationTimes` in `scheduler.js` (+5 test). Settings: sezione notifiche nativa (permesso Android 13+, "Sveglie e promemoria", avviso risparmio batteria); niente SW/push/installazione PWA nell'app. Icone e splash generati dal design esistente (`npm run icons:android`). **Verificato su emulatore Pixel 6 (Android 13)**: permesso richiesto all'avvio, allarme esatto registrato dal sistema, notifica ricevuta ad app chiusa (processo terminato). **Completato lo stesso giorno**: `ALLOWED_ORIGIN` su Render = sito + `https://localhost` (origine della WebView, verificato via header CORS); `.env` locale con `VITE_SYNC_*` → Quick Add AI **verificata dall'app su emulatore** ("Chiamare il dentista domani alle 10" → task creato, 5 notifiche pianificate 08:00–10:00); importanza tradotta nel titolo notifica (`[Media] …` invece di `[MEDIUM] …`, anche sul web); APK di debug consegnato all'utente. Manca: test su telefono reale; build firmata (keystore di release) per il Play Store; eventuali Android App Links dal dominio del sito |
+| **ROAD-07** | **Sistema di profili utente reale (auth Supabase + RLS)** | LOGIC ENGINE + UI ENGINE | - | 🟡 IN_PROGRESS | LOW | **2026-08-26**: fix di sicurezza critico applicato — RLS abilitata "a secco" su `items`/`subscriptions`/`sent_notifications` (migrazione `enable_rls_lockdown_public_tables`, verificato via Security Advisor: solo notice INFO residue, nessun errore). Scaffolding auth completo, non ancora attivo end-to-end: `src/logic/auth/` (client Supabase, `signUp`/`signIn`/`signOut`, `useAuthSession`), `src/ui/components/Auth/` (`LoginForm`, `RegisterForm`, `ProtectedRoute`), `src/ui/pages/LoginPage.jsx` + `RegisterPage.jsx` montati su `/login`+`/register` in `App.jsx` (raggiungibili, ma inerti: senza `.env` locale `signIn`/`signUp` restituiscono sempre "Supabase Auth non configurato"). Migrazione SQL vera pronta in `supabase/drafts/add_user_ownership_and_rls.sql` (colonna `user_id`, policy `auth.uid()`, dati di test esistenti da cancellare — decisione presa, non ancora eseguita). Manca ancora: `.env` locale con credenziali Supabase, `ProtectedRoute` applicata alle route esistenti, esecuzione della migrazione vera, verifica con due utenti reali. **Target: entro fine settembre 2026** (annunciato in Settings → Prossimamente, date volutamente vaghe per scelta dell'utente) — **superato, nessuna nuova data**. **Aggiornamento 2026-10-10**: le tabelle ora sono `AAA4_agenda_items`/`AAA4_agenda_subscriptions`/`AAA4_agenda_sent_notifications`/`AAA4_agenda_quick_add_usage` nel progetto condiviso **todo-list-app** (RLS attiva senza policy, come prima); la bozza SQL è già aggiornata ai nuovi nomi. Attenzione: lì `auth.users` è condiviso con le altre app (AAA2_/AAA3_) |
 
 **ROAD-07 — passi ancora da fare, non coperti sopra** (da `piano-fix-rls-e-autenticazione.md`, integrato qui e poi rimosso):
 - Attivare il provider **Email** in Supabase Auth (dashboard progetto `qamvkevkddfwyxhbftoy` "todo-list-app", condiviso con altre app: attenzione, gli utenti Auth sono condivisi con le app AAA2_/AAA3_) — decidere se richiedere conferma email o no. Non ancora fatto.
@@ -136,15 +138,22 @@ Dal 2026-08-14 il lavoro prosegue su una roadmap separata (non conteggiata nel 9
 - Ogni `item`/`subscription` creato dal client dovrà includere `user_id: session.user.id`; le letture non dovranno più filtrare a mano lato client (RLS restituisce già solo le righe dell'utente loggato) — basta garantire che le richieste passino da un client Supabase autenticato, non con l'anon key nuda.
 - **Checklist di verifica finale** prima di considerare ROAD-07 davvero DONE: login con due utenti diversi → ognuno vede solo i propri item/subscription; una chiamata con la sola anon key (nessuna sessione) → RLS blocca, nessuna riga restituita; Security Advisor ri-eseguito e pulito; invio notifiche push ancora funzionante dopo l'attivazione (tocca `subscriptions`/`sent_notifications`, ora protette da RLS).
 
+### Priorità 4 — App nativa (avviata 2026-10-10)
+
+| ID | Task | Owner | DependsOn | Stato | Priority | Acceptance |
+|----|------|-------|-----------|-------|----------|------------|
+| **ROAD-09** | **App nativa Android (Capacitor 8)** | ORCHESTRATOR | - | 🟡 IN_PROGRESS | MEDIUM | **2026-10-10**: progetto Android creato (`android/`, appId `com.m.e.t.agenda`, firma M.E.T.), iOS rimandato (nessun Mac). Decisione: **notifiche locali** (`@capacitor/local-notifications`) invece di push FCM — più puntuali (allarmi esatti di sistema, nessuna dipendenza da Render/cron), funzionano offline; le push native torneranno utili solo con il cloud-sync di ROAD-07. `src/logic/notifications/native.js`: pianificazione anticipata di tutte le ripetizioni (orizzonte 14 giorni, max 60/item e 400 totali), canali Android per vibrazione/silenzioso, storico Avvisi ricostruito dalla pianificazione precedente. Nuova `calculateUpcomingNotificationTimes` in `scheduler.js` (+5 test). Settings: sezione notifiche nativa (permesso Android 13+, "Sveglie e promemoria", avviso risparmio batteria); niente SW/push/installazione PWA nell'app. Icone e splash generati dal design esistente (`npm run icons:android`). **Verificato su emulatore Pixel 6 (Android 13)**: permesso richiesto all'avvio, allarme esatto registrato dal sistema, notifica ricevuta ad app chiusa (processo terminato). **Completato lo stesso giorno**: `ALLOWED_ORIGIN` su Render = sito + `https://localhost` (origine della WebView, verificato via header CORS); `.env` locale con `VITE_SYNC_*` → Quick Add AI **verificata dall'app su emulatore** ("Chiamare il dentista domani alle 10" → task creato, 5 notifiche pianificate 08:00–10:00); importanza tradotta nel titolo notifica (`[Media] …` invece di `[MEDIUM] …`, anche sul web); APK di debug consegnato all'utente. Manca: test su telefono reale; build firmata (keystore di release) per il Play Store; eventuali Android App Links dal dominio del sito |
+
 ### Meta
 
 | ID | Task | Owner | DependsOn | Stato | Priority | Acceptance |
 |----|------|-------|-----------|-------|----------|------------|
-| **ROAD-08** | **Aggiornare PLAN.md e README.md a fine implementazione** | ORCHESTRATOR | ROAD-01..07 | ⬜ TODO | MEDIUM | Dopo aver implementato le voci sopra (anche solo alcune): `README.md` — tabella feature + limiti noti aggiornati riflettendo cosa è stato effettivamente attivato; `PLAN.md` — stato di ogni `ROAD-*` aggiornato distinguendo chiaramente "fatto/attivo" da "creato ma non collegato" (Priorità 2/3, usare la nota `✅ DONE (non attivo)` accanto al task) da "da fare" |
+| **ROAD-08** | **Aggiornare PLAN.md e README.md a fine implementazione** | ORCHESTRATOR | ROAD-01..07 | ✅ **DONE (2026-10-10)** | MEDIUM | **Fatto 2026-10-10**: PLAN diviso in hub attivo + archivio `docs/plan/` (nessuna riga persa, verificato contro l'originale); README ridotto a 55 righe orientate all'utente, dettagli tecnici spostati senza perdite in `docs/funzionalita.md`, `docs/sviluppo.md`, `docs/architettura.md`, `docs/design-system.md`; tutta la documentazione riallineata allo stato reale (app Android, database todo-list-app, cron-job.org); link interni verificati con script. Da ripetere quando si chiudono ROAD-07/ROAD-09. Testo originale: Dopo aver implementato le voci sopra (anche solo alcune): `README.md` — tabella feature + limiti noti aggiornati riflettendo cosa è stato effettivamente attivato; `PLAN.md` — stato di ogni `ROAD-*` aggiornato distinguendo chiaramente "fatto/attivo" da "creato ma non collegato" (Priorità 2/3, usare la nota `✅ DONE (non attivo)` accanto al task) da "da fare" |
 
 **Ordine di lavoro:** Priorità 1 (ROAD-01/02/03) chiusa. Priorità 2 (ROAD-04/05) in attesa
-dell'account Google AdSense. Priorità 3: ROAD-06 chiuso, **ROAD-07 (profili utente) è il prossimo
-lavoro grosso** — vedi checklist sopra.
+dell'account Google AdSense. Priorità 3: ROAD-06 chiuso, ROAD-07 (profili utente) in sospeso —
+vedi checklist sopra. **In corso adesso: ROAD-09** (test su telefono reale, poi build firmata per
+il Play Store).
 
 ---
 
@@ -154,6 +163,9 @@ Regole standing, valide per chiunque lavori su questo progetto:
 - `src/logic/` non importa React; `src/ui/` non contiene logica di dominio.
 - Nessun file in `public/` che collida con un artefatto di build (`sw.js`, `index.html`).
 - Prima di usare una classe Tailwind custom, verificare che generi CSS: `grep "\.nome-classe" src/styles/global.css`.
+- **Niente `git commit`/`git push`**: li fa l'utente. A fine lavoro elencare i file modificati.
+- **Solo pnpm, mai npm/npx** (dal 2026-10-10): `pnpm install`, `pnpm <script>`, `pnpm dlx` al posto di `npx`. Root e `server/` hanno ciascuno il proprio `pnpm-lock.yaml`; `server/pnpm-workspace.yaml` lo tiene separato dalla radice.
+- Modifiche a notifiche/UI mobile: verificarle anche sull'emulatore Android (Android Studio), non solo nel browser desktop.
 - ✅ DONE/VERIFIED **solo** allegando la prova (comando e output, o il passo manuale svolto con browser reale e data). Un task non eseguito resta ⬜ TODO.
 
 ---
@@ -162,22 +174,30 @@ Regole standing, valide per chiunque lavori su questo progetto:
 
 ### Sviluppo
 ```bash
-npm install
-npm run dev
+pnpm install
+pnpm dev
 # http://localhost:5173
 ```
 
 ### Produzione
 ```bash
-npm run build
-npm run preview
+pnpm build
+pnpm preview
 ```
 
 ### Test
 ```bash
-npm test          # esegue tutta la suite una volta
-npm run test:watch  # modalità watch
+pnpm test          # esegue tutta la suite una volta
+pnpm test:watch  # modalità watch
 ```
+
+### App Android
+```bash
+pnpm android:sync   # build web + copia in android/ (richiede .env con le VITE_*)
+pnpm android:open   # apre Android Studio → Run ▶
+```
+
+Dettagli (backend, variabili, prerequisiti): [`docs/sviluppo.md`](docs/sviluppo.md).
 
 ---
 
@@ -196,14 +216,23 @@ npm run test:watch  # modalità watch
 2. **`tailwind.config.js` non è attivo:** in v4 serve `@config` o un blocco `@theme` (DS-01). Prima di usare una classe custom, verificare che produca davvero CSS
 3. **File eliminati:** `stitch_persistent_reminder_agenda/`, `theme.scss`, `theme.js`, `public/sw.js`, `public/index.html`, `src/logic/notifications/sw.js`
 4. **Niente duplicati in `public/`:** i file lì dentro vengono copiati in `dist/` e possono sovrascrivere gli artefatti di build. È così che il Service Worker custom è sparito dalla produzione per mesi
-5. **Un solo punto di registrazione del SW:** `virtual:pwa-register` in `main.jsx`. Non aggiungere `navigator.serviceWorker.register()` altrove
+5. **Un solo punto di registrazione del SW:** `virtual:pwa-register` in `main.jsx`. Non aggiungere `navigator.serviceWorker.register()` altrove. Nell'app nativa il SW **non** viene registrato (`isNativeApp`)
 6. **Variabili CSS:** Preferire schema `--color-*` invece di `--bs-*`
 7. **Struttura:** Mantenere separazione Logic ↔ UI. Il layer logic non importa React: per comunicare con la UI usa il pub/sub dei toast, non chiamate dirette
 8. **JSDoc:** Tutti i contratti devono essere documentati
+9. **App Android:** il codice web è uno solo; le differenze passano da `isNativeApp` (`src/logic/platform.js`). Dopo ogni modifica al codice web: `pnpm android:sync` e reinstallare l'app
+10. **Database condiviso:** il progetto Supabase todo-list-app ospita anche altre app: le tabelle di questa hanno **sempre** il prefisso `AAA4_agenda_`, e `auth.users` è comune a tutte
 
 ---
 
 ## 📡 Limiti reali delle "notifiche con app chiusa"
+
+> **Vale solo per la versione web (PWA).** Dal 2026-10-10 l'**app nativa Android** (ROAD-09) non ha
+> questi limiti: le notifiche sono **locali**, pianificate dal telefono stesso con gli allarmi esatti
+> di sistema (`@capacitor/local-notifications`), senza browser, server né connessione. Verificato su
+> emulatore: notifica consegnata all'orario esatto con l'app e il suo processo terminati. Resta solo
+> il risparmio energetico aggressivo di alcuni produttori (avviso già presente in Impostazioni).
+> Quanto segue descrive perché, **sul web**, serve il backend Web Push.
 
 Il web **non offre notifiche programmate garantite senza un backend push**. Va detto esplicitamente
 perché README e PLAN hanno promesso più di quanto sia tecnicamente ottenibile:
@@ -216,7 +245,7 @@ perché README e PLAN hanno promesso più di quanto sia tecnicamente ottenibile:
 l'app è aperta + **recupero all'apertura** (FIX-06). **Per una garanzia vera serve un server con
 Web Push — esiste da BUG-01 (2026-08-25, `server/`, VAPID)**: è il canale che consegna
 puntualmente anche a telefono bloccato, con l'unico limite pratico noto nella sezione
-"Limitazioni note" di [README.md](README.md) (restrizioni batteria Android).
+"Limitazioni note" di [docs/funzionalita.md](docs/funzionalita.md#️-limitazioni-note) (restrizioni batteria Android).
 
 ---
 

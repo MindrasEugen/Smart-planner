@@ -6,7 +6,7 @@
 # Prima di applicarlo: recupera la connection string Postgres dal tuo
 # progetto Supabase (Project Settings > Database > Connection string >
 # pooler "Transaction", porta 6543 -- vedi server/.env.example) e genera una
-# coppia di chiavi VAPID con `npx web-push generate-vapid-keys` dentro
+# coppia di chiavi VAPID con `pnpm dlx web-push generate-vapid-keys` dentro
 # server/. I valori marcati `sync: false` vanno incollati a mano nel
 # dashboard Render dopo la creazione dei servizi (mai committarli qui).
 
@@ -16,14 +16,15 @@ services:
     runtime: node
     plan: free
     rootDir: server
-    buildCommand: npm install
-    startCommand: npm start
+    buildCommand: pnpm install --frozen-lockfile
+    startCommand: pnpm start
     healthCheckPath: /
     envVars:
       - key: TZ
         value: Europe/Rome
       - key: ALLOWED_ORIGIN
-        value: https://smart-planner-vjgl.onrender.com
+        # https://localhost: origine della WebView dell'app Android (Capacitor)
+        value: https://smart-planner-vjgl.onrender.com,https://localhost
       - key: TICK_WINDOW_MINUTES
         value: "5"
       - key: SYNC_SECRET
@@ -43,6 +44,9 @@ services:
       - key: QUICK_ADD_DAILY_LIMIT
         value: "5"
 
+  # NON IN USO (2026-10-10): il Cron Job di Render non e' piu' gratuito. Il tick e'
+  # chiamato da cron-job.org ogni 5 minuti (GET $TICK_URL con lo stesso header
+  # Authorization). Tenuto qui come riferimento se si passa a un piano a pagamento.
   - type: cron
     name: agenda-push-tick
     runtime: node

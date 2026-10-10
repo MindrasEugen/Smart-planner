@@ -1,0 +1,4 @@
+# server/ e' un progetto indipendente (deploy separato su Render, lockfile proprio):
+# questo file ferma pnpm qui, invece di risalire al pnpm-workspace.yaml della radice.
+packages:
+  - '.'

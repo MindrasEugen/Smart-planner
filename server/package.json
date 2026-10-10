@@ -3,6 +3,7 @@
   "private": true,
   "version": "1.0.0",
   "type": "module",
+  "packageManager": "pnpm@11.9.0",
   "description": "Backend minimo per Web Push (VAPID): invia le notifiche di Agenda Intelligente anche ad app chiusa.",
   "scripts": {
     "start": "node src/index.js",
