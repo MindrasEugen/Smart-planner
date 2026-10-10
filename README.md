@@ -440,8 +440,8 @@ Attivazione del permesso notifiche e stato corrente dell'autorizzazione.
 ---
 
 ## 📄 Riferimenti
-- **Piano dettagliato, audit e stato dei task:** [`PLAN.md`](PLAN.md)
-- **Roadmap prossimi sviluppi (ROAD-01..08):** [`PLAN.md` § Roadmap](PLAN.md#️-roadmap--prossimi-sviluppi-handoff-2026-08-14)
-- **Fix UX da uso reale, sessione 2026-08-27:** [`PLAN.md` § Fix UX](PLAN.md#-fix-ux-da-uso-reale--sessione-2026-08-27)
-- **Bug da uso reale, tutti risolti:** [`PLAN.md` § Bug reali](PLAN.md#-bug-reali-trovati-in-uso-reale--sessioni-2026-08-15--2026-08-18)
+- **Stato attuale, roadmap e indice dello storico:** [`PLAN.md`](PLAN.md) (lo storico dei lavori chiusi è in [`docs/plan/`](docs/plan/))
+- **Roadmap prossimi sviluppi (ROAD-01..09):** [`PLAN.md` § Roadmap](PLAN.md#️-roadmap--prossimi-sviluppi-handoff-2026-08-14)
+- **Fix UX da uso reale, sessione 2026-08-27:** [`docs/plan/uso-reale-2026-08.md` § Fix UX](docs/plan/uso-reale-2026-08.md#-fix-ux-da-uso-reale--sessione-2026-08-27)
+- **Bug da uso reale, tutti risolti:** [`docs/plan/uso-reale-2026-08.md` § Bug reali](docs/plan/uso-reale-2026-08.md#-bug-reali-trovati-in-uso-reale--sessioni-2026-08-15--2026-08-18)
 - **Design Reference:** Google Stitch — Cognitive Protocol
