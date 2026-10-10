@@ -28,6 +28,9 @@ const scheduledNotifications = new Map();
 // Attesa prima di riprovare quando l'orario calcolato e' gia' passato
 const RETRY_DELAY_MS = 60000;
 
+// Etichette italiane dell'importanza, come nel form (useTaskForm.js)
+const IMPORTANCE_LABELS = { LOW: 'Bassa', MEDIUM: 'Media', HIGH: 'Alta' };
+
 /**
  * Invia un messaggio al Service Worker, se attivo
  * @param {Object} message - Messaggio da inviare
@@ -47,8 +50,9 @@ async function postToServiceWorker(message) {
  */
 export function formatItemNotification(item) {
   const dueDate = item.dueDate instanceof Date ? item.dueDate : new Date(item.dueDate);
+  const importance = IMPORTANCE_LABELS[item.importance] ?? item.importance;
   return {
-    title: `[${item.importance}] ${item.title}`,
+    title: `[${importance}] ${item.title}`,
     body: `Scadenza: ${dueDate.toLocaleDateString()} alle ${item.dueTime}`,
   };
 }
