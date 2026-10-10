@@ -36,6 +36,7 @@ Il valore principale dell'app è:
 | **Quick Add AI** | Scrivi una frase libera, l'AI (Gemini) estrae titolo/data/ora/importanza. Se la frase specifica data e ora, il task si salva subito (con "Annulla"); altrimenti pre-compila il form per la revisione. Limite 5/giorno per dispositivo | ✅ Funzionante — richiede il backend configurato, vedi [Setup Progetto](#-setup-progetto) |
 | **Filtri** | Per tipo, stato, importanza, data (incluso "Imminenti") + 7 scorciatoie rapide (pagina Filtri) | ✅ Funzionante |
 | **Notifiche (app aperta)** | Promemoria ripetuti e configurabili, con cronologia (pagina Alerts) | ✅ Funzionante |
+| **App Android** | App nativa (Capacitor 8, appId `com.m.e.t.agenda`) con notifiche locali: arrivano ad app chiusa e offline, senza dipendere dal server | 🟡 Verificata su emulatore, da provare su telefono reale — vedi [App Android](#app-android-capacitor) |
 | **Notifiche (app chiusa)** | Web Push (VAPID) con backend su Render + Supabase | ✅ Funzionante, verificato su device reale — richiede un passo di setup lato utente, vedi [Limitazioni note](#️-limitazioni-note) |
 | **PWA installabile** | Manifest + icone + banner "Installa App" su mobile, e pulsante equivalente sempre raggiungibile in Settings | ✅ Funzionante |
 | **Preferenze** | Tema (chiaro/scuro/sistema), vibrazione e notifiche silenziose, in Settings | ✅ Funzionante, tema scuro esteso a tutta l'app (verificato su device reale) |
@@ -43,7 +44,7 @@ Il valore principale dell'app è:
 | **Tailwind CSS** | Stili utility-first per UI responsive | ✅ Tema custom attivo (vedi sotto) |
 | **Design System** | Tema personalizzato da Google Stitch | ✅ `@theme` in `global.css` — unica sorgente di verità |
 | **SEO** | Meta tag Open Graph + structured data JSON-LD | ✅ Funzionante |
-| **Test automatici** | Vitest, layer logic | ✅ 49/49 (`npm test`) |
+| **Test automatici** | Vitest, layer logic | ✅ 54/54 (`npm test`) |
 | **Deploy** | Static Site su Render | ✅ Live — https://smart-planner-vjgl.onrender.com |
 | **Sezione "Prossimamente"** | Anteprima roadmap nelle Settings, pilotata da un array | ✅ Funzionante |
 | **Feedback** | Form categorizzato → issue GitHub precompilata, nessun backend | ✅ Funzionante |
@@ -260,9 +261,10 @@ npm start               # ascolta su PORT (default 3000)
 npm test                 # suite del server (tick, finestra di controllo)
 ```
 
-In produzione gira come Web Service su Render (`server/`, root dir `server`) più un cron esterno che
-chiama `GET /api/tick` ogni `TICK_WINDOW_MINUTES` (default 5) — il Cron Job nativo di Render non è
-più gratuito. Il frontend deployato ha bisogno delle stesse `VAPID_PUBLIC_KEY`/`SYNC_SECRET` del
+In produzione gira come Web Service su Render (`server/`, root dir `server`) più un cron esterno
+(**cron-job.org**) che chiama `GET /api/tick` ogni `TICK_WINDOW_MINUTES` (default 5) con l'header
+`Authorization: Bearer <SYNC_SECRET>` — il Cron Job nativo di Render non è più gratuito. Il database
+è il progetto Supabase condiviso **todo-list-app**, con tabelle prefissate `AAA4_agenda_`. Il frontend deployato ha bisogno delle stesse `VAPID_PUBLIC_KEY`/`SYNC_SECRET` del
 server, esposte come `VITE_VAPID_PUBLIC_KEY`/`VITE_SYNC_SECRET` a build-time.
 
 ### Quick Add AI (opzionale, richiede una chiave Gemini)
@@ -311,7 +313,7 @@ server deve includere `https://localhost` (l'origine della WebView Capacitor su 
 ### Cloud-sync / Autenticazione (in arrivo, bozza non ancora attiva)
 
 L'app supporterà a breve **login/registrazione e sincronizzazione dati su più dispositivi** tramite
-Supabase Auth (progetto Smart-Planner), atteso per **fine settembre 2026**. Il codice esiste già come
+Supabase Auth (progetto condiviso todo-list-app: gli utenti Auth sono comuni alle altre app del progetto). Il codice esiste già come
 bozza nelle cartelle `src/logic/auth/` e `src/ui/components/Auth/`, ma **non è ancora collegato
 all'app**: oggi l'app funziona esattamente come prima, senza alcun login richiesto. `items` e
 `subscriptions` sono già sincronizzati su Supabase (per il backend Web Push, vedi sopra), ma senza
