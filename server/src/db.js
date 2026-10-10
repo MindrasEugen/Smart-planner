@@ -19,7 +19,7 @@ const sql = postgres(process.env.DATABASE_URL, {
  */
 export async function initDB() {
   await sql`
-    CREATE TABLE IF NOT EXISTS subscriptions (
+    CREATE TABLE IF NOT EXISTS "AAA4_agenda_subscriptions" (
       endpoint TEXT PRIMARY KEY,
       p256dh TEXT NOT NULL,
       auth TEXT NOT NULL,
@@ -29,7 +29,7 @@ export async function initDB() {
     )
   `;
   await sql`
-    CREATE TABLE IF NOT EXISTS items (
+    CREATE TABLE IF NOT EXISTS "AAA4_agenda_items" (
       id TEXT PRIMARY KEY,
       title TEXT NOT NULL,
       due_date TEXT NOT NULL,
@@ -42,7 +42,7 @@ export async function initDB() {
   // Dedupe: un'occorrenza (item, orario calcolato) va inviata una volta sola,
   // anche se due tick si sovrappongono o il DB mirror non e' ancora cambiato
   await sql`
-    CREATE TABLE IF NOT EXISTS sent_notifications (
+    CREATE TABLE IF NOT EXISTS "AAA4_agenda_sent_notifications" (
       item_id TEXT NOT NULL,
       next_time BIGINT NOT NULL,
       sent_at BIGINT NOT NULL,
@@ -52,7 +52,7 @@ export async function initDB() {
   // Contatore per il rate limit giornaliero della Quick Add AI (per dispositivo,
   // non per utente: non esiste ancora un concetto di account, vedi PLAN.md ROAD-07).
   await sql`
-    CREATE TABLE IF NOT EXISTS quick_add_usage (
+    CREATE TABLE IF NOT EXISTS "AAA4_agenda_quick_add_usage" (
       device_id TEXT NOT NULL,
       usage_date DATE NOT NULL,
       count INT NOT NULL DEFAULT 0,
@@ -62,7 +62,7 @@ export async function initDB() {
   // Tabella scritta solo da questo server (ruolo postgres, bypassa RLS per
   // design, vedi commento in testa al file): lockdown a secco comunque
   // applicato, stessa postura di sicurezza delle altre tabelle pubbliche.
-  await sql`ALTER TABLE quick_add_usage ENABLE ROW LEVEL SECURITY`;
+  await sql`ALTER TABLE "AAA4_agenda_quick_add_usage" ENABLE ROW LEVEL SECURITY`;
 }
 
 /**
@@ -80,7 +80,7 @@ function todayInRome() {
  */
 export async function getQuickAddUsageToday(deviceId) {
   const rows = await sql`
-    SELECT count FROM quick_add_usage WHERE device_id = ${deviceId} AND usage_date = ${todayInRome()}
+    SELECT count FROM "AAA4_agenda_quick_add_usage" WHERE device_id = ${deviceId} AND usage_date = ${todayInRome()}
   `;
   return rows[0]?.count ?? 0;
 }
@@ -92,9 +92,9 @@ export async function getQuickAddUsageToday(deviceId) {
  */
 export async function incrementQuickAddUsage(deviceId) {
   const rows = await sql`
-    INSERT INTO quick_add_usage (device_id, usage_date, count)
+    INSERT INTO "AAA4_agenda_quick_add_usage" (device_id, usage_date, count)
     VALUES (${deviceId}, ${todayInRome()}, 1)
-    ON CONFLICT (device_id, usage_date) DO UPDATE SET count = quick_add_usage.count + 1
+    ON CONFLICT (device_id, usage_date) DO UPDATE SET count = "AAA4_agenda_quick_add_usage".count + 1
     RETURNING count
   `;
   return rows[0].count;
@@ -108,7 +108,7 @@ export async function incrementQuickAddUsage(deviceId) {
  */
 export async function upsertSubscription(subscription, prefs = {}) {
   await sql`
-    INSERT INTO subscriptions (endpoint, p256dh, auth, vibrate, silent, created_at)
+    INSERT INTO "AAA4_agenda_subscriptions" (endpoint, p256dh, auth, vibrate, silent, created_at)
     VALUES (${subscription.endpoint}, ${subscription.keys.p256dh}, ${subscription.keys.auth},
             ${Boolean(prefs.vibrate)}, ${Boolean(prefs.silent)}, ${Date.now()})
     ON CONFLICT (endpoint) DO UPDATE SET
@@ -125,14 +125,14 @@ export async function upsertSubscription(subscription, prefs = {}) {
  * @returns {Promise<void>}
  */
 export async function deleteSubscription(endpoint) {
-  await sql`DELETE FROM subscriptions WHERE endpoint = ${endpoint}`;
+  await sql`DELETE FROM "AAA4_agenda_subscriptions" WHERE endpoint = ${endpoint}`;
 }
 
 /**
  * @returns {Promise<Array<{endpoint: string, keys: {p256dh: string, auth: string}, vibrate: boolean, silent: boolean}>>}
  */
 export async function getAllSubscriptions() {
-  const rows = await sql`SELECT * FROM subscriptions`;
+  const rows = await sql`SELECT * FROM "AAA4_agenda_subscriptions"`;
   return rows.map((row) => ({
     endpoint: row.endpoint,
     keys: { p256dh: row.p256dh, auth: row.auth },
@@ -149,10 +149,10 @@ export async function getAllSubscriptions() {
  */
 export async function replaceItems(items) {
   await sql.begin(async (tx) => {
-    await tx`DELETE FROM items`;
+    await tx`DELETE FROM "AAA4_agenda_items"`;
     for (const item of items) {
       await tx`
-        INSERT INTO items (id, title, due_date, due_time, status, notification_settings, updated_at)
+        INSERT INTO "AAA4_agenda_items" (id, title, due_date, due_time, status, notification_settings, updated_at)
         VALUES (${item.id}, ${item.title}, ${item.dueDate}, ${item.dueTime}, ${item.status},
                 ${JSON.stringify(item.notificationSettings ?? {})}, ${item.updatedAt ?? null})
       `;
@@ -164,7 +164,7 @@ export async function replaceItems(items) {
  * @returns {Promise<Array<Object>>} Item nel formato atteso da scheduler.js
  */
 export async function getAllItems() {
-  const rows = await sql`SELECT * FROM items`;
+  const rows = await sql`SELECT * FROM "AAA4_agenda_items"`;
   return rows.map((row) => ({
     id: row.id,
     title: row.title,
@@ -182,7 +182,7 @@ export async function getAllItems() {
  */
 export async function wasNotified(itemId, nextTime) {
   const rows = await sql`
-    SELECT 1 FROM sent_notifications WHERE item_id = ${itemId} AND next_time = ${nextTime}
+    SELECT 1 FROM "AAA4_agenda_sent_notifications" WHERE item_id = ${itemId} AND next_time = ${nextTime}
   `;
   return rows.length > 0;
 }
@@ -196,9 +196,9 @@ export async function wasNotified(itemId, nextTime) {
  */
 export async function markNotified(itemId, nextTime) {
   await sql`
-    INSERT INTO sent_notifications (item_id, next_time, sent_at)
+    INSERT INTO "AAA4_agenda_sent_notifications" (item_id, next_time, sent_at)
     VALUES (${itemId}, ${nextTime}, ${Date.now()})
     ON CONFLICT (item_id, next_time) DO NOTHING
   `;
-  await sql`DELETE FROM sent_notifications WHERE item_id = ${itemId} AND next_time < ${nextTime}`;
+  await sql`DELETE FROM "AAA4_agenda_sent_notifications" WHERE item_id = ${itemId} AND next_time < ${nextTime}`;
 }
